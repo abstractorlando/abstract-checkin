@@ -288,28 +288,25 @@ const isTouch=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform=
 function wrap(ctx,text,maxW){const words=text.split(' ');const lines=[];let cur='';
   words.forEach(w=>{const t=cur?cur+' '+w:w;if(ctx.measureText(t).width<=maxW||!cur)cur=t;else{lines.push(cur);cur=w}});if(cur)lines.push(cur);return lines}
 function drawLabel(ctx,g){
-  ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.textBaseline='alphabetic';
-  const maxW=LW-PAD*2;
-  // reservation name: biggest size that fits in 2 lines
-  let size=34,lines;
-  for(;size>=14;size--){ctx.font=`800 ${pt(size)}px Poppins, Arial, sans-serif`;lines=wrap(ctx,g.reservation,maxW);if(lines.length<=2&&lines.every(l=>ctx.measureText(l).width<=maxW))break}
-  let y=PAD;lines.slice(0,2).forEach(l=>{y+=pt(size)*0.98;ctx.fillText(l,PAD,y)});
-  // footer
-  const fy=LH-PAD+4;ctx.font=`500 ${pt(6.5)}px Poppins, Arial, sans-serif`;
-  ctx.fillText(`Guest ${g.num}/${g.size}${g.pn>1?' · Project '+g.pk+'/'+g.pn:''}`,PAD,fy);
-  ctx.textAlign='right';ctx.fillText(STUDIO,LW-PAD,fy);ctx.textAlign='left';
-  ctx.fillRect(PAD,fy-pt(6.5)-12,maxW,5);
-  // class day + time
-  const dy=fy-pt(6.5)-40;ctx.font=`700 ${pt(10)}px Poppins, Arial, sans-serif`;
-  ctx.fillText(`${niceDate(g.date)} · ${g.time}`,PAD,dy);
-  // guest first name + FT/RG box
-  const gy=dy-pt(10)-38;ctx.font=`700 ${pt(15)}px Poppins, Arial, sans-serif`;
-  let nm=g.name;while(ctx.measureText(nm).width>maxW-170&&nm.length>2)nm=nm.slice(0,-2)+'…';
-  ctx.fillText(nm,PAD,gy);
-  ctx.font=`800 ${pt(11)}px Poppins, Arial, sans-serif`;
-  const tw=ctx.measureText(g.type).width+36,th=pt(11)+18,tx=LW-PAD-tw,ty=gy-pt(11)-8;
-  ctx.lineWidth=6;if(g.type==='FT'){ctx.fillRect(tx,ty,tw,th);ctx.fillStyle='#fff'}else ctx.strokeRect(tx,ty,tw,th);
-  ctx.fillText(g.type,tx+18,ty+th-14);ctx.fillStyle='#000';
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.textBaseline='alphabetic';ctx.textAlign='left';
+  const P=34,maxW=LW-P*2;
+  // FT / RG box: top-right corner
+  ctx.font=`800 ${pt(13)}px Poppins, Arial, sans-serif`;
+  const tw=ctx.measureText(g.type).width+44,th=pt(13)+24,tx=LW-P-tw,ty=P;
+  ctx.lineWidth=7;if(g.type==='FT'){ctx.fillRect(tx,ty,tw,th);ctx.fillStyle='#fff'}else ctx.strokeRect(tx+3.5,ty+3.5,tw-7,th-7);
+  ctx.fillText(g.type,tx+22,ty+th-19);ctx.fillStyle='#000';
+  // reservation name: biggest size that fits in 2 lines, beside the box
+  const resW=maxW-tw-24;let size=40,lines;
+  for(;size>=14;size--){ctx.font=`800 ${pt(size)}px Poppins, Arial, sans-serif`;lines=wrap(ctx,g.reservation,resW);if(lines.length<=2&&lines.every(l=>ctx.measureText(l).width<=resW))break}
+  let y=P-pt(size)*0.12;lines.slice(0,2).forEach(l=>{y+=pt(size)*0.98;ctx.fillText(l,P,y)});
+  // bottom line: day + time left, QTY right
+  const by=LH-P-4;ctx.font=`700 ${pt(12)}px Poppins, Arial, sans-serif`;
+  ctx.fillText(`${niceDate(g.date)} · ${g.time}`,P,by);
+  ctx.font=`800 ${pt(12)}px Poppins, Arial, sans-serif`;ctx.textAlign='right';ctx.fillText(`QTY: ${g.size}`,LW-P,by);ctx.textAlign='left';
+  // guest first name
+  ctx.font=`700 ${pt(19)}px Poppins, Arial, sans-serif`;
+  let nm=g.name;while(ctx.measureText(nm).width>maxW&&nm.length>2)nm=nm.slice(0,-2)+'…';
+  ctx.fillText(nm,P,by-pt(12)-46);
 }
 async function makePdf(copies){
   try{await Promise.all(['800','700','500'].map(w=>document.fonts.load(`${w} 40px Poppins`)))}catch(e){}
