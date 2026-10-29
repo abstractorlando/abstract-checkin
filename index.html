@@ -102,8 +102,10 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
         <b style="font-size:17px">Arriving today</b>
-        <label class="btn ghost small" style="display:inline-flex;align-items:center">Import Toast bookings
-          <input type="file" id="bkFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFile(this)"></label>
+        <span style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn ghost small" id="mailBtn" onclick="checkEmail()">Check email for new report</button>
+        <label class="btn ghost small" style="display:inline-flex;align-items:center">Import file
+          <input type="file" id="bkFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFile(this)"></label></span>
       </div>
       <input id="bkFilter" placeholder="Search today's reservations…" oninput="renderArrivals()" autocomplete="off">
       <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
@@ -201,7 +203,7 @@ let PIN='';try{PIN=localStorage.getItem('abs_pin')||''}catch(e){}
 let asking=false;
 function askPin(wrong){if(asking)return;asking=true;const v=prompt((wrong?'Wrong PIN. ':'')+'Staff PIN');asking=false;if(v===null)return;PIN=v.trim();try{localStorage.setItem('abs_pin',PIN)}catch(e){};loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()}
 demo.bk=[];demo.importBookings=function(l){const d={};l.forEach(b=>d[b.date]=1);this.bk=this.bk.filter(b=>!d[b.date]).concat(l.map((b,i)=>Object.assign({row:this.bk.length+i+2,partyId:''},b)));return {imported:l.length,dates:Object.keys(d)}};
-demo.getBookings=function(d){return this.bk.filter(b=>b.date===d)};
+demo.checkEmail=()=>0;demo.getBookings=function(d){return this.bk.filter(b=>b.date===d)};
 const _dsp=demo.saveParty.bind(demo);demo.saveParty=function(p){const o=_dsp(p);const b=this.bk.find(x=>x.row==p.bookingRow);if(b)b.partyId=o[0].partyId;return o};
 
 /* ---------- helpers ---------- */
@@ -407,6 +409,12 @@ function pick(row){
   $('guests').innerHTML='';for(let i=0;i<b.size;i++)addGuest(i===0?b.reservation.split(' ')[0]:'');
   renderArrivals();$('formTop').scrollIntoView({behavior:'smooth'});
   const empty=[...$('guests').querySelectorAll('input')].find(i=>!i.value);(empty||$('guests').querySelector('input')).focus();
+}
+async function checkEmail(){
+  const b=$('mailBtn');b.disabled=true;b.textContent='Checking…';
+  try{const n=await call('checkEmail');toast(n?`Imported ${n} bookings from email`:'No new report in email yet',3500);loadArrivals()}
+  catch(e){toast('Could not check email: '+(e.message||e),5000)}
+  b.disabled=false;b.textContent='Check email for new report';
 }
 /* Toast dates look like "10/29/2026, 12:30:00 PM" */
 function toDate(v){
