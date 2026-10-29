@@ -126,7 +126,7 @@
       </div>
     </div>
     <div class="card">
-      <label class="l">Guests · FT = first timer, RG = returning guest · projects = how many labels</label>
+      <label class="l">Guests · FT = first timer, RG = returning guest · number = stickers to print</label>
       <div id="guests" class="gl"></div>
       <button class="btn ghost small add" onclick="addGuest()">+ Add guest</button>
       <button class="btn ghost small add" onclick="addMany()">+ Add 4</button>
@@ -247,7 +247,7 @@ function addGuest(name='',type='FT',projects=1){
   const wrap=document.createElement('div');wrap.className='g';
   wrap.innerHTML=`<span class="n"></span><input placeholder="First name" value="${esc(name)}" autocomplete="off">
     <div class="seg"><button type="button" class="ft">FT</button><button type="button" class="rg">RG</button></div>
-    <div class="pj" title="Projects (labels)"><button type="button" class="m">−</button><span>1</span><button type="button" class="p">+</button></div>
+    <div class="pj" title="Stickers to print"><button type="button" class="m">−</button><span>1</span><button type="button" class="p">+</button></div>
     <button class="x" type="button" aria-label="Remove guest">×</button>`;
   const [ft,rg]=wrap.querySelectorAll('.seg button');
   const set=t=>{wrap.dataset.type=t;ft.classList.toggle('on',t==='FT');rg.classList.toggle('on',t==='RG')};
@@ -373,12 +373,12 @@ function renderParties(list,el){
         <button class="btn ghost small" onclick='reprint(${JSON.stringify(p.map(g=>g.row))})'>Print all</button></div>
       ${storageLine(p)}
       <div id="sf_${f.partyId}"></div>
-      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b>${(g.projects||1)>1?` <span class="tag NEW">${g.projects} projects</span>`:''} <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span></div>
-        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="addProject(${g.row})">+ Project</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print</button></div></div>`).join('')}
+      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b> <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span></div>
+        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button></div></div>`).join('')}
       <button class="btn ghost small" style="margin-top:10px" onclick="addToParty('${f.partyId}')">+ Add guest to this party</button>
     </div>`}).join('');
 }
-function reprint(rows){printLabels(rows.map(r=>cache[r]).filter(Boolean))}
+function reprint(rows){printLabels(rows.map(r=>cache[r]).filter(Boolean).map(g=>Object.assign({},g,{projects:1})))}
 /* extra project later on: saves the new count, prints only the new sticker */
 async function addProject(row){
   const g=cache[row];const n=(g.projects||1)+1;
