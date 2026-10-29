@@ -444,7 +444,7 @@ async function loadDay(quiet){
   }catch(e){if(!quiet)$('dayList').innerHTML='<p class="muted">Could not load.</p>'}
 }
 function printNew(){const fresh=dayData.filter(g=>!g.printed).sort((a,b)=>a.row-b.row);fresh.forEach(g=>cache[g.row]=g);printLabels(fresh);setTimeout(()=>loadDay(true),2500)}
-setInterval(()=>{if(!$('vNew').classList.contains('hide')&&!document.hidden)loadArrivals()},60000);
+setInterval(()=>{if(!$('vNew').classList.contains('hide')&&!document.hidden)loadArrivals(true)},60000);
 setInterval(()=>{if(!$('vToday').classList.contains('hide')&&!document.hidden)loadDay(true)},15000);
 
 let fh;function debFind(){clearTimeout(fh);fh=setTimeout(find,300)}
@@ -452,7 +452,11 @@ async function find(){const q=$('q').value.trim();if(q.length<2){$('findList').i
 
 /* ---------- Toast bookings: arriving today ---------- */
 let arrivals=[],picked=null;
-async function loadArrivals(){try{arrivals=await call('getBookings',$('dt').value);renderArrivals()}catch(e){$('arrivals').innerHTML='<p class="muted">Could not load bookings.</p>'}}
+async function loadArrivals(quiet){
+  if(!quiet&&!arrivals.length)$('arrivals').innerHTML='<p class="muted">Loading bookings…</p>';
+  try{arrivals=await call('getBookings',$('dt').value);renderArrivals()}
+  catch(e){$('arrivals').innerHTML=`<p class="muted">Could not load bookings: ${esc(e.message||e)} <a href="#" onclick="loadArrivals();return false" style="color:var(--teal)">Try again</a></p>`}
+}
 function tMin(t){const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||'');if(!m)return 9999;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2]}
 let showDone=false;
 function renderArrivals(){
