@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ====== EDIT CLASS TIMES HERE ====== */
+  :root{--mag:#ff009d;--teal:#0093ad;--purp:#4e3aa2;--ink:#1d1b26;--muted:#6b6878;--line:#e6e3ee;--soft:#f6f4fb}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--soft)}
+  header{background:var(--purp);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;font-weight:700}
+  nav{display:flex;gap:6px}
+  nav button{background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;padding:8px 14px;font:600 14px Poppins;cursor:pointer;min-height:40px}
+  nav button.on{background:#fff;color:var(--purp);border-color:#fff}
+  main{max-width:760px;margin:0 auto;padding:16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+  label.l{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:0 0 6px}
+  input,select{width:100%;font:500 17px Poppins;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);min-height:48px}
+  input:focus,select:focus{outline:none;border-color:var(--teal)}
+  .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .gl{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .g{display:flex;gap:8px;align-items:center}
+  .g .n{width:28px;font-weight:700;color:var(--muted);text-align:center}
+  .g input{flex:1}
+  .seg{display:flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
+  .seg button{border:0;background:#fff;font:800 15px Poppins;padding:0;width:48px;min-height:44px;cursor:pointer;color:var(--muted)}
+  .pj{display:flex;align-items:center;border:2px solid var(--line);border-radius:12px;flex:none}
+  .pj button{border:0;background:none;font:700 18px Poppins;width:32px;min-height:40px;cursor:pointer;color:var(--muted)}
+  .pj span{min-width:16px;text-align:center;font-weight:700}
+  .pj.multi{border-color:var(--purp)}.pj.multi span{color:var(--purp)}
+  .seg button.on.ft{background:var(--teal);color:#fff}
+  .seg button.on.rg{background:var(--mag);color:#fff}
+  .x{border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer;width:36px;height:44px}
+  .btn{border:0;border-radius:999px;font:700 16px Poppins;padding:14px 22px;cursor:pointer;min-height:48px}
+  .btn.main{background:var(--mag);color:#fff;width:100%;font-size:18px}
+  .btn.ghost{background:#fff;border:2px solid var(--line);color:var(--ink)}
+  .btn.small{padding:8px 14px;font-size:14px;min-height:40px}
+  .btn:disabled{opacity:.5;cursor:default}
+  .add{margin-top:10px}
+  .party{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;background:#fff}
+  .ph{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+  .ph b{font-size:17px}
+  .ph span{color:var(--muted);font-size:14px}
+  .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
+  .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff}
+  .tag.NEW{background:var(--purp)}.party.isnew{border:2px solid var(--mag)}
+  .tag.FT{background:var(--teal)}.tag.RG{background:var(--mag)}
+  .muted{color:var(--muted);font-size:14px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;display:none;z-index:5}
+  .hide{display:none!important}
+  .arr{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font:500 16px Poppins;color:var(--ink);cursor:pointer;min-height:54px}
+  .arr:hover{border-color:var(--teal)}
+  .arr .t{font-weight:700;color:var(--purp);min-width:78px}
+  .arr .nm{flex:1;font-weight:600}
+  .arr .sz{background:var(--soft);border-radius:999px;padding:2px 10px;font-weight:700;font-size:14px}
+  .arr.in{opacity:.45}
+  .arr.sel{border-color:var(--mag);background:#fff0f8}
+  .loc{display:inline-block;background:var(--purp);color:#fff;font-weight:800;font-size:18px;padding:4px 12px;border-radius:10px;letter-spacing:.5px}
+  .st{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--soft);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .sf{margin-top:10px;padding:12px;border:2px solid var(--teal);border-radius:12px;display:grid;gap:10px}
+  .sf .r3{display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px}
+  .chk{display:flex;gap:8px;align-items:center;font-weight:600;font-size:14px}
+  .chk input{width:22px;height:22px;min-height:0}
+  .done{color:#1a8a3a;font-weight:700}
+  @media (max-width:560px){.sf .r3{grid-template-columns:1fr 1fr}.sf .r3>:nth-child(2){grid-column:1/-1;order:-1}}
+
+  /* ====== LABEL: 3in x 2in ====== */
+  #print{display:none}
+  @page{size:3in 2in;margin:0}
+  @media print{
+    body{background:#fff}
+    body>*:not(#print){display:none!important}
+    #print{display:block}
+  }
+  .lbl{width:3in;height:2in;padding:.09in .12in;display:flex;flex-direction:column;justify-content:space-between;page-break-after:always;break-after:page;overflow:hidden;color:#000;font-family:Poppins,Arial,sans-serif}
+  .lbl:last-child{page-break-after:auto;break-after:auto}
+  .lbl .top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+  .lbl .rn{font-weight:800;line-height:1.02;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+  .lbl .gn{font-weight:600;font-size:15pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lbl .mid{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .lbl .ty{font-weight:800;font-size:10pt;padding:1pt 5pt;border:1.5pt solid #000;border-radius:4pt;white-space:nowrap;flex:none}
+  .lbl .ty.FT{background:#000;color:#fff}
+  .lbl .when{font-weight:600;font-size:10pt;line-height:1.15}
+  .lbl .ft{display:flex;justify-content:space-between;gap:4pt;white-space:nowrap;font-size:6.5pt;border-top:1pt solid #000;padding-top:2pt}
+</style>
+</head>
+<body>
+<header>
+  <h1>Abstract Check-In</h1>
+  <nav>
+    <button id="tabNew" class="on" onclick="show('new')">Check In</button>
+    <button id="tabToday" onclick="show('today')">Today</button>
+    <button id="tabFind" onclick="show('find')">Pickup</button>
+  </nav>
+</header>
+
+<main>
+  <!-- CHECK IN -->
+  <section id="vNew">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <b style="font-size:17px">Arriving today</b>
+        <label class="btn ghost small" style="display:inline-flex;align-items:center">Import Toast bookings
+          <input type="file" id="bkFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFile(this)"></label>
+      </div>
+      <input id="bkFilter" placeholder="Search today's reservations…" oninput="renderArrivals()" autocomplete="off">
+      <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
+    </div>
+    <div class="card" id="formTop">
+      <label class="l" for="res">Reservation name</label>
+      <input id="res" placeholder="e.g. Beatriz Castro Silva" autocomplete="off">
+      <div class="row" style="margin-top:12px">
+        <div><label class="l" for="ph">Phone</label><input id="ph" type="tel" placeholder="(407) 555-1234" autocomplete="off"></div>
+        <div><label class="l" for="em">Email</label><input id="em" type="email" placeholder="name@email.com" autocomplete="off" autocapitalize="off"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div><label class="l" for="dt">Class day</label><input id="dt" type="date" onchange="loadArrivals()"></div>
+        <div><label class="l" for="tm">Class time</label><select id="tm"></select></div>
+      </div>
+    </div>
+    <div class="card">
+      <label class="l">Guests · FT = first timer, RG = returning guest · projects = how many labels</label>
+      <div id="guests" class="gl"></div>
+      <button class="btn ghost small add" onclick="addGuest()">+ Add guest</button>
+      <button class="btn ghost small add" onclick="addMany()">+ Add 4</button>
+    </div>
+    <button id="saveBtn" class="btn main" onclick="saveAndPrint()">Check in &amp; print labels</button>
+    <p class="muted" style="text-align:center">Saves to the Google Sheet, then opens the print dialog.</p>
+  </section>
+
+  <!-- TODAY -->
+  <section id="vToday" class="hide">
+    <div class="card" style="display:flex;gap:10px;align-items:end">
+      <div style="flex:1"><label class="l" for="dayPick">Date</label><input id="dayPick" type="date" onchange="loadDay()"></div>
+      <button class="btn ghost small" onclick="loadDay()">Refresh</button>
+    </div>
+    <div id="newBar" class="card hide" style="border:2px solid var(--mag);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <b id="newCount" style="font-size:17px"></b>
+      <button class="btn main" style="width:auto;font-size:16px" onclick="printNew()">Print new labels</button>
+    </div>
+    <div id="dayList"><p class="muted">Loading…</p></div>
+  </section>
+
+  <!-- FIND -->
+  <section id="vFind" class="hide">
+    <div class="card">
+      <label class="l" for="q">Pickup: search reservation or guest name</label>
+      <input id="q" placeholder="Type a name…" oninput="debFind()">
+      <datalist id="pieceTypes"></datalist>
+    </div>
+    <div id="findList"></div>
+  </section>
+</main>
+
+<div id="print"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ====== EDIT CLASS TIMES HERE (in order) ====== */
+const CLASS_TIMES = ['11:00 AM','12:30 PM','2:00 PM','3:30 PM','5:00 PM'];
+// From Jan 2027, change to e.g.: ['12:00 PM','1:30 PM','3:00 PM','4:30 PM','6:00 PM','7:30 PM'];
+const STUDIO = 'Abstract Orlando · (689) 348-8239';
+/* ====== PIECE TYPES (suggestions when storing) ====== */
+const PIECE_TYPES = ['Daisy 8 inch Glass Vase','Magnolia 10 inch Glass Vase','Air Abstract','Heart Sculpture','Topolino/Topolina','Trooper','Kodiak','Silvertip','Grizzly','Yearling','Cub','Floppy','Winnie','Kitty','Snoopy','Skully','626','Fluffy','Cooper','Tars','Gargantua','The Bat','Labubu','Turbo','Hexagon Gift Coasters','Ear Coasters','Tapas','Meze','Halo','Mona Lisa','Banksy','Pollock','Frida','Hilma','Melody Guitar','The Boss','High Four','Castle','Ears','Crush','Surfboard','Shark','T-REX','Smiley','Sunshine','Degas Canvas','Monet Canvas','Van Gogh Canvas','Picasso Canvas','Haring Canvas','Goya Canvas','Renoir Canvas','Georgia Canvas','Basquiat Canvas','Koons Canvas','Gustav Canvas','Matisse Canvas','Da Vinci Canvas','Mixed'];
+
+/* ====== YOUR APPS SCRIPT WEB APP LINK (ends in /exec) ====== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwvba_1OZKz5alSsEVV8pXWKUQJN5wmur6ACjaUD1grRUbJoFN0zJJ5verK4omhuygcKw/exec';
+
+/* ---------- server bridge (demo store if API_URL is empty) ---------- */
+const hasGAS = !!API_URL;
+const demo = {rows:[],st:{},
+  wrap(r){return Object.assign({},r,{storage:this.st[r.partyId]||null})},
+  saveParty(p){const id=Math.random().toString(36).slice(2,10).toUpperCase();const out=p.guests.map((g,i)=>({row:this.rows.length+2+i,ts:Date.now(),date:p.date,time:p.time,reservation:p.reservation,size:p.guests.length,num:i+1,name:g.name,type:g.type,projects:g.projects||1,partyId:id,printed:0,phone:p.phone,email:p.email}));this.rows.push(...out);return out.map(r=>this.wrap(r))},
+  getDay(d){return this.rows.filter(r=>r.date===d).slice().reverse().map(r=>this.wrap(r))},
+  search(q){q=q.toLowerCase();return this.rows.filter(r=>r.name.toLowerCase().includes(q)||r.reservation.toLowerCase().includes(q)).slice().reverse().map(r=>this.wrap(r))},
+  markPrinted(rows){rows.forEach(n=>{const r=this.rows.find(x=>x.row===n);if(r)r.printed++});return true},
+  updateGuest(row,n,t,pj){const r=this.rows.find(x=>x.row===row);r.name=n;r.type=t;if(pj)r.projects=pj;return this.wrap(r)},
+  updateContact(pid,ph,em){this.rows.filter(r=>r.partyId===pid).forEach(r=>{r.phone=ph;r.email=em});return true},
+  storeParty(s){const o=this.st[s.partyId]||{};this.st[s.partyId]={location:s.location.toUpperCase(),pieceType:s.pieceType,pieces:+s.pieces,emailSent:o.emailSent||s.notify,textSent:o.textSent||s.notify,pickedUp:o.pickedUp||false};return {email:s.notify?'sent':'skipped',text:s.notify?'sent':'skipped'}},
+  addGuestToParty(pid,name,type){const party=this.rows.filter(r=>r.partyId===pid);const f=party[0];const size=party.length+1;party.forEach(r=>r.size=size);
+    const g=Object.assign({},f,{row:this.rows.length+2,num:size,size,name,type,projects:1,printed:0});this.rows.push(g);return this.wrap(g)},
+  markPickedUp(pid){this.st[pid].pickedUp=true;return true}};
+function call(fn,...args){
+  return new Promise((res,rej)=>{
+    if(!hasGAS){try{res(demo[fn](...args))}catch(e){rej(e)}return}
+    // text/plain body = no CORS preflight; no cookies = no Google sign-in problems
+    fetch(API_URL,{method:'POST',body:JSON.stringify({pin:PIN,fn,args}),redirect:'follow',credentials:'omit'})
+      .then(r=>r.json()).then(j=>{
+        if(j.ok)return res(j.data);
+        if(/Wrong PIN/.test(j.error))askPin(true);
+        rej(new Error(j.error));
+      }).catch(()=>rej(new Error('No connection — check Wi-Fi')));
+  });
+}
+
+/* ---------- staff PIN ---------- */
+let PIN='';try{PIN=localStorage.getItem('abs_pin')||''}catch(e){}
+let asking=false;
+function askPin(wrong){if(asking)return;asking=true;const v=prompt((wrong?'Wrong PIN. ':'')+'Staff PIN');asking=false;if(v===null)return;PIN=v.trim();try{localStorage.setItem('abs_pin',PIN)}catch(e){};loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()}
+demo.bk=[];demo.importBookings=function(l){const d={};l.forEach(b=>d[b.date]=1);this.bk=this.bk.filter(b=>!d[b.date]).concat(l.map((b,i)=>Object.assign({row:this.bk.length+i+2,partyId:''},b)));return {imported:l.length,dates:Object.keys(d)}};
+demo.getBookings=function(d){return this.bk.filter(b=>b.date===d)};
+const _dsp=demo.saveParty.bind(demo);demo.saveParty=function(p){const o=_dsp(p);const b=this.bk.find(x=>x.row==p.bookingRow);if(b)b.partyId=o[0].partyId;return o};
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function niceDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+function cap(s){s=s.trim();return s.charAt(0).toUpperCase()+s.slice(1)}
+function titleCase(s){return s.trim().replace(/\s+/g,' ').split(' ').map(cap).join(' ')}
+function toast(m,ms){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',ms||2600)}
+function nearestTime(){
+  const now=new Date(),mins=now.getHours()*60+now.getMinutes();
+  const toM=t=>{let [h,mm]=t.split(/[: ]/);h=+h;const pm=/PM/.test(t);if(pm&&h!==12)h+=12;if(!pm&&h===12)h=0;return h*60+ +mm};
+  let best=CLASS_TIMES[0],bd=1e9;CLASS_TIMES.forEach(t=>{const d=Math.abs(toM(t)-mins);if(d<bd){bd=d;best=t}});return best;
+}
+
+/* ---------- tabs ---------- */
+function show(v){
+  ['new','today','find'].forEach(k=>{$('v'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==v);$('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on',k===v)});
+  if(v==='today')loadDay(); if(v==='new')loadArrivals(); if(v==='find')$('q').focus();
+}
+
+/* ---------- check-in form ---------- */
+function addGuest(name='',type='FT',projects=1){
+  const wrap=document.createElement('div');wrap.className='g';
+  wrap.innerHTML=`<span class="n"></span><input placeholder="First name" value="${esc(name)}" autocomplete="off">
+    <div class="seg"><button type="button" class="ft">FT</button><button type="button" class="rg">RG</button></div>
+    <div class="pj" title="Projects (labels)"><button type="button" class="m">−</button><span>1</span><button type="button" class="p">+</button></div>
+    <button class="x" type="button" aria-label="Remove guest">×</button>`;
+  const [ft,rg]=wrap.querySelectorAll('.seg button');
+  const set=t=>{wrap.dataset.type=t;ft.classList.toggle('on',t==='FT');rg.classList.toggle('on',t==='RG')};
+  ft.onclick=()=>set('FT');rg.onclick=()=>set('RG');set(type);
+  const pj=wrap.querySelector('.pj span');const setP=n=>{n=Math.min(Math.max(n,1),9);wrap.dataset.projects=n;pj.textContent=n;pj.parentNode.classList.toggle('multi',n>1)};
+  wrap.querySelector('.pj .m').onclick=()=>setP(+wrap.dataset.projects-1);wrap.querySelector('.pj .p').onclick=()=>setP(+wrap.dataset.projects+1);setP(projects);
+  wrap.querySelector('.x').onclick=()=>{wrap.remove();renum()};
+  wrap.querySelector('input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addGuest();}});
+  $('guests').appendChild(wrap);renum();wrap.querySelector('input').focus();
+}
+function addMany(){for(let i=0;i<4;i++)addGuest()}
+function renum(){[...$('guests').children].forEach((g,i)=>g.querySelector('.n').textContent=i+1)}
+function resetForm(){picked=null;['res','ph','em'].forEach(k=>$(k).value='');$('guests').innerHTML='';addGuest();$('tm').value=nearestTime();$('res').focus()}
+
+async function saveAndPrint(){
+  const reservation=$('res').value.trim();
+  const guests=[...$('guests').children].map(g=>({name:cap(g.querySelector('input').value),type:g.dataset.type,projects:+g.dataset.projects||1})).filter(g=>g.name);
+  if(!reservation){toast('Add the reservation name');$('res').focus();return}
+  if(!guests.length){toast('Add at least one guest');return}
+  const em=$('em').value.trim();
+  if(em&&!/^\S+@\S+\.\S+$/.test(em)){toast('Check the email');$('em').focus();return}
+  const btn=$('saveBtn');btn.disabled=true;btn.textContent='Saving…';
+  try{
+    const saved=await call('saveParty',{date:$('dt').value,time:$('tm').value,reservation:titleCase(reservation),phone:$('ph').value.trim(),email:em,guests,bookingRow:picked?picked.row:0});
+    picked=null;$('bkFilter').value='';loadArrivals();
+    printLabels(saved);
+    resetForm();toast(`Checked in ${saved.length} guest${saved.length>1?'s':''}`);
+  }catch(e){toast('Could not save: '+(e.message||e))}
+  btn.disabled=false;btn.textContent='Check in & print labels';
+}
+
+/* ---------- labels: RESERVATION NAME biggest ---------- */
+function resSize(n){const L=n.length;return L<=10?34:L<=14?28:L<=18?24:L<=24?21:18}
+function printLabels(list){
+  if(!list.length)return;
+  const copies=[];list.forEach(g=>{const n=g.projects||1;
+    if(g.onlyProject)copies.push(Object.assign({},g,{pk:g.onlyProject,pn:n}));
+    else for(let k=1;k<=n;k++)copies.push(Object.assign({},g,{pk:k,pn:n}))});
+  $('print').innerHTML=copies.map(g=>`
+    <div class="lbl">
+      <div class="rn" style="font-size:${resSize(g.reservation)}pt">${esc(g.reservation)}</div>
+      <div class="mid"><div class="gn">${esc(g.name)}</div>
+        <div class="ty ${g.type}">${g.type}</div></div>
+      <div class="when">${esc(niceDate(g.date))} · ${esc(g.time)}</div>
+      <div class="ft"><span>Guest ${g.num}/${g.size}${g.pn>1?' · Project '+g.pk+'/'+g.pn:''}</span><span>${STUDIO}</span></div>
+    </div>`).join('');
+  setTimeout(()=>{window.print();list.forEach(g=>g.printed=(g.printed||0)+1);call('markPrinted',list.map(g=>g.row)).then(()=>{if(!$('vToday').classList.contains('hide'))loadDay(true)}).catch(()=>{})},150);
+}
+
+/* ---------- lists ---------- */
+function groupParties(list){const m=new Map();list.forEach(g=>{if(!m.has(g.partyId))m.set(g.partyId,[]);m.get(g.partyId).push(g)});return [...m.values()].map(a=>a.sort((x,y)=>x.num-y.num))}
+let cache={},parties={};
+function storageLine(p){
+  const s=p[0].storage,id=p[0].partyId;
+  if(!s)return `<div class="st"><span class="muted">Not in storage yet</span><button class="btn ghost small" onclick="openStore('${id}')">Store &amp; notify</button></div>`;
+  const sent=[s.emailSent?'email':'',s.textSent?'text':''].filter(Boolean).join(' + ');
+  return `<div class="st"><div><span class="loc">${esc(s.location)}</span>
+      <span style="margin-left:8px;font-weight:600">${s.pieces} × ${esc(s.pieceType||'piece')}</span><br>
+      <span class="muted">${s.pickedUp?'<span class="done">✓ Picked up</span>':sent?'Guest notified by '+sent:'Not notified'}</span></div>
+    <div style="display:flex;gap:6px">${s.pickedUp?'':`<button class="btn ghost small" onclick="pickedUp('${id}')">Picked up</button>`}
+      <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
+}
+function renderParties(list,el){
+  if(!list.length){el.innerHTML='<p class="muted">No check-ins found.</p>';return}
+  cache={};list.forEach(g=>cache[g.row]=g);
+  el.innerHTML=groupParties(list).map(p=>{parties[p[0].partyId]=p;const f=p[0];return `
+    <div class="party${p.every(g=>!g.printed)?' isnew':''}" id="p_${f.partyId}">
+      <div class="ph"><div>${p.every(g=>!g.printed)?'<span class="tag NEW">NEW</span> ':''}${f.source==='Guest'?'<span class="muted">(self check-in)</span><br>':''}<b>${esc(f.reservation)}</b><br><span>${esc(niceDate(f.date))} · ${esc(f.time)} · ${f.size} guest${f.size>1?'s':''}</span><br>
+        <span>${esc(f.phone||'no phone')} · ${esc(f.email||'no email')}</span> <a href="#" onclick="editContact('${f.partyId}');return false" style="color:var(--teal);font-size:13px;font-weight:600">edit</a></div>
+        <button class="btn ghost small" onclick='reprint(${JSON.stringify(p.map(g=>g.row))})'>Print all</button></div>
+      ${storageLine(p)}
+      <div id="sf_${f.partyId}"></div>
+      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b>${(g.projects||1)>1?` <span class="tag NEW">${g.projects} projects</span>`:''} <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span></div>
+        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="addProject(${g.row})">+ Project</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print</button></div></div>`).join('')}
+      <button class="btn ghost small" style="margin-top:10px" onclick="addToParty('${f.partyId}')">+ Add guest to this party</button>
+    </div>`}).join('');
+}
+function reprint(rows){printLabels(rows.map(r=>cache[r]).filter(Boolean))}
+/* extra project later on: saves the new count, prints only the new sticker */
+async function addProject(row){
+  const g=cache[row];const n=(g.projects||1)+1;
+  try{const u=await call('updateGuest',row,g.name,g.type,n);Object.assign(g,u||{},{projects:n});
+    printLabels([Object.assign({},g,{onlyProject:n})]);toast(g.name+' now has '+n+' projects');setTimeout(refreshView,2500)}
+  catch(e){toast('Could not update')}
+}
+async function addToParty(id){
+  const n=prompt('New guest first name');if(!n||!n.trim())return;
+  const ft=confirm(cap(n)+': first timer?\nOK = FT (first timer), Cancel = RG (returning guest)');
+  try{const g=await call('addGuestToParty',id,cap(n),ft?'FT':'RG');cache[g.row]=g;printLabels([g]);toast('Added '+g.name);setTimeout(refreshView,2500)}
+  catch(e){toast('Could not add: '+(e.message||e))}
+}
+
+function openStore(id){
+  const box=$('sf_'+id);if(box.innerHTML){box.innerHTML='';return}
+  const p=parties[id],s=p[0].storage||{},first=!p[0].storage;
+  box.innerHTML=`<div class="sf">
+    <div class="r3">
+      <div><label class="l">Shelf</label><input id="loc_${id}" placeholder="B-23" value="${esc(s.location||'')}" autocapitalize="characters"></div>
+      <div><label class="l">Piece type</label><input id="pt_${id}" list="pieceTypes" placeholder="e.g. Kodiak" value="${esc(s.pieceType||'')}"></div>
+      <div><label class="l"># pieces</label><input id="pc_${id}" type="number" min="1" inputmode="numeric" value="${s.pieces||p[0].size}"></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="nt_${id}" ${first?'checked':''}> Send "ready for pickup" email + text now</label>
+    <button class="btn main" style="font-size:16px" onclick="saveStore('${id}')">Save</button></div>`;
+  $('loc_'+id).focus();
+}
+async function saveStore(id){
+  const loc=$('loc_'+id).value.trim();if(!loc){toast('Add the shelf');return}
+  const notify=$('nt_'+id).checked,p=parties[id][0];
+  if(notify&&!p.email&&!p.phone){toast('No phone or email on this party — tap edit next to the contact');return}
+  try{
+    const r=await call('storeParty',{partyId:id,location:loc,pieceType:$('pt_'+id).value.trim(),pieces:$('pc_'+id).value,notify});
+    toast(notify?`Saved · email: ${r.email} · text: ${r.text}`:'Saved',4000);refreshView();
+  }catch(e){toast('Could not save: '+(e.message||e))}
+}
+async function pickedUp(id){if(!confirm('Mark '+parties[id][0].reservation+' as picked up?'))return;try{await call('markPickedUp',id);toast('Picked up ✓');refreshView()}catch(e){toast('Could not update')}}
+async function editContact(id){
+  const f=parties[id][0];const ph=prompt('Phone',f.phone);if(ph===null)return;const em=prompt('Email',f.email);if(em===null)return;
+  try{await call('updateContact',id,ph.trim(),em.trim());toast('Updated');refreshView()}catch(e){toast('Could not update')}
+}
+async function editGuest(row){
+  const g=cache[row];const n=prompt('Guest first name',g.name);if(n===null)return;
+  const ft=confirm('Is '+(n||g.name)+' a first timer?\nOK = FT (first timer), Cancel = RG (returning guest)');
+  const pj=prompt('How many projects (labels)?',g.projects||1);if(pj===null)return;
+  try{await call('updateGuest',row,cap(n||g.name),ft?'FT':'RG',parseInt(pj)||1);toast('Updated');refreshView()}catch(e){toast('Could not update')}
+}
+function refreshView(){if(!$('vToday').classList.contains('hide'))loadDay();else if(!$('vFind').classList.contains('hide'))find()}
+let dayData=[];
+async function loadDay(quiet){
+  if(!quiet)$('dayList').innerHTML='<p class="muted">Loading…</p>';
+  try{
+    const list=await call('getDay',$('dayPick').value);
+    if(quiet&&JSON.stringify(list)===JSON.stringify(dayData))return;
+    if(quiet&&document.querySelector('#dayList .sf'))return; // don't wipe a form being filled
+    dayData=list;renderParties(list,$('dayList'));
+    const fresh=list.filter(g=>!g.printed);
+    $('newBar').classList.toggle('hide',!fresh.length);
+    $('newCount').textContent=fresh.length+' new label'+(fresh.length>1?'s':'')+' to print';
+  }catch(e){if(!quiet)$('dayList').innerHTML='<p class="muted">Could not load.</p>'}
+}
+function printNew(){const fresh=dayData.filter(g=>!g.printed).sort((a,b)=>a.row-b.row);fresh.forEach(g=>cache[g.row]=g);printLabels(fresh);setTimeout(()=>loadDay(true),2500)}
+setInterval(()=>{if(!$('vNew').classList.contains('hide')&&!document.hidden)loadArrivals()},60000);
+setInterval(()=>{if(!$('vToday').classList.contains('hide')&&!document.hidden)loadDay(true)},15000);
+
+let fh;function debFind(){clearTimeout(fh);fh=setTimeout(find,300)}
+async function find(){const q=$('q').value.trim();if(q.length<2){$('findList').innerHTML='';return}try{renderParties(await call('search',q),$('findList'))}catch(e){$('findList').innerHTML='<p class="muted">Could not search.</p>'}}
+
+/* ---------- Toast bookings: arriving today ---------- */
+let arrivals=[],picked=null;
+async function loadArrivals(){try{arrivals=await call('getBookings',$('dt').value);renderArrivals()}catch(e){$('arrivals').innerHTML='<p class="muted">Could not load bookings.</p>'}}
+function tMin(t){const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||'');if(!m)return 9999;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2]}
+let showDone=false;
+function renderArrivals(){
+  const q=$('bkFilter').value.trim().toLowerCase();
+  const isToday=$('dt').value===today(),now=new Date(),nowM=now.getHours()*60+now.getMinutes();
+  // a class drops off the list once checked in, or 2 hours after it started (no-show)
+  const done=b=>b.partyId||(isToday&&tMin(b.time)+120<nowM);
+  const all=arrivals.filter(b=>!q||b.reservation.toLowerCase().includes(q)).sort((a,b)=>tMin(a.time)-tMin(b.time));
+  const hidden=q?[]:all.filter(done);
+  const list=(q||showDone)?all:all.filter(b=>!done(b));
+  if(!arrivals.length){$('arrivals').innerHTML='<p class="muted">No bookings imported for this date yet. Tap <b>Import Toast bookings</b>, or just type below.</p>';return}
+  $('arrivals').innerHTML=list.map(b=>`<button class="arr${b.partyId?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="pick(${b.row})">
+    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>`).join('')+
+    (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
+    ||'<p class="muted">No match.</p>';
+}
+async function openParty(id,date){
+  $('dayPick').value=date;show('today');await loadDay();
+  const el=$('p_'+id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.boxShadow='0 0 0 4px var(--teal)';setTimeout(()=>el.style.boxShadow='',2500)}
+}
+function pick(row){
+  const b=arrivals.find(x=>x.row===row);if(!b)return;
+  if(b.partyId){openParty(b.partyId,b.date);return}
+  picked=b;$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
+  if(CLASS_TIMES.includes(b.time))$('tm').value=b.time;
+  $('guests').innerHTML='';for(let i=0;i<b.size;i++)addGuest(i===0?b.reservation.split(' ')[0]:'');
+  renderArrivals();$('formTop').scrollIntoView({behavior:'smooth'});
+  const empty=[...$('guests').querySelectorAll('input')].find(i=>!i.value);(empty||$('guests').querySelector('input')).focus();
+}
+/* Toast dates look like "10/29/2026, 12:30:00 PM" */
+function toDate(v){
+  if(v instanceof Date)return isNaN(v)?null:v;
+  const m=/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)/i.exec(String(v));
+  if(!m){const d=new Date(String(v));return isNaN(d)?null:d}
+  let h=+m[4]%12;if(/pm/i.test(m[6]))h+=12;return new Date(+m[3],+m[1]-1,+m[2],h,+m[5]);
+}
+function fmtPhone(v){const d=String(v).replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:String(v).trim()}
+/* Reads the Toast "Bookings" report download (CSV or Excel). Column names are matched loosely. */
+async function importFile(inp){
+  const f=inp.files[0];inp.value='';if(!f)return;
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{cellDates:true});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false});
+    if(!rows.length)throw new Error('empty file');
+    const keys=Object.keys(rows[0]),K=re=>keys.find(k=>re.test(k.toLowerCase()));
+    const kFirst=K(/first/),kLast=K(/last/),kName=K(/^(guest )?name$|full name|guest name/),kEmail=K(/e-?mail/),kPhone=K(/phone|mobile/),
+      kSize=K(/party size/)||K(/party|size|covers|guests/),kStart=K(/expected start/)||K(/start|date|time/),kStatus=K(/^status$/)||K(/status/),
+      kNote=K(/special request/),kType=K(/^type$/);
+    if(!kStart||!(kFirst||kName))throw new Error('could not find name/time columns ('+keys.join(', ')+')');
+    const out=[];
+    rows.forEach(r=>{
+      if(kStatus&&/cancel|no.?show/i.test(r[kStatus]))return;
+      if(kType&&/waitlist/i.test(r[kType]))return;
+      const d=toDate(r[kStart]);if(!d)return;
+      const name=titleCase(kName?String(r[kName]):(String(r[kFirst])+' '+String(kLast?r[kLast]:'')));if(!name.trim())return;
+      out.push({date:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),
+        time:d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),reservation:name,
+        size:parseInt(r[kSize])||1,phone:kPhone?fmtPhone(r[kPhone]):'',email:kEmail?String(r[kEmail]).trim():'',
+        note:kNote?String(r[kNote]).trim():''});
+    });
+    if(!out.length)throw new Error('no bookings found');
+    const res=await call('importBookings',out);
+    toast(`Imported ${res.imported} bookings`,3500);loadArrivals();
+  }catch(e){toast('Import failed: '+(e.message||e),6000)}
+}
+
+/* ---------- init ---------- */
+$('tm').innerHTML=CLASS_TIMES.map(t=>`<option>${t}</option>`).join('');
+$('pieceTypes').innerHTML=PIECE_TYPES.map(t=>`<option value="${esc(t)}">`).join('');
+$('dt').value=today();$('dayPick').value=today();
+resetForm();
+if(hasGAS&&!PIN)askPin();
+show('new');
+</script>
+</body>
+</html>
