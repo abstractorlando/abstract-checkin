@@ -50,6 +50,8 @@
   .muted{color:var(--muted);font-size:14px}
   .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;display:none;z-index:5}
   .hide{display:none!important}
+  .modal{position:fixed;inset:0;background:rgba(29,27,38,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
+  .mbox{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center}
   .arr{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font:500 16px Poppins;color:var(--ink);cursor:pointer;min-height:54px}
   .arr:hover{border-color:var(--teal)}
   .arr .t{font-weight:700;color:var(--purp);min-width:78px}
@@ -93,6 +95,7 @@
     <button id="tabNew" class="on" onclick="show('new')">Check In</button>
     <button id="tabToday" onclick="show('today')">Today</button>
     <button id="tabFind" onclick="show('find')">Pickup</button>
+    <button onclick="openSettings()" aria-label="Printer settings" title="Printer settings">⚙︎</button>
   </nav>
 </header>
 
@@ -158,6 +161,19 @@
 
 <div id="print"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<div id="printModal" class="modal hide"><div class="mbox">
+  <div style="font-size:44px">🏷️</div><h2 id="pmCount" style="margin:6px 0 4px">Stickers</h2>
+  <p class="muted" style="margin:0 0 18px">ready for the Rollo</p>
+  <button class="btn main" onclick="sendToPrinter()">Print</button>
+  <button class="btn ghost" style="width:100%;margin-top:10px" onclick="$('printModal').classList.add('hide')">Cancel</button>
+</div></div>
+<div id="setModal" class="modal hide"><div class="mbox" style="text-align:left">
+  <h2 style="margin:0 0 6px">Printer settings</h2>
+  <p class="muted" style="margin:0 0 16px">Saved on this device only.</p>
+  <label class="chk" style="font-size:16px"><input type="checkbox" id="rotChk"> Turn sticker 90° (use if it prints sideways)</label>
+  <div style="display:flex;gap:8px;margin-top:18px"><button class="btn ghost" style="flex:1" onclick="testPrint()">Test print</button><button class="btn main" style="flex:1" onclick="saveSettings()">Save</button></div>
+</div></div>
 <div id="toast" class="toast"></div>
 
 <script>
@@ -265,21 +281,77 @@ async function saveAndPrint(){
 
 /* ---------- labels: RESERVATION NAME biggest ---------- */
 function resSize(n){const L=n.length;return L<=10?34:L<=14?28:L<=18?24:L<=24?21:18}
-function printLabels(list){
+/* ---------- STICKERS: drawn as an exact 3" x 2" PDF so every device prints the same ---------- */
+const DPI=300,LW=900,LH=600,PAD=30,pt=n=>Math.round(n*DPI/72);
+let ROTATE=false;try{ROTATE=localStorage.getItem('abs_rot')==='1'}catch(e){}
+const isTouch=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function wrap(ctx,text,maxW){const words=text.split(' ');const lines=[];let cur='';
+  words.forEach(w=>{const t=cur?cur+' '+w:w;if(ctx.measureText(t).width<=maxW||!cur)cur=t;else{lines.push(cur);cur=w}});if(cur)lines.push(cur);return lines}
+function drawLabel(ctx,g){
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.textBaseline='alphabetic';
+  const maxW=LW-PAD*2;
+  // reservation name: biggest size that fits in 2 lines
+  let size=34,lines;
+  for(;size>=14;size--){ctx.font=`800 ${pt(size)}px Poppins, Arial, sans-serif`;lines=wrap(ctx,g.reservation,maxW);if(lines.length<=2&&lines.every(l=>ctx.measureText(l).width<=maxW))break}
+  let y=PAD;lines.slice(0,2).forEach(l=>{y+=pt(size)*0.98;ctx.fillText(l,PAD,y)});
+  // footer
+  const fy=LH-PAD+4;ctx.font=`500 ${pt(6.5)}px Poppins, Arial, sans-serif`;
+  ctx.fillText(`Guest ${g.num}/${g.size}${g.pn>1?' · Project '+g.pk+'/'+g.pn:''}`,PAD,fy);
+  ctx.textAlign='right';ctx.fillText(STUDIO,LW-PAD,fy);ctx.textAlign='left';
+  ctx.fillRect(PAD,fy-pt(6.5)-12,maxW,5);
+  // class day + time
+  const dy=fy-pt(6.5)-40;ctx.font=`700 ${pt(10)}px Poppins, Arial, sans-serif`;
+  ctx.fillText(`${niceDate(g.date)} · ${g.time}`,PAD,dy);
+  // guest first name + FT/RG box
+  const gy=dy-pt(10)-38;ctx.font=`700 ${pt(15)}px Poppins, Arial, sans-serif`;
+  let nm=g.name;while(ctx.measureText(nm).width>maxW-170&&nm.length>2)nm=nm.slice(0,-2)+'…';
+  ctx.fillText(nm,PAD,gy);
+  ctx.font=`800 ${pt(11)}px Poppins, Arial, sans-serif`;
+  const tw=ctx.measureText(g.type).width+36,th=pt(11)+18,tx=LW-PAD-tw,ty=gy-pt(11)-8;
+  ctx.lineWidth=6;if(g.type==='FT'){ctx.fillRect(tx,ty,tw,th);ctx.fillStyle='#fff'}else ctx.strokeRect(tx,ty,tw,th);
+  ctx.fillText(g.type,tx+18,ty+th-14);ctx.fillStyle='#000';
+}
+async function makePdf(copies){
+  try{await Promise.all(['800','700','500'].map(w=>document.fonts.load(`${w} 40px Poppins`)))}catch(e){}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF(ROTATE?{orientation:'portrait',unit:'in',format:[2,3]}:{orientation:'landscape',unit:'in',format:[2,3]});
+  const c=document.createElement('canvas'),ctx=c.getContext('2d');
+  copies.forEach((g,i)=>{
+    c.width=LW;c.height=LH;drawLabel(ctx,g);
+    let img=c;
+    if(ROTATE){const r=document.createElement('canvas');r.width=LH;r.height=LW;const rc=r.getContext('2d');rc.translate(LH,0);rc.rotate(Math.PI/2);rc.drawImage(c,0,0);img=r}
+    if(i)doc.addPage(ROTATE?[2,3]:[3,2],ROTATE?'portrait':'landscape');
+    doc.addImage(img.toDataURL('image/png'),'PNG',0,0,ROTATE?2:3,ROTATE?3:2);
+  });
+  return doc.output('blob');
+}
+let pendingPdf=null;
+async function printLabels(list){
   if(!list.length)return;
   const copies=[];list.forEach(g=>{const n=g.projects||1;
     if(g.onlyProject)copies.push(Object.assign({},g,{pk:g.onlyProject,pn:n}));
     else for(let k=1;k<=n;k++)copies.push(Object.assign({},g,{pk:k,pn:n}))});
-  $('print').innerHTML=copies.map(g=>`
-    <div class="lbl">
-      <div class="rn" style="font-size:${resSize(g.reservation)}pt">${esc(g.reservation)}</div>
-      <div class="mid"><div class="gn">${esc(g.name)}</div>
-        <div class="ty ${g.type}">${g.type}</div></div>
-      <div class="when">${esc(niceDate(g.date))} · ${esc(g.time)}</div>
-      <div class="ft"><span>Guest ${g.num}/${g.size}${g.pn>1?' · Project '+g.pk+'/'+g.pn:''}</span><span>${STUDIO}</span></div>
-    </div>`).join('');
-  setTimeout(()=>{window.print();list.forEach(g=>g.printed=(g.printed||0)+1);call('markPrinted',list.map(g=>g.row)).then(()=>{if(!$('vToday').classList.contains('hide'))loadDay(true)}).catch(()=>{})},150);
+  let blob;try{blob=await makePdf(copies)}catch(e){toast('Could not make stickers: '+(e.message||e),5000);return}
+  pendingPdf={blob,count:copies.length};
+  if(isTouch){$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
+  else sendToPrinter();
+  if(list[0].row){list.forEach(g=>g.printed=(g.printed||0)+1);call('markPrinted',list.map(g=>g.row)).then(()=>{if(!$('vToday').classList.contains('hide'))loadDay(true)}).catch(()=>{})}
 }
+async function sendToPrinter(){
+  if(!pendingPdf)return;const {blob}=pendingPdf;$('printModal').classList.add('hide');
+  if(isTouch){
+    const file=new File([blob],'abstract-stickers.pdf',{type:'application/pdf'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return}catch(e){if(e.name==='AbortError')return}}
+    window.open(URL.createObjectURL(blob),'_blank');return;
+  }
+  const url=URL.createObjectURL(blob);let f=$('pdfFrame');
+  if(!f){f=document.createElement('iframe');f.id='pdfFrame';f.style.cssText='position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0';document.body.appendChild(f)}
+  f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},300)};
+  f.src=url;
+}
+function openSettings(){$('rotChk').checked=ROTATE;$('setModal').classList.remove('hide')}
+function saveSettings(){ROTATE=$('rotChk').checked;try{localStorage.setItem('abs_rot',ROTATE?'1':'0')}catch(e){};$('setModal').classList.add('hide');toast('Saved for this device')}
+function testPrint(){saveSettings();printLabels([{reservation:'Beatriz Castro Silva',name:'Mike',type:'FT',date:today(),time:CLASS_TIMES[0],num:1,size:2,projects:1}])}
 
 /* ---------- lists ---------- */
 function groupParties(list){const m=new Map();list.forEach(g=>{if(!m.has(g.partyId))m.set(g.partyId,[]);m.get(g.partyId).push(g)});return [...m.values()].map(a=>a.sort((x,y)=>x.num-y.num))}
