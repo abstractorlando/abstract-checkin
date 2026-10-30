@@ -45,7 +45,9 @@
   .ph span{color:var(--muted);font-size:14px}
   .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
   .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff}
-  .tag.NEW{background:var(--purp)}.party.isnew{border:2px solid var(--mag)}
+  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}
+  .arrw{margin-bottom:8px}.arrw .arr{margin-bottom:0}.feebtn{margin:6px 0 4px;border-color:#c40056;color:#c40056}.feeln{font-size:13px;color:#1a8a3a;font-weight:600;margin:4px 0 0 4px}
+  .arr:disabled{cursor:default}.party.isnew{border:2px solid var(--mag)}
   .tag.FT{background:var(--teal)}.tag.RG{background:var(--mag)}
   .muted{color:var(--muted);font-size:14px}
   .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;display:none;z-index:5}
@@ -186,6 +188,7 @@
 const CLASS_TIMES = ['11:00 AM','12:30 PM','2:00 PM','3:30 PM','5:00 PM'];
 // From Jan 2027, change to e.g.: ['12:00 PM','1:30 PM','3:00 PM','4:30 PM','6:00 PM','7:30 PM'];
 const STUDIO = 'Abstract Orlando · (689) 348-8239';
+const FEE_PER_GUEST = 50; // keep in sync with BOOK.feePerGuest in Booking.gs
 /* ====== PIECE TYPES (suggestions when storing) ====== */
 const PIECE_TYPES = {
   /* Project names as listed in FareHarbor */
@@ -498,15 +501,29 @@ function renderArrivals(){
   const q=$('bkFilter').value.trim().toLowerCase();
   const isToday=$('dt').value===today(),now=new Date(),nowM=now.getHours()*60+now.getMinutes();
   // a class drops off the list once checked in, or 2 hours after it started (no-show)
-  const done=b=>b.partyId||(isToday&&tMin(b.time)+120<nowM);
+  const isPast=b=>b.date<today()||(isToday&&tMin(b.time)+120<nowM);
+  const done=b=>b.partyId||b.status!=='Confirmed'||isPast(b);
   const all=arrivals.filter(b=>!q||b.reservation.toLowerCase().includes(q)).sort((a,b)=>tMin(a.time)-tMin(b.time));
   const hidden=q?[]:all.filter(done);
   const list=(q||showDone)?all:all.filter(b=>!done(b));
-  if(!arrivals.length){$('arrivals').innerHTML='<p class="muted">No bookings imported for this date yet. Tap <b>Import Toast bookings</b>, or just type below.</p>';return}
-  $('arrivals').innerHTML=list.map(b=>`<button class="arr${b.partyId?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="pick(${b.row})">
-    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>`).join('')+
+  if(!arrivals.length){$('arrivals').innerHTML='<p class="muted">No bookings for this date yet. Website bookings show up here on their own; for Toast, tap <b>Import file</b>. Or just type below.</p>';return}
+  $('arrivals').innerHTML=list.map(b=>{
+    const off=b.status!=='Confirmed';
+    const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':'';
+    const st=b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':'';
+    const fee=FEE_PER_GUEST*b.size;
+    const act=!b.card?'':b.fee?`<div class="feeln">✓ Fee charged: ${esc(b.fee.split(' · ')[0])}</div>`
+      :b.status==='Late cancel'?`<button class="btn ghost small feebtn" onclick="chargeFee('${b.bookingId}','late',${fee},'${esc(b.reservation)}')">Charge $${fee} late-cancel fee</button>`
+      :(b.status==='Confirmed'&&!b.partyId&&isPast(b))?`<button class="btn ghost small feebtn" onclick="chargeFee('${b.bookingId}','noshow',${fee},'${esc(b.reservation)}')">No-show · charge $${fee}</button>`:'';
+    return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" ${off?'disabled':''} onclick="pick(${b.row})">
+    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${st}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${act}</div>`}).join('')+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
+}
+async function chargeFee(id,kind,amt,name){
+  if(!confirm(`Charge ${name} $${amt} for ${kind==='noshow'?'not showing up':'cancelling late'}?\nThis charges the card they saved when booking.`))return;
+  try{const r=await call('chargeFee',id,kind);toast(`Charged $${r.charged} ✓`,4000);loadArrivals()}
+  catch(e){toast('Not charged: '+(e.message||e),6000)}
 }
 async function openParty(id,date){
   $('dayPick').value=date;show('today');await loadDay();
@@ -517,7 +534,8 @@ function pick(row){
   if(b.partyId){openParty(b.partyId,b.date);return}
   picked=b;$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
   if(CLASS_TIMES.includes(b.time))$('tm').value=b.time;
-  $('guests').innerHTML='';for(let i=0;i<b.size;i++)addGuest(i===0?b.reservation.split(' ')[0]:'');
+  const names=b.guests?b.guests.split(/,\s*/):[b.reservation.split(' ')[0]];
+  $('guests').innerHTML='';for(let i=0;i<b.size;i++)addGuest(names[i]||'');
   renderArrivals();$('formTop').scrollIntoView({behavior:'smooth'});
   const empty=[...$('guests').querySelectorAll('input')].find(i=>!i.value);(empty||$('guests').querySelector('input')).focus();
 }

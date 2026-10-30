@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book Your Class | Abstract Orlando</title>
+<meta name="description" content="Book your fluid art class at Abstract Orlando. $0 today. Projects start at $50.">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  :root{--mag:#ff009d;--teal:#0093ad;--purp:#4e3aa2;--ink:#1d1b26;--muted:#6b6878;--line:#e6e3ee;--soft:#f6f4fb}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--soft)}
+  .top{background:linear-gradient(135deg,var(--purp),#7a2fb0 55%,var(--mag));color:#fff;padding:28px 18px 54px;text-align:center}
+  .brand{font-weight:800;letter-spacing:3px;font-size:13px;opacity:.9}
+  .top h1{margin:10px 0 6px;font-size:30px;line-height:1.1;font-weight:800}
+  .top p{margin:0;font-size:15px;opacity:.95}
+  .pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+  .pill{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
+  main{max-width:600px;margin:-34px auto 0;padding:0 16px 60px}
+  .card{background:#fff;border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:0 6px 24px rgba(78,58,162,.08)}
+  .step{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+  .num{width:28px;height:28px;border-radius:50%;background:var(--purp);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
+  .step h2{margin:0;font-size:18px}
+  .muted{color:var(--muted);font-size:14px}
+  .stepper{display:flex;align-items:center;gap:18px}
+  .stepper button{width:52px;height:52px;border-radius:50%;border:2px solid var(--line);background:#fff;font:700 24px Poppins;color:var(--purp);cursor:pointer}
+  .stepper button:disabled{opacity:.35;cursor:default}
+  .stepper .v{font-size:34px;font-weight:800;min-width:40px;text-align:center}
+  .days{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory}
+  .day{flex:none;width:74px;border:2px solid var(--line);border-radius:16px;background:#fff;padding:10px 4px;text-align:center;cursor:pointer;scroll-snap-align:start;font-family:Poppins;color:var(--ink)}
+  .day .dw{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase}
+  .day .dn{font-size:24px;font-weight:800;line-height:1.2}
+  .day .dm{font-size:12px;font-weight:600}
+  .day.on{border-color:var(--mag);background:#fff0f8}
+  .times{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+  .time{border:2px solid var(--line);border-radius:14px;background:#fff;padding:12px;cursor:pointer;font-family:Poppins;text-align:left;color:var(--ink)}
+  .time b{display:block;font-size:17px}
+  .time span{font-size:13px;color:var(--teal);font-weight:600}
+  .time.low span{color:var(--mag)}
+  .time:disabled{opacity:.4;cursor:default}
+  .time:disabled span{color:var(--muted)}
+  .time.on{border-color:var(--mag);background:#fff0f8}
+  label.l{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
+  input,textarea{width:100%;font:500 17px Poppins;padding:13px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+  textarea{min-height:70px;resize:vertical}
+  input:focus,textarea:focus{outline:none;border-color:var(--teal)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .policy{background:var(--soft);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.5;margin:16px 0}
+  .policy b{color:var(--purp)}
+  .chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;font-weight:500;line-height:1.45;cursor:pointer}
+  .chk input{width:22px;height:22px;flex:none;margin-top:2px}
+  .go{width:100%;border:0;border-radius:999px;background:var(--mag);color:#fff;font:800 19px Poppins;min-height:60px;cursor:pointer;margin-top:16px}
+  .go:disabled{opacity:.55;cursor:default}
+  .ghost{width:100%;border:2px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:700 16px Poppins;min-height:52px;cursor:pointer;margin-top:10px}
+  .err{color:#c40056;font-weight:600;font-size:14px;min-height:20px;margin-top:10px}
+  .sum{display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:6px 0;border-bottom:1px solid var(--line)}
+  .sum:last-child{border:0}
+  .done{text-align:center;padding:10px 0}
+  .done .big{font-size:56px}
+  .done h2{font-size:26px;margin:6px 0}
+  .hide{display:none!important}
+  .lock{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
+  #pay{min-height:120px}
+  .closed{padding:14px;border-radius:14px;background:#fff5e6;font-size:14px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">ABSTRACT ORLANDO</div>
+  <h1 id="heroTitle">Book your class</h1>
+  <p id="heroSub">Pour your own one-of-a-kind art. No experience needed.</p>
+  <div class="pills" id="heroPills"><span class="pill">$0 today</span><span class="pill">Projects from $50</span><span class="pill">About 60 minutes</span></div>
+</div>
+
+<main>
+  <!-- ============ BOOKING FLOW ============ -->
+  <section id="flow">
+    <div class="card">
+      <div class="step"><div class="num">1</div><h2>How many are painting?</h2></div>
+      <div class="stepper">
+        <button type="button" id="minus" aria-label="Fewer guests">−</button>
+        <div class="v" id="size">2</div>
+        <button type="button" id="plus" aria-label="More guests">+</button>
+        <div class="muted" id="sizeNote">guests</div>
+      </div>
+      <p class="muted" id="bigParty" style="margin:12px 0 0">Bigger group? Text us at <a href="sms:+16893488239">(689) 348-8239</a>.</p>
+    </div>
+
+    <div class="card">
+      <div class="step"><div class="num">2</div><h2>Pick a day</h2></div>
+      <div class="days" id="days"><p class="muted">Loading open days…</p></div>
+    </div>
+
+    <div class="card" id="timeCard">
+      <div class="step"><div class="num">3</div><h2>Pick a time</h2></div>
+      <div class="times" id="times"><p class="muted">Pick a day first.</p></div>
+    </div>
+
+    <div class="card" id="detailsCard">
+      <div class="step"><div class="num">4</div><h2>Your details</h2></div>
+      <div class="row">
+        <div><label class="l" for="first">First name</label><input id="first" autocomplete="given-name"></div>
+        <div><label class="l" for="last">Last name</label><input id="last" autocomplete="family-name"></div>
+      </div>
+      <label class="l" for="phone">Mobile number</label>
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(407) 555-1234">
+      <label class="l" for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" autocapitalize="off" placeholder="you@email.com">
+      <div id="guestNames"></div>
+      <label class="l" for="note">Celebrating something? <span class="muted">(optional)</span></label>
+      <textarea id="note" placeholder="Birthday, date night, anniversary…"></textarea>
+      <p class="err" id="err1"></p>
+      <button class="go" id="toPay">Continue</button>
+    </div>
+
+    <div class="card hide" id="payCard">
+      <div class="step"><div class="num">5</div><h2>Hold your spot</h2></div>
+      <div id="summary"></div>
+      <div class="policy" id="policyText"></div>
+      <div id="pay"></div>
+      <label class="chk" style="margin-top:14px"><input type="checkbox" id="agree"> <span id="agreeText"></span></label>
+      <p class="err" id="err2"></p>
+      <button class="go" id="book">Book my spot · $0 today</button>
+      <button class="ghost" id="back">Back</button>
+      <p class="lock">🔒 Card secured by Stripe. We never see your card number.</p>
+    </div>
+  </section>
+
+  <!-- ============ CONFIRMED ============ -->
+  <section id="confirmed" class="hide">
+    <div class="card done">
+      <div class="big">🎨</div>
+      <h2 id="cTitle">You're booked!</h2>
+      <p id="cWhen" style="font-size:18px;font-weight:700;margin:4px 0"></p>
+      <p class="muted" id="cParty"></p>
+      <p style="margin:18px 0 0">We emailed your confirmation. Arrive about 10 minutes early to pick your project and colors.</p>
+    </div>
+    <div class="card">
+      <p style="margin:0 0 8px"><b>12211 Regency Village Dr, Suite 11</b><br>Orlando, FL 32821</p>
+      <p class="muted" style="margin:0">Questions? Text us at <a href="sms:+16893488239">(689) 348-8239</a></p>
+    </div>
+  </section>
+
+  <!-- ============ MANAGE ============ -->
+  <section id="manage" class="hide">
+    <div class="card" id="mCard"><p class="muted">Loading your booking…</p></div>
+    <div class="card hide" id="moveCard">
+      <div class="step"><div class="num">↻</div><h2>Pick a new day and time</h2></div>
+      <div class="days" id="mDays"></div>
+      <div class="times" id="mTimes" style="margin-top:12px"></div>
+      <p class="err" id="mErr"></p>
+      <button class="go" id="mSave" disabled>Move my booking</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ====== YOUR APPS SCRIPT WEB APP LINK (same as the check-in app) ====== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwvba_1OZKz5alSsEVV8pXWKUQJN5wmur6ACjaUD1grRUbJoFN0zJJ5verK4omhuygcKw/exec';
+
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function call(fn,...args){
+  return fetch(API_URL,{method:'POST',body:JSON.stringify({public:true,fn,args}),redirect:'follow',credentials:'omit'})
+    .then(r=>r.json(),()=>{throw new Error('Connection problem. Please try again.')})
+    .then(j=>{if(!j.ok)throw new Error(j.error);return j.data});
+}
+function dObj(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function niceDate(s){return dObj(s).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
+
+let AV=null,size=2,sel={date:null,time:null},booking=null,stripe=null,elements=null;
+
+/* ---------- step 1: party size ---------- */
+function setSize(n){
+  size=Math.max(1,Math.min(AV?AV.maxParty:8,n));$('size').textContent=size;$('sizeNote').textContent=size>1?'guests':'guest';
+  $('minus').disabled=size<=1;$('plus').disabled=AV&&size>=AV.maxParty;renderDays();renderNames();
+}
+$('minus').onclick=()=>setSize(size-1);$('plus').onclick=()=>setSize(size+1);
+
+/* ---------- step 2 & 3: day and time ---------- */
+function dayButtons(el,days,current,onPick,need){
+  const ok=days.filter(d=>d.times.some(t=>t.left>=need));
+  if(!ok.length){el.innerHTML='<p class="closed">No open times for a party this size right now. Text us at (689) 348-8239 and we\'ll find you a spot.</p>';return}
+  el.innerHTML=ok.map(d=>{const o=dObj(d.date);return `<button type="button" class="day${current===d.date?' on':''}" data-d="${d.date}">
+    <div class="dw">${o.toLocaleDateString('en-US',{weekday:'short'})}</div><div class="dn">${o.getDate()}</div><div class="dm">${o.toLocaleDateString('en-US',{month:'short'})}</div></button>`}).join('');
+  el.querySelectorAll('.day').forEach(b=>b.onclick=()=>onPick(b.dataset.d));
+}
+function timeButtons(el,day,current,onPick,need){
+  if(!day){el.innerHTML='<p class="muted">Pick a day first.</p>';return}
+  el.innerHTML=day.times.map(t=>{const can=t.left>=need;return `<button type="button" class="time${current===t.time?' on':''}${can&&t.left<=3?' low':''}" data-t="${t.time}" ${can?'':'disabled'}>
+    <b>${t.time}</b><span>${!can?(t.left?'Not enough room':'Full'):t.left<=3?'Only '+t.left+' left':t.left+' spots open'}</span></button>`}).join('');
+  el.querySelectorAll('.time').forEach(b=>b.onclick=()=>onPick(b.dataset.t));
+}
+function renderDays(){
+  if(!AV)return;
+  const day=AV.days.find(d=>d.date===sel.date);
+  if(day&&!day.times.some(t=>t.left>=size)){sel.date=null;sel.time=null}
+  dayButtons($('days'),AV.days,sel.date,d=>{sel.date=d;sel.time=null;renderDays();$('timeCard').scrollIntoView({behavior:'smooth',block:'start'})},size);
+  const d2=AV.days.find(d=>d.date===sel.date);
+  const tt=d2&&d2.times.find(t=>t.time===sel.time);if(sel.time&&(!tt||tt.left<size))sel.time=null;
+  timeButtons($('times'),d2,sel.time,t=>{sel.time=t;renderDays();$('detailsCard').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('first').focus(),400)},size);
+}
+
+/* ---------- step 4: details ---------- */
+function renderNames(){
+  const box=$('guestNames');const have=[...box.querySelectorAll('input')].map(i=>i.value);
+  if(size<2){box.innerHTML='';return}
+  box.innerHTML=`<label class="l">Who's painting with you? <span class="muted">(optional, first names)</span></label>
+    <div class="row">${Array.from({length:size-1},(_,i)=>`<input placeholder="Guest ${i+2}" value="${esc(have[i]||'')}" autocapitalize="words">`).join('')}</div>`;
+}
+$('toPay').onclick=async()=>{
+  $('err1').textContent='';
+  const first=$('first').value.trim(),last=$('last').value.trim(),phone=$('phone').value.trim(),email=$('email').value.trim();
+  if(!sel.date||!sel.time)return $('err1').textContent='Please pick a day and time.';
+  if(!first||!last)return $('err1').textContent='Please add your first and last name.';
+  if(phone.replace(/\D/g,'').length<10)return $('err1').textContent='Please check your mobile number.';
+  if(!/^\S+@\S+\.\S+$/.test(email))return $('err1').textContent='Please check your email.';
+  const fee=AV.feePerGuest,h=AV.lateHours;
+  $('summary').innerHTML=`<div class="sum"><span>Day</span><b>${esc(niceDate(sel.date))}</b></div>
+    <div class="sum"><span>Time</span><b>${esc(sel.time)}</b></div><div class="sum"><span>Party</span><b>${size} guest${size>1?'s':''}</b></div>
+    <div class="sum"><span>Due today</span><b>$0</b></div>`;
+  $('policyText').innerHTML=`<b>Nothing is charged today.</b> You pick your project at the studio (from $50) and pay there.<br><br>
+    We save your card to hold your spot. Need to cancel or move your booking? Do it anytime up to <b>${h} hours before</b> and nothing is charged. Inside ${h} hours, or if you don't show up, it's <b>$${fee} per guest</b> ($${fee*size} for your party).`;
+  $('agreeText').textContent=`I agree to the cancellation policy and allow Abstract Orlando to charge my card $${fee} per guest if I cancel within ${h} hours or don't show up.`;
+  const btn=$('toPay');btn.disabled=true;btn.textContent='Holding your spot…';
+  try{
+    if(booking&&booking.key!==JSON.stringify([sel,size]))booking=null;
+    if(!booking){
+      const guests=[first,...[...$('guestNames').querySelectorAll('input')].map(i=>i.value.trim())];
+      const r=await call('startBooking',{date:sel.date,time:sel.time,size,name:first+' '+last,phone,email,guests,note:$('note').value,policy:true});
+      booking={id:r.bookingId,secret:r.clientSecret,key:JSON.stringify([sel,size])};
+      try{sessionStorage.setItem('ao_booking',booking.id)}catch(e){}
+      mountCard();
+    }
+    $('detailsCard').classList.add('hide');$('payCard').classList.remove('hide');$('payCard').scrollIntoView({behavior:'smooth'});
+  }catch(e){$('err1').textContent=e.message;if(/filled|left/.test(e.message))loadAvailability()}
+  btn.disabled=false;btn.textContent='Continue';
+};
+function mountCard(){
+  if(!stripe)stripe=Stripe(AV.publishable);
+  elements=stripe.elements({clientSecret:booking.secret,appearance:{theme:'stripe',variables:{colorPrimary:'#4e3aa2',fontFamily:'Poppins, system-ui, sans-serif',borderRadius:'12px'}},
+    fonts:[{cssSrc:'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap'}]});
+  $('pay').innerHTML='';elements.create('payment',{layout:'tabs'}).mount('#pay');
+}
+$('back').onclick=()=>{$('payCard').classList.add('hide');$('detailsCard').classList.remove('hide')};
+
+/* ---------- step 5: save card + confirm ---------- */
+$('book').onclick=async()=>{
+  $('err2').textContent='';
+  if(!$('agree').checked)return $('err2').textContent='Please check the box to agree to the cancellation policy.';
+  const btn=$('book');btn.disabled=true;btn.textContent='Booking…';
+  try{
+    const {error,setupIntent}=await stripe.confirmSetup({elements,redirect:'if_required',
+      confirmParams:{return_url:location.origin+location.pathname+'?done='+booking.id}});
+    if(error)throw new Error(error.message);
+    await finish(booking.id,setupIntent.id);
+  }catch(e){$('err2').textContent=e.message;btn.disabled=false;btn.textContent='Book my spot · $0 today'}
+};
+async function finish(id,siId){
+  const b=await call('finishBooking',id,siId);
+  try{sessionStorage.removeItem('ao_booking')}catch(e){}
+  $('flow').classList.add('hide');$('confirmed').classList.remove('hide');
+  $('heroTitle').textContent='See you soon!';$('heroSub').textContent='Your spot is saved.';$('heroPills').innerHTML='';
+  $('cTitle').textContent=`You're booked, ${b.name.split(' ')[0]}!`;
+  $('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;$('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;
+  window.scrollTo(0,0);
+}
+
+/* ---------- manage existing booking (?b=ID&t=TOKEN) ---------- */
+let mine=null,move={date:null,time:null};
+async function loadMine(){
+  const q=new URLSearchParams(location.search);
+  try{mine=await call('getMyBooking',q.get('b'),q.get('t'));renderMine()}
+  catch(e){$('mCard').innerHTML=`<p>${esc(e.message)}</p><p class="muted">Text us at (689) 348-8239 and we'll help.</p>`}
+}
+function renderMine(){
+  const b=mine,q=new URLSearchParams(location.search);
+  $('heroTitle').textContent='Your booking';$('heroSub').textContent='Confirmation '+b.id;$('heroPills').innerHTML='';
+  const active=b.status==='Confirmed'&&!b.past;
+  $('mCard').innerHTML=`<div class="sum"><span>Name</span><b>${esc(b.name)}</b></div>
+    <div class="sum"><span>Day</span><b>${esc(niceDate(b.date))}</b></div><div class="sum"><span>Time</span><b>${esc(b.time)}</b></div>
+    <div class="sum"><span>Party</span><b>${b.size} guest${b.size>1?'s':''}</b></div>
+    <div class="sum"><span>Status</span><b>${b.status==='Confirmed'?(b.past?'Done':'Confirmed ✓'):esc(b.status==='Late cancel'?'Cancelled':b.status)}</b></div>
+    ${active?(b.late?`<div class="policy">Your class is less than ${AV.lateHours} hours away, so changes can't be made online. Please text us at <a href="sms:+16893488239">(689) 348-8239</a>. If you can't make it, cancelling here applies the $${AV.feePerGuest} per guest fee ($${b.fee}).</div>`
+      :`<div class="policy">You can move or cancel at no charge until ${AV.lateHours} hours before your class.</div>
+       <button class="go" id="mMove">Change day or time</button>`)
+      +`<button class="ghost" id="mCancel">Cancel my booking</button>`:''}`;
+  if(!active)return;
+  if($('mMove'))$('mMove').onclick=()=>{$('moveCard').classList.remove('hide');renderMove();$('moveCard').scrollIntoView({behavior:'smooth'})};
+  $('mCancel').onclick=async()=>{
+    if(!confirm(b.late?`Cancel your booking? Because it's within ${AV.lateHours} hours, a $${b.fee} fee applies.`:'Cancel your booking? Nothing will be charged.'))return;
+    try{mine=await call('cancelMyBooking',q.get('b'),q.get('t'));$('moveCard').classList.add('hide');renderMine()}catch(e){alert(e.message)}
+  };
+}
+function renderMove(){
+  const need=mine.size;
+  dayButtons($('mDays'),AV.days,move.date,d=>{move.date=d;move.time=null;renderMove()},need);
+  timeButtons($('mTimes'),AV.days.find(d=>d.date===move.date),move.time,t=>{move.time=t;renderMove()},need);
+  $('mSave').disabled=!(move.date&&move.time);
+}
+$('mSave').onclick=async()=>{
+  const q=new URLSearchParams(location.search);$('mErr').textContent='';$('mSave').disabled=true;
+  try{mine=await call('rescheduleMyBooking',q.get('b'),q.get('t'),move.date,move.time);$('moveCard').classList.add('hide');renderMine();window.scrollTo(0,0);loadAvailability()}
+  catch(e){$('mErr').textContent=e.message;$('mSave').disabled=false}
+};
+
+/* ---------- start ---------- */
+async function loadAvailability(){
+  try{AV=await call('availability');}catch(e){$('days').innerHTML=`<p class="closed">${esc(e.message)}</p>`;return}
+  setSize(size);if(!$('moveCard').classList.contains('hide'))renderMove();
+}
+(async()=>{
+  const q=new URLSearchParams(location.search);
+  if(q.get('b')&&q.get('t')){$('flow').classList.add('hide');$('manage').classList.remove('hide')}
+  await loadAvailability();
+  if(q.get('b')&&q.get('t'))return loadMine();
+  // returning from a bank verification page
+  const si=q.get('setup_intent'),id=q.get('done');
+  if(si&&id){$('flow').classList.add('hide');try{await finish(id,si)}catch(e){$('flow').classList.remove('hide');$('err1').textContent=e.message}}
+})();
+</script>
+</body>
+</html>
