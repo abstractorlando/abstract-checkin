@@ -229,8 +229,19 @@
 
 <script>
 /* ====== EDIT CLASS TIMES HERE (in order) ====== */
-const CLASS_TIMES = ['11:00 AM','12:30 PM','2:00 PM','3:30 PM','5:00 PM'];
-// From Jan 2027, change to e.g.: ['12:00 PM','1:30 PM','3:00 PM','4:30 PM','6:00 PM','7:30 PM'];
+const OLD_TIMES = ['11:00 AM','12:30 PM','2:00 PM','3:30 PM','5:00 PM'];   // through Dec 31, 2026
+const NEW_FROM = '2027-01-01';                                              // new hours start this day
+const NEW_TIMES = {                                                         // Sun=0 … Sat=6
+  3:['3:00 PM','4:30 PM','6:00 PM','7:30 PM'], 4:['3:00 PM','4:30 PM','6:00 PM','7:30 PM'], 5:['3:00 PM','4:30 PM','6:00 PM','7:30 PM'],
+  6:['12:00 PM','1:30 PM','3:00 PM','4:30 PM','6:00 PM'], 0:['12:00 PM','1:30 PM','3:00 PM','4:30 PM']
+};
+// Class times for a date (YYYY-MM-DD). Keep in sync with Booking.gs.
+function timesFor(date){
+  if(!date||date<NEW_FROM)return OLD_TIMES;
+  const [y,m,d]=date.split('-').map(Number);const t=NEW_TIMES[new Date(y,m-1,d).getDay()];
+  return t&&t.length?t:NEW_TIMES[6];   // closed day (Mon/Tue): show Saturday's times so a walk-in can still be entered
+}
+function fillTimes(sel,date,keep){const ts=timesFor(date);sel.innerHTML=ts.map(t=>`<option${t===keep?' selected':''}>${t}</option>`).join('');if(!ts.includes(keep))sel.value=ts[0]}
 const STUDIO = 'Abstract Orlando · (689) 348-8239';
 const FEE_PER_GUEST = 50; // keep in sync with BOOK.feePerGuest in Booking.gs
 /* ====== PIECE TYPES (suggestions when storing) ====== */
@@ -295,7 +306,7 @@ function toast(m,ms){const t=$('toast');t.textContent=m;t.style.display='block';
 function nearestTime(){
   const now=new Date(),mins=now.getHours()*60+now.getMinutes();
   const toM=t=>{let [h,mm]=t.split(/[: ]/);h=+h;const pm=/PM/.test(t);if(pm&&h!==12)h+=12;if(!pm&&h===12)h=0;return h*60+ +mm};
-  let best=CLASS_TIMES[0],bd=1e9;CLASS_TIMES.forEach(t=>{const d=Math.abs(toM(t)-mins);if(d<bd){bd=d;best=t}});return best;
+  const ts=timesFor($('dt').value||today());let best=ts[0],bd=1e9;ts.forEach(t=>{const d=Math.abs(toM(t)-mins);if(d<bd){bd=d;best=t}});return best;
 }
 
 /* ---------- tabs ---------- */
@@ -411,7 +422,7 @@ async function sendToPrinter(){
 }
 function openSettings(){$('rotChk').checked=ROTATE;$('setModal').classList.remove('hide')}
 function saveSettings(){ROTATE=$('rotChk').checked;try{localStorage.setItem('abs_rot',ROTATE?'1':'0')}catch(e){};$('setModal').classList.add('hide');toast('Saved for this device')}
-function testPrint(){saveSettings();printLabels([{reservation:'Beatriz Castro Silva',name:'Mike',type:'FT',date:today(),time:CLASS_TIMES[0],num:1,size:2,projects:1}])}
+function testPrint(){saveSettings();printLabels([{reservation:'Beatriz Castro Silva',name:'Mike',type:'FT',date:today(),time:timesFor(today())[0],num:1,size:2,projects:1}])}
 
 /* ---------- lists ---------- */
 function groupParties(list){const m=new Map();list.forEach(g=>{if(!m.has(g.partyId))m.set(g.partyId,[]);m.get(g.partyId).push(g)});return [...m.values()].map(a=>a.sort((x,y)=>x.num-y.num))}
@@ -535,7 +546,7 @@ async function find(){const q=$('q').value.trim();if(q.length<2){$('findList').i
 
 /* ---------- Toast bookings: arriving today ---------- */
 let arrivals=[],picked=null;
-function setArrDay(d){if(!d)return;$('dt').value=d;$('arrDay').value=d;
+function setArrDay(d){if(!d)return;$('dt').value=d;$('arrDay').value=d;fillTimes($('tm'),d,$('tm').value);
   $('arrTitle').textContent=d===today()?'Arriving today':'Arriving '+niceDate(d);picked=null;arrivals=[];loadArrivals()}
 function shiftDay(n){const [y,m,dd]=$('arrDay').value.split('-').map(Number);const x=new Date(y,m-1,dd+n);
   setArrDay(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'))}
@@ -584,7 +595,7 @@ async function staffAct(k,action){
 }
 function openMove(k){
   const box=$('mv_'+k);if(box.innerHTML){box.innerHTML='';return}const b=bookingByKey(k);
-  box.innerHTML=`<div class="mv"><input type="date" id="mvd_${k}" value="${b.date}"><select id="mvt_${k}">${CLASS_TIMES.map(t=>`<option${t===b.time?' selected':''}>${t}</option>`).join('')}</select>
+  box.innerHTML=`<div class="mv"><input type="date" id="mvd_${k}" value="${b.date}" onchange="fillTimes($('mvt_${k}'),this.value,$('mvt_${k}').value)"><select id="mvt_${k}">${timesFor(b.date).map(t=>`<option${t===b.time?' selected':''}>${t}</option>`).join('')}</select>
     <button class="btn main" style="width:auto;font-size:15px;min-height:44px;padding:0 18px" onclick="saveMove('${k}')">Move</button></div>`;
 }
 async function saveMove(k){
@@ -609,7 +620,7 @@ function pick(row){
   const b=arrivals.find(x=>x.row===row);if(!b)return;
   if(b.partyId){openParty(b.partyId,b.date);return}
   picked=b;$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
-  if(CLASS_TIMES.includes(b.time))$('tm').value=b.time;
+  if(timesFor($('dt').value).includes(b.time))$('tm').value=b.time;
   const names=b.guests?b.guests.split(/,\s*/):[b.reservation.split(' ')[0]];
   $('guests').innerHTML='';for(let i=0;i<b.size;i++)addGuest(names[i]||'');
   renderArrivals();$('formTop').scrollIntoView({behavior:'smooth'});
@@ -702,8 +713,7 @@ async function setCap(time,n){
 }
 
 /* ---------- init ---------- */
-$('tm').innerHTML=CLASS_TIMES.map(t=>`<option>${t}</option>`).join('');
-$('dt').value=today();$('arrDay').value=today();$('dayPick').value=today();
+$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();
 resetForm();
 if(hasGAS&&!PIN)askPin();
 show('new');
