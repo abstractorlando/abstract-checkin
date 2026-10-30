@@ -2,14 +2,22 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4e3aa2">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Check-In">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* ====== EDIT CLASS TIMES HERE ====== */
   :root{--mag:#ff009d;--teal:#0093ad;--purp:#4e3aa2;--ink:#1d1b26;--muted:#6b6878;--line:#e6e3ee;--soft:#f6f4fb}
   *{box-sizing:border-box}
   body{margin:0;font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--soft)}
-  header{background:var(--purp);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  header{background:var(--purp);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
   header h1{margin:0;font-size:20px;font-weight:700}
   nav{display:flex;gap:6px}
   nav button{background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;padding:8px 14px;font:600 14px Poppins;cursor:pointer;min-height:40px}
