@@ -63,8 +63,9 @@
   .scls.off .sbar div{background:#bbb}
   .scount{font-size:14px;color:var(--muted);white-space:nowrap}.scount b{color:var(--ink);font-size:18px}
   .scap{display:flex;align-items:center;border:2px solid var(--line);border-radius:14px}
-  .scap button{width:46px;height:46px;border:0;background:none;font:700 22px Poppins;color:var(--purp);cursor:pointer}
-  .scap button:disabled{opacity:.3}.scap span{min-width:30px;text-align:center;font-weight:800;font-size:20px}
+  .scap{padding:0 12px 0 0}.scap input{width:74px;border:0;text-align:center;font:800 22px Poppins;min-height:48px;padding:0;background:transparent}
+  .scap input:focus{outline:none}.scap:focus-within{border-color:var(--teal)}.seatl{font-size:13px;color:var(--muted);font-weight:600}
+  .scap input.saving{color:var(--muted)}
   @media (max-width:640px){.scls{grid-template-columns:1fr auto;}.sbar{grid-column:1/-1;order:3}.scount{order:4}}
   .daynav{display:flex;gap:8px;align-items:center;margin:0 0 10px}.daynav input{flex:1;min-width:0}.daynav .btn{min-width:44px;font-size:18px}
   .pk{max-height:300px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:6px 8px 10px}
@@ -670,13 +671,26 @@ function renderSched(){
         <div class="stime"><b>${c.time}</b><span class="muted">${closed?'Closed':full?'Full':(c.cap-c.booked)+' open'}</span></div>
         <div class="sbar"><div style="width:${pct}%"></div></div>
         <div class="scount"><b>${c.booked}</b> booked of</div>
-        <div class="scap"><button onclick="setCap('${c.time}',${Math.max(0,c.cap-1)})" ${c.cap<=0?'disabled':''} aria-label="Fewer seats">−</button><span>${c.cap}</span><button onclick="setCap('${c.time}',${c.cap+1})" aria-label="More seats">+</button></div>
+        <div class="scap"><input type="number" min="0" max="99" inputmode="numeric" value="${c.cap}" data-t="${c.time}" aria-label="Seats for ${c.time}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div>
         <button class="btn ghost small" onclick="setCap('${c.time}',${closed?d.defaultCap:0})">${closed?'Open':'Close'}</button>
         ${c.custom?`<button class="tl" onclick="setCap('${c.time}',null)">Reset to ${d.defaultCap}</button>`:''}
       </div>`}).join('');
 }
+function capInput(el){
+  const n=parseInt(el.value,10),c=SCH.classes.find(x=>x.time===el.dataset.t);
+  if(isNaN(n)||n<0){el.value=c.cap;return}
+  if(n===c.cap)return;
+  el.classList.add('saving');setCap(el.dataset.t,n);
+}
 async function setCap(time,n){
-  try{SCH=await call('setCapacity',SCH.date,time,n);renderSched();toast('Saved · booking page updated')}catch(e){toast('Could not save: '+(e.message||e),5000)}
+  // show the change instantly, save in the background
+  const prev=JSON.stringify(SCH);
+  if(time==='*'){if(n===0)SCH.dayOpen=false;else{SCH.dayOpen=true;SCH.classes.forEach(c=>{c.cap=SCH.defaultCap;c.custom=false})}}
+  else{const c=SCH.classes.find(x=>x.time===time);c.cap=n===null?SCH.defaultCap:n;c.custom=n!==null}
+  renderSched();
+  try{const fresh=await call('setCapacity',SCH.date,time,n);if(fresh.date===SCH.date){SCH=fresh;if(!document.activeElement||!document.activeElement.dataset||!document.activeElement.dataset.t)renderSched()}toast('Saved · booking page updated')}
+  catch(e){SCH=JSON.parse(prev);renderSched();toast('Not saved: '+(e.message||e),5000)}
 }
 
 /* ---------- init ---------- */
