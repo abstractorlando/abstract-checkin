@@ -22,6 +22,28 @@
   nav{display:flex;gap:6px}
   nav button{background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;padding:8px 14px;font:600 14px Poppins;cursor:pointer;min-height:40px}
   nav button.on{background:#fff;color:var(--purp);border-color:#fff}
+  nav button i{display:none;font-style:normal}
+  header{flex-wrap:nowrap}header h1{flex:1}header nav{order:3}
+  .gear{order:4;background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;width:40px;height:40px;font-size:18px;cursor:pointer;flex:none}
+  .imp{position:relative}.imp summary{list-style:none;cursor:pointer}.imp summary::-webkit-details-marker{display:none}
+  .imp .menu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(20,10,60,.15);padding:6px;z-index:4;min-width:230px;display:grid}
+  .imp .menu>*{border:0;background:none;text-align:left;font:600 15px Poppins;color:var(--ink);padding:12px 12px;border-radius:10px;cursor:pointer;display:block}
+  .imp .menu>*:hover{background:var(--soft)}
+  .daynav .today{padding:8px 12px}
+  @media (max-width:640px){
+    header{padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
+    header h1{font-size:18px}
+    nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#fff;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));gap:0;box-shadow:0 -4px 16px rgba(20,10,60,.06)}
+    nav button{flex:1;border:0;border-radius:12px;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;font-size:12px;min-height:54px}
+    nav button i{display:block;font-size:20px;line-height:1}
+    nav button.on{background:var(--soft);color:var(--purp)}
+    main{padding:12px 12px calc(96px + env(safe-area-inset-bottom))}
+    .card{padding:14px;border-radius:14px}
+    .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+    .daynav{gap:6px}.daynav .btn{min-width:40px;padding:8px 0}.daynav .today{padding:8px 12px}
+    .daynav input{font-size:16px;padding:8px 10px}
+    .arr{padding:10px 12px;gap:8px}.arr .t{min-width:62px;font-size:14px}.daynav .today{font-size:15px}
+  }
   main{max-width:760px;margin:0 auto;padding:16px}
   .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
   label.l{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:0 0 6px}
@@ -53,7 +75,8 @@
   .ph span{color:var(--muted);font-size:14px}
   .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
   .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff}
-  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}
+  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.FH{background:#0b7a3e;font-size:10px;vertical-align:middle}
+  .dep{display:block;font-size:13px;font-weight:700;color:#0b7a3e}
   .tools{display:flex;gap:6px;margin:4px 0 2px 4px;flex-wrap:wrap}.tl{border:0;background:none;color:var(--muted);font:600 13px Poppins;padding:4px 8px;border-radius:8px;cursor:pointer}.tl:hover{background:var(--soft);color:var(--ink)}
   .mv{display:flex;gap:8px;margin:6px 0 4px;flex-wrap:wrap}.mv input,.mv select{flex:1;min-width:140px;min-height:44px;padding:8px 10px;font-size:15px}
   .arrw{margin-bottom:8px}.arrw .arr{margin-bottom:0}.feebtn{margin:6px 0 4px;border-color:#c40056;color:#c40056}.feeln{font-size:13px;color:#1a8a3a;font-weight:600;margin:4px 0 0 4px}
@@ -122,12 +145,12 @@
 <body>
 <header>
   <h1>Abstract Check-In</h1>
+  <button class="gear" onclick="openSettings()" aria-label="Printer settings" title="Printer settings">⚙︎</button>
   <nav>
-    <button id="tabNew" class="on" onclick="show('new')">Check In</button>
-    <button id="tabToday" onclick="show('today')">Checked in</button>
-    <button id="tabFind" onclick="show('find')">Pickup</button>
-    <button id="tabSched" onclick="show('sched')">Schedule</button>
-    <button onclick="openSettings()" aria-label="Printer settings" title="Printer settings">⚙︎</button>
+    <button id="tabNew" class="on" onclick="show('new')"><i>✚</i><span>Check in</span></button>
+    <button id="tabToday" onclick="show('today')"><i>✓</i><span>Checked in</span></button>
+    <button id="tabFind" onclick="show('find')"><i>⌂</i><span>Pickup</span></button>
+    <button id="tabSched" onclick="show('sched')"><i>▦</i><span>Schedule</span></button>
   </nav>
 </header>
 
@@ -137,16 +160,18 @@
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
         <b style="font-size:17px" id="arrTitle">Arriving today</b>
-        <span style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn ghost small" id="mailBtn" onclick="checkEmail()">Check email for new report</button>
-        <label class="btn ghost small" style="display:inline-flex;align-items:center">Import file
-          <input type="file" id="bkFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFile(this)"></label></span>
+        <details class="imp" id="impMenu"><summary class="btn ghost small">Import ▾</summary>
+          <div class="menu" onclick="setTimeout(()=>$('impMenu').open=false,50)">
+            <button type="button" id="mailBtn" onclick="checkEmail()">Check email for new report</button>
+            <label>Import Toast file<input type="file" id="bkFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFile(this)"></label>
+            <label>Import FareHarbor file<input type="file" id="fhFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFH(this)"></label>
+          </div></details>
       </div>
       <div class="daynav">
         <button type="button" class="btn ghost small" onclick="shiftDay(-1)" aria-label="Previous day">‹</button>
         <input id="arrDay" type="date" onchange="setArrDay(this.value)">
         <button type="button" class="btn ghost small" onclick="shiftDay(1)" aria-label="Next day">›</button>
-        <button type="button" class="btn ghost small" onclick="setArrDay(today())">Today</button>
+        <button type="button" class="btn ghost small today" onclick="setArrDay(today())">Today</button>
       </div>
       <input id="bkFilter" placeholder="Search reservations…" oninput="renderArrivals()" autocomplete="off">
       <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
@@ -291,7 +316,7 @@ function call(fn,...args){
 let PIN='';try{PIN=localStorage.getItem('abs_pin')||''}catch(e){}
 let asking=false;
 function askPin(wrong){if(asking)return;asking=true;const v=prompt((wrong?'Wrong PIN. ':'')+'Staff PIN');asking=false;if(v===null)return;PIN=v.trim();try{localStorage.setItem('abs_pin',PIN)}catch(e){};loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()}
-demo.bk=[];demo.importBookings=function(l){const d={};l.forEach(b=>d[b.date]=1);this.bk=this.bk.filter(b=>!d[b.date]).concat(l.map((b,i)=>Object.assign({row:this.bk.length+i+2,partyId:''},b)));return {imported:l.length,dates:Object.keys(d)}};
+demo.importFareHarbor=function(l){l.forEach(b=>this.bk.push(Object.assign({row:this.bk.length+2,partyId:'',source:'FareHarbor',status:'Confirmed',key:'fh'+this.bk.length},b)));return{added:l.length,updated:0}};demo.bk=[];demo.importBookings=function(l){const d={};l.forEach(b=>d[b.date]=1);this.bk=this.bk.filter(b=>!d[b.date]).concat(l.map((b,i)=>Object.assign({row:this.bk.length+i+2,partyId:''},b)));return {imported:l.length,dates:Object.keys(d)}};
 demo.checkEmail=()=>0;demo.getBookings=function(d){return this.bk.filter(b=>b.date===d)};
 const _dsp=demo.saveParty.bind(demo);demo.saveParty=function(p){const o=_dsp(p);const b=this.bk.find(x=>x.row==p.bookingRow);if(b)b.partyId=o[0].partyId;return o};
 
@@ -569,7 +594,8 @@ function renderArrivals(){
   if(!arrivals.length){$('arrivals').innerHTML='<p class="muted">No bookings for this date yet. Website bookings show up here on their own; for Toast, tap <b>Import file</b>. Or just type below.</p>';return}
   $('arrivals').innerHTML=list.map(b=>{
     const off=b.status!=='Confirmed';
-    const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':'';
+    const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FH</span>':'';
+    const dep=b.source==='FareHarbor'?`<span class="dep">${b.deposit?'$'+money(b.deposit)+' deposit paid · take off bill':'FareHarbor booking · check deposit'}</span>`:'';
     const st=b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
     const fee=FEE_PER_GUEST*b.size;
     const act=!b.card?'':b.fee?`<div class="feeln">✓ Fee charged: ${esc(b.fee.split(' · ')[0])}</div>`
@@ -580,7 +606,7 @@ function renderArrivals(){
       ?`<div class="tools"><button class="tl" onclick="staffAct('${k}','noshow')">No-show</button><button class="tl" onclick="staffAct('${k}','cancel')">Cancel</button><button class="tl" onclick="openMove('${k}')">Move</button></div><div id="mv_${k}"></div>`
       :`<div class="tools"><button class="tl" onclick="staffAct('${k}','restore')">Undo · put back on the list</button></div>`;
     return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" ${off?'disabled':''} onclick="pick(${b.row})">
-    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${st}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
+    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${st}${dep}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
 }
@@ -619,6 +645,7 @@ async function openParty(id,date){
 function pick(row){
   const b=arrivals.find(x=>x.row===row);if(!b)return;
   if(b.partyId){openParty(b.partyId,b.date);return}
+  if(b.source==='FareHarbor')toast(b.deposit?`FareHarbor booking · $${money(b.deposit)} deposit already paid`:'FareHarbor booking',4000);
   picked=b;$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
   if(timesFor($('dt').value).includes(b.time))$('tm').value=b.time;
   const names=b.guests?b.guests.split(/,\s*/):[b.reservation.split(' ')[0]];
@@ -667,6 +694,47 @@ async function importFile(inp){
     const res=await call('importBookings',out);
     toast(`Imported ${res.imported} bookings`,3500);loadArrivals();
   }catch(e){toast('Import failed: '+(e.message||e),6000)}
+}
+
+function money(n){n=+n||0;return n%1?n.toFixed(2):String(n)}
+/* Reads the FareHarbor bookings export (CSV or Excel). Every booking gets the FH tag and its deposit. */
+async function importFH(inp){
+  const f=inp.files[0];inp.value='';if(!f)return;
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{cellDates:true});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false});
+    if(!rows.length)throw new Error('empty file');
+    const keys=Object.keys(rows[0]),K=(...res)=>{for(const re of res){const k=keys.find(k=>re.test(k.toLowerCase().trim()));if(k)return k}};
+    const kStart=K(/^start$/,/^start (date|at)/,/availability.*start/,/^start/,/^date$/,/date/),
+      kTime=K(/^start time$/,/^time$/,/time/),
+      kFirst=K(/first name/),kLast=K(/last name/),
+      kName=K(/^contact( name)?$/,/contact.*name/,/customer name|full name|^name$|guest name/),
+      kEmail=K(/contact.*e-?mail/,/e-?mail/),kPhone=K(/contact.*phone/,/phone|mobile/),
+      kSize=K(/^total pax$|^# ?(of )?pax|^pax$/,/pax/,/party size|^guests$|number of guests|^customers$|^qty$|quantity/),
+      kPaid=K(/^total paid$/,/amount paid/,/^paid$/,/deposit/,/paid/),
+      kId=K(/^booking (id|#|number|pk)$/,/^booking$/,/^#$|^id$|^pk$/,/booking.*(id|#|number)/),
+      kStatus=K(/^status$/,/status/),kNote=K(/note/,/special/);
+    if(!kStart||!(kName||kFirst))throw new Error('could not find the date or name columns ('+keys.join(', ')+')');
+    const out=[];let skipped=0;
+    rows.forEach(r=>{
+      if(kStatus&&/cancel|rebooked|no.?show|refund/i.test(r[kStatus])){skipped++;return}
+      let raw=String(r[kStart]);if(kTime&&kTime!==kStart&&!/\d:\d\d/.test(raw))raw+=' '+r[kTime];
+      const d=r[kStart] instanceof Date?r[kStart]:toDate(raw)||toDate(raw.replace(/\b(at|@)\b/i,' ').replace(/(\d)(am|pm)/i,'$1 $2'));
+      if(!d){skipped++;return}
+      const name=titleCase(kName?String(r[kName]):(String(r[kFirst])+' '+String(kLast?r[kLast]:'')));if(!name.trim()){skipped++;return}
+      const date=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(date<today()){skipped++;return}   // only upcoming bookings
+      out.push({date,time:d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),reservation:name,
+        size:parseInt(r[kSize])||1,phone:kPhone?fmtPhone(r[kPhone]):'',email:kEmail?String(r[kEmail]).trim():'',
+        note:kNote?String(r[kNote]).trim().slice(0,300):'',deposit:kPaid?parseFloat(String(r[kPaid]).replace(/[^\d.]/g,''))||0:0,
+        fhId:kId?String(r[kId]).replace(/^#/,'').trim():''});
+    });
+    if(!out.length)throw new Error('no upcoming bookings found');
+    const dep=out.reduce((s,b)=>s+b.deposit,0),ppl=out.reduce((s,b)=>s+b.size,0);
+    if(!confirm(`Import ${out.length} FareHarbor bookings (${ppl} guests, $${money(dep)} in deposits)?\nFirst: ${out[0].reservation} · ${niceDate(out[0].date)} ${out[0].time}`+(skipped?`\n${skipped} rows skipped (cancelled or past).`:'')))return;
+    const res=await call('importFareHarbor',out);
+    toast(`FareHarbor: ${res.added} added${res.updated?`, ${res.updated} updated`:''}`,4000);loadArrivals();
+  }catch(e){toast('FareHarbor import failed: '+(e.message||e),7000)}
 }
 
 /* ---------- Schedule: seats per class, one tap ---------- */
