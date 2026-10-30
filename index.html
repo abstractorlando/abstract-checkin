@@ -50,6 +50,11 @@
   .muted{color:var(--muted);font-size:14px}
   .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;display:none;z-index:5}
   .hide{display:none!important}
+  .pk{max-height:300px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:6px 8px 10px}
+  .pc{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px}
+  .chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;margin:0 6px 6px 0;font:600 14px Poppins;cursor:pointer;color:var(--ink)}
+  .chip.on{background:var(--purp);border-color:var(--purp);color:#fff}
+  .si{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
   .modal{position:fixed;inset:0;background:rgba(29,27,38,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
   .mbox{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center}
   .arr{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font:500 16px Poppins;color:var(--ink);cursor:pointer;min-height:54px}
@@ -182,7 +187,17 @@ const CLASS_TIMES = ['11:00 AM','12:30 PM','2:00 PM','3:30 PM','5:00 PM'];
 // From Jan 2027, change to e.g.: ['12:00 PM','1:30 PM','3:00 PM','4:30 PM','6:00 PM','7:30 PM'];
 const STUDIO = 'Abstract Orlando · (689) 348-8239';
 /* ====== PIECE TYPES (suggestions when storing) ====== */
-const PIECE_TYPES = ['Daisy 8 inch Glass Vase','Magnolia 10 inch Glass Vase','Air Abstract','Heart Sculpture','Topolino/Topolina','Trooper','Kodiak','Silvertip','Grizzly','Yearling','Cub','Floppy','Winnie','Kitty','Snoopy','Skully','626','Fluffy','Cooper','Tars','Gargantua','The Bat','Labubu','Turbo','Hexagon Gift Coasters','Ear Coasters','Tapas','Meze','Halo','Mona Lisa','Banksy','Pollock','Frida','Hilma','Melody Guitar','The Boss','High Four','Castle','Ears','Crush','Surfboard','Shark','T-REX','Smiley','Sunshine','Degas Canvas','Monet Canvas','Van Gogh Canvas','Picasso Canvas','Haring Canvas','Goya Canvas','Renoir Canvas','Georgia Canvas','Basquiat Canvas','Koons Canvas','Gustav Canvas','Matisse Canvas','Da Vinci Canvas','Mixed'];
+const PIECE_TYPES = {
+  /* Project names as listed in FareHarbor */
+  'Bears':['Kodiak','Silvertip','Grizzly','Yearling','Cub'],
+  'Piggy Banks':['626','Floppy','Winnie','Kitty','Fluffy','Cooper','The Bat','Labubu'],
+  'Sculptures':['Air Abstract','Heart Sculpture','Topolino/Topolina','Trooper','Snoopy','Skully','Tars','Gargantua','Turbo'],
+  'Vases & Lamp':['Daisy- 8" Glass Vase','Magnolia- 10" Glass Vase','Halo'],
+  'Coasters & Trays':['Ear Coasters','Tapas','Goya Bamboo Tray','Dali Bamboo Tray','Warhol Acacia Tray'],
+  'Art Pieces':['Banksy','Pollock','Frida','Hilma'],
+  'Wall Cutouts':['Melody Guitar','The Boss','High Four','Castle','Ears','Crush','Sunshine','Surfboard','Shark','T-REX','Smiley'],
+  'Canvases':['Degas Canvas','Monet Canvas','Van Gogh Canvas']
+};
 
 /* ====== YOUR APPS SCRIPT WEB APP LINK (ends in /exec) ====== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwvba_1OZKz5alSsEVV8pXWKUQJN5wmur6ACjaUD1grRUbJoFN0zJJ5verK4omhuygcKw/exec';
@@ -358,7 +373,7 @@ function storageLine(p){
   if(!s)return `<div class="st"><span class="muted">Not in storage yet</span><button class="btn ghost small" onclick="openStore('${id}')">Store &amp; notify</button></div>`;
   const sent=[s.emailSent?'email':'',s.textSent?'text':''].filter(Boolean).join(' + ');
   return `<div class="st"><div><span class="loc">${esc(s.location)}</span>
-      <span style="margin-left:8px;font-weight:600">${s.pieces} × ${esc(s.pieceType||'piece')}</span><br>
+      <span style="margin-left:8px;font-weight:600">${s.pieces} piece${s.pieces>1?'s':''}</span><br><span style="font-size:14px">${esc(s.pieceType||'')}</span><br>
       <span class="muted">${s.pickedUp?'<span class="done">✓ Picked up</span>':sent?'Guest notified by '+sent:'Not notified'}</span></div>
     <div style="display:flex;gap:6px">${s.pickedUp?'':`<button class="btn ghost small" onclick="pickedUp('${id}')">Picked up</button>`}
       <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
@@ -393,25 +408,48 @@ async function addToParty(id){
   catch(e){toast('Could not add: '+(e.message||e))}
 }
 
+/* ---- storage form: pick one or more piece types, with a count for each ---- */
+let pickMap={};
+function parsePieces(str,total){const m={};if(!str)return m;
+  str.split(/,\s*/).forEach(x=>{const r=/^(\d+)\s*[×x]\s*(.+)$/.exec(x.trim());if(r)m[r[2]]=+r[1];else if(x.trim())m[x.trim()]=0});
+  const known=Object.values(m).reduce((a,b)=>a+b,0);Object.keys(m).forEach(k=>{if(!m[k])m[k]=Math.max(1,(total||1)-known)});return m}
+function piecesText(m){return Object.entries(m).map(([k,v])=>`${v}× ${k}`).join(', ')}
 function openStore(id){
   const box=$('sf_'+id);if(box.innerHTML){box.innerHTML='';return}
   const p=parties[id],s=p[0].storage||{},first=!p[0].storage;
+  pickMap[id]=parsePieces(s.pieceType,s.pieces);
   box.innerHTML=`<div class="sf">
-    <div class="r3">
-      <div><label class="l">Shelf</label><input id="loc_${id}" placeholder="B-23" value="${esc(s.location||'')}" autocapitalize="characters"></div>
-      <div><label class="l">Piece type</label><input id="pt_${id}" list="pieceTypes" placeholder="e.g. Kodiak" value="${esc(s.pieceType||'')}"></div>
-      <div><label class="l"># pieces</label><input id="pc_${id}" type="number" min="1" inputmode="numeric" value="${s.pieces||p[0].size}"></div>
-    </div>
+    <div><label class="l">Shelf</label><input id="loc_${id}" placeholder="e.g. B-23 (or B-23, C-4)" value="${esc(s.location||'')}" autocapitalize="characters"></div>
+    <div><label class="l">Pieces (tap every type that's going on the shelf)</label>
+      <div id="sel_${id}" class="sel"></div>
+      <input id="pf_${id}" placeholder="Search projects…" oninput="renderPicker('${id}')" autocomplete="off" style="margin-top:8px">
+      <div id="pk_${id}" class="pk"></div></div>
     <label class="chk"><input type="checkbox" id="nt_${id}" ${first?'checked':''}> Send "ready for pickup" email + text now</label>
     <button class="btn main" style="font-size:16px" onclick="saveStore('${id}')">Save</button></div>`;
-  $('loc_'+id).focus();
+  renderPicker(id);$('loc_'+id).focus();
 }
+function renderPicker(id){
+  const m=pickMap[id],q=($('pf_'+id).value||'').toLowerCase();
+  const total=Object.values(m).reduce((a,b)=>a+b,0);
+  $('sel_'+id).innerHTML=Object.keys(m).length?Object.entries(m).map(([k,v])=>`<div class="si"><b>${esc(k)}</b>
+      <span class="pj multi"><button type="button" onclick="bump('${id}',${JSON.stringify(k).replace(/"/g,'&quot;')},-1)">−</button><span>${v}</span><button type="button" onclick="bump('${id}',${JSON.stringify(k).replace(/"/g,'&quot;')},1)">+</button></span></div>`).join('')+
+      `<div class="muted" style="margin-top:4px">Total: <b>${total}</b> piece${total>1?'s':''}</div>`:'<p class="muted" style="margin:0">Nothing selected yet.</p>';
+  $('pk_'+id).innerHTML=Object.entries(PIECE_TYPES).map(([cat,items])=>{
+    const f=items.filter(t=>!q||t.toLowerCase().includes(q));if(!f.length)return '';
+    return `<div class="pc">${esc(cat)}</div>`+f.map(t=>`<button type="button" class="chip${m[t]?' on':''}" onclick="bump('${id}',${JSON.stringify(t).replace(/"/g,'&quot;')},${m[t]?0:1})">${esc(t)}${m[t]?' ✓':''}</button>`).join('');
+  }).join('')||'<p class="muted">No match.</p>';
+}
+function bump(id,k,d){const m=pickMap[id];
+  if(d===0){delete m[k]}else{m[k]=(m[k]||0)+d;if(m[k]<=0)delete m[k]}
+  renderPicker(id)}
 async function saveStore(id){
   const loc=$('loc_'+id).value.trim();if(!loc){toast('Add the shelf');return}
+  const m=pickMap[id];const total=Object.values(m).reduce((a,b)=>a+b,0);
+  if(!total){toast('Tap at least one piece type');return}
   const notify=$('nt_'+id).checked,p=parties[id][0];
   if(notify&&!p.email&&!p.phone){toast('No phone or email on this party — tap edit next to the contact');return}
   try{
-    const r=await call('storeParty',{partyId:id,location:loc,pieceType:$('pt_'+id).value.trim(),pieces:$('pc_'+id).value,notify});
+    const r=await call('storeParty',{partyId:id,location:loc,pieceType:piecesText(m),pieces:total,notify});
     toast(notify?`Saved · email: ${r.email} · text: ${r.text}`:'Saved',4000);refreshView();
   }catch(e){toast('Could not save: '+(e.message||e))}
 }
@@ -528,7 +566,6 @@ async function importFile(inp){
 
 /* ---------- init ---------- */
 $('tm').innerHTML=CLASS_TIMES.map(t=>`<option>${t}</option>`).join('');
-$('pieceTypes').innerHTML=PIECE_TYPES.map(t=>`<option value="${esc(t)}">`).join('');
 $('dt').value=today();$('dayPick').value=today();
 resetForm();
 if(hasGAS&&!PIN)askPin();
