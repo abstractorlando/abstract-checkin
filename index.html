@@ -54,6 +54,18 @@
   .muted{color:var(--muted);font-size:14px}
   .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;display:none;z-index:5}
   .hide{display:none!important}
+  .sday{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .sday.closed{background:#fff5f8}
+  .scls{display:grid;grid-template-columns:120px 1fr auto auto auto;align-items:center;gap:14px;padding:14px 18px}
+  .scls.off{opacity:.6;background:#fafafa}
+  .stime b{display:block;font-size:18px}.stime .muted{font-size:13px}
+  .sbar{height:10px;background:var(--soft);border-radius:999px;overflow:hidden}.sbar div{height:100%;background:var(--teal);border-radius:999px}
+  .scls.off .sbar div{background:#bbb}
+  .scount{font-size:14px;color:var(--muted);white-space:nowrap}.scount b{color:var(--ink);font-size:18px}
+  .scap{display:flex;align-items:center;border:2px solid var(--line);border-radius:14px}
+  .scap button{width:46px;height:46px;border:0;background:none;font:700 22px Poppins;color:var(--purp);cursor:pointer}
+  .scap button:disabled{opacity:.3}.scap span{min-width:30px;text-align:center;font-weight:800;font-size:20px}
+  @media (max-width:640px){.scls{grid-template-columns:1fr auto;}.sbar{grid-column:1/-1;order:3}.scount{order:4}}
   .daynav{display:flex;gap:8px;align-items:center;margin:0 0 10px}.daynav input{flex:1;min-width:0}.daynav .btn{min-width:44px;font-size:18px}
   .pk{max-height:300px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:6px 8px 10px}
   .pc{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px}
@@ -105,6 +117,7 @@
     <button id="tabNew" class="on" onclick="show('new')">Check In</button>
     <button id="tabToday" onclick="show('today')">Checked in</button>
     <button id="tabFind" onclick="show('find')">Pickup</button>
+    <button id="tabSched" onclick="show('sched')">Schedule</button>
     <button onclick="openSettings()" aria-label="Printer settings" title="Printer settings">⚙︎</button>
   </nav>
 </header>
@@ -162,6 +175,19 @@
       <button class="btn main" style="width:auto;font-size:16px" onclick="printNew()">Print new labels</button>
     </div>
     <div id="dayList"><p class="muted">Loading…</p></div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section id="vSched" class="hide">
+    <div class="card">
+      <div class="daynav" style="margin:0">
+        <button type="button" class="btn ghost small" onclick="schedShift(-1)" aria-label="Previous day">‹</button>
+        <input id="schedDay" type="date" onchange="loadSched()">
+        <button type="button" class="btn ghost small" onclick="schedShift(1)" aria-label="Next day">›</button>
+        <button type="button" class="btn ghost small" onclick="$('schedDay').value=today();loadSched()">Today</button>
+      </div>
+    </div>
+    <div id="schedBox"><p class="muted">Loading…</p></div>
   </section>
 
   <!-- FIND -->
@@ -265,7 +291,8 @@ function nearestTime(){
 
 /* ---------- tabs ---------- */
 function show(v){
-  ['new','today','find'].forEach(k=>{$('v'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==v);$('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on',k===v)});
+  ['new','today','find','sched'].forEach(k=>{$('v'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==v);$('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on',k===v)});
+  if(v==='sched')loadSched();
   if(v==='today')loadDay(); if(v==='new')loadArrivals(); if(v==='find')$('q').focus();
 }
 
@@ -620,6 +647,36 @@ async function importFile(inp){
     const res=await call('importBookings',out);
     toast(`Imported ${res.imported} bookings`,3500);loadArrivals();
   }catch(e){toast('Import failed: '+(e.message||e),6000)}
+}
+
+/* ---------- Schedule: seats per class, one tap ---------- */
+let SCH=null;
+function schedShift(n){const [y,m,d]=$('schedDay').value.split('-').map(Number);const x=new Date(y,m-1,d+n);
+  $('schedDay').value=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');loadSched()}
+async function loadSched(){
+  if(!$('schedDay').value)$('schedDay').value=today();
+  $('schedBox').innerHTML='<p class="muted">Loading…</p>';
+  try{SCH=await call('getSchedule',$('schedDay').value);renderSched()}catch(e){$('schedBox').innerHTML=`<p class="muted">Could not load: ${esc(e.message||e)}</p>`}
+}
+function renderSched(){
+  const d=SCH,title=niceDate(d.date);
+  if(!d.dayOpen){$('schedBox').innerHTML=`<div class="card sday closed"><div><b style="font-size:20px">${esc(title)}</b><br>
+    <span class="muted">${d.regular?'Closed for booking':'Not a regular class day'}</span></div>
+    <button class="btn main" style="width:auto;padding:0 22px" onclick="setCap('*',${d.regular?'null':d.defaultCap})">Open this day</button></div>`;return}
+  $('schedBox').innerHTML=`<div class="card sday"><div><b style="font-size:20px">${esc(title)}</b><br><span class="muted">Online booking is open</span></div>
+      <button class="btn ghost" style="border-color:#c40056;color:#c40056" onclick="if(confirm('Close ALL classes on ${esc(title)} for new bookings?'))setCap('*',0)">Close whole day</button></div>`+
+    d.classes.map(c=>{const closed=c.cap===0,full=!closed&&c.booked>=c.cap,pct=c.cap?Math.min(100,c.booked/c.cap*100):100;
+      return `<div class="card scls${closed?' off':''}">
+        <div class="stime"><b>${c.time}</b><span class="muted">${closed?'Closed':full?'Full':(c.cap-c.booked)+' open'}</span></div>
+        <div class="sbar"><div style="width:${pct}%"></div></div>
+        <div class="scount"><b>${c.booked}</b> booked of</div>
+        <div class="scap"><button onclick="setCap('${c.time}',${Math.max(0,c.cap-1)})" ${c.cap<=0?'disabled':''} aria-label="Fewer seats">−</button><span>${c.cap}</span><button onclick="setCap('${c.time}',${c.cap+1})" aria-label="More seats">+</button></div>
+        <button class="btn ghost small" onclick="setCap('${c.time}',${closed?d.defaultCap:0})">${closed?'Open':'Close'}</button>
+        ${c.custom?`<button class="tl" onclick="setCap('${c.time}',null)">Reset to ${d.defaultCap}</button>`:''}
+      </div>`}).join('');
+}
+async function setCap(time,n){
+  try{SCH=await call('setCapacity',SCH.date,time,n);renderSched();toast('Saved · booking page updated')}catch(e){toast('Could not save: '+(e.message||e),5000)}
 }
 
 /* ---------- init ---------- */
