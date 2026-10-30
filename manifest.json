@@ -1,0 +1,16 @@
+{
+  "name": "Abstract Check-In",
+  "short_name": "Check-In",
+  "description": "Abstract Orlando team app: check-in, stickers, storage, pickups and schedule.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f4fb",
+  "theme_color": "#4e3aa2",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
