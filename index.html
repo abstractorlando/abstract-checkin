@@ -46,6 +46,8 @@
   .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
   .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff}
   .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}
+  .tools{display:flex;gap:6px;margin:4px 0 2px 4px;flex-wrap:wrap}.tl{border:0;background:none;color:var(--muted);font:600 13px Poppins;padding:4px 8px;border-radius:8px;cursor:pointer}.tl:hover{background:var(--soft);color:var(--ink)}
+  .mv{display:flex;gap:8px;margin:6px 0 4px;flex-wrap:wrap}.mv input,.mv select{flex:1;min-width:140px;min-height:44px;padding:8px 10px;font-size:15px}
   .arrw{margin-bottom:8px}.arrw .arr{margin-bottom:0}.feebtn{margin:6px 0 4px;border-color:#c40056;color:#c40056}.feeln{font-size:13px;color:#1a8a3a;font-weight:600;margin:4px 0 0 4px}
   .arr:disabled{cursor:default}.party.isnew{border:2px solid var(--mag)}
   .tag.FT{background:var(--teal)}.tag.RG{background:var(--mag)}
@@ -521,15 +523,42 @@ function renderArrivals(){
   $('arrivals').innerHTML=list.map(b=>{
     const off=b.status!=='Confirmed';
     const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':'';
-    const st=b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':'';
+    const st=b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
     const fee=FEE_PER_GUEST*b.size;
     const act=!b.card?'':b.fee?`<div class="feeln">✓ Fee charged: ${esc(b.fee.split(' · ')[0])}</div>`
       :b.status==='Late cancel'?`<button class="btn ghost small feebtn" onclick="chargeFee('${b.bookingId}','late',${fee},'${esc(b.reservation)}')">Charge $${fee} late-cancel fee</button>`
-      :(b.status==='Confirmed'&&!b.partyId&&isPast(b))?`<button class="btn ghost small feebtn" onclick="chargeFee('${b.bookingId}','noshow',${fee},'${esc(b.reservation)}')">No-show · charge $${fee}</button>`:'';
+      :b.status==='No-show'?`<button class="btn ghost small feebtn" onclick="chargeFee('${b.bookingId}','noshow',${fee},'${esc(b.reservation)}')">Charge $${fee} no-show fee</button>`:'';
+    const k=encodeURIComponent(b.key);
+    const tools=b.partyId?'':b.status==='Confirmed'
+      ?`<div class="tools"><button class="tl" onclick="staffAct('${k}','noshow')">No-show</button><button class="tl" onclick="staffAct('${k}','cancel')">Cancel</button><button class="tl" onclick="openMove('${k}')">Move</button></div><div id="mv_${k}"></div>`
+      :`<div class="tools"><button class="tl" onclick="staffAct('${k}','restore')">Undo · put back on the list</button></div>`;
     return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" ${off?'disabled':''} onclick="pick(${b.row})">
-    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${st}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${act}</div>`}).join('')+
+    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${st}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
+}
+function bookingByKey(k){return arrivals.find(b=>b.key===decodeURIComponent(k))}
+async function staffAct(k,action){
+  const b=bookingByKey(k);if(!b)return;const web=b.source==='Website'&&b.email;let email=false;
+  if(action==='noshow'&&!confirm(`Mark ${b.reservation} as a NO-SHOW?`+(b.card?`\n\nYou'll then see a button to charge the $${FEE_PER_GUEST*b.size} no-show fee.`:'')))return;
+  if(action==='cancel'){if(!confirm(`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir seats open up again. No fee is charged.`))return;
+    if(web)email=confirm(`Email ${b.reservation} that their booking is cancelled?`)}
+  try{await call('staffUpdate',b.key,action,{email});toast({noshow:'Marked no-show',cancel:'Booking cancelled',restore:'Back on the list'}[action]);showDone=action!=='restore'?showDone:false;loadArrivals()}
+  catch(e){toast('Could not update: '+(e.message||e),5000)}
+}
+function openMove(k){
+  const box=$('mv_'+k);if(box.innerHTML){box.innerHTML='';return}const b=bookingByKey(k);
+  box.innerHTML=`<div class="mv"><input type="date" id="mvd_${k}" value="${b.date}"><select id="mvt_${k}">${CLASS_TIMES.map(t=>`<option${t===b.time?' selected':''}>${t}</option>`).join('')}</select>
+    <button class="btn main" style="width:auto;font-size:15px;min-height:44px;padding:0 18px" onclick="saveMove('${k}')">Move</button></div>`;
+}
+async function saveMove(k){
+  const b=bookingByKey(k),date=$('mvd_'+k).value,time=$('mvt_'+k).value;const web=b.source==='Website'&&b.email;
+  const email=web&&confirm(`Email ${b.reservation} their new time (${niceDate(date)} · ${time})?`);
+  try{let r=await call('staffUpdate',b.key,'move',{date,time,email});
+    if(r.needsForce){if(!confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for a party of ${b.size}. Move them anyway?`))return;
+      r=await call('staffUpdate',b.key,'move',{date,time,email,force:true})}
+    toast(`Moved to ${niceDate(date)} · ${time}`,3500);loadArrivals()}
+  catch(e){toast('Could not move: '+(e.message||e),5000)}
 }
 async function chargeFee(id,kind,amt,name){
   if(!confirm(`Charge ${name} $${amt} for ${kind==='noshow'?'not showing up':'cancelling late'}?\nThis charges the card they saved when booking.`))return;
