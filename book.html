@@ -6,6 +6,7 @@
 <title>Book Your Class | Abstract Orlando</title>
 <meta name="description" content="Book your fluid art class at Abstract Orlando. $0 today. Projects start at $50.">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>if(window.parent!==window||/[?&]embed/.test(location.search))document.documentElement.classList.add('embed')</script>
 <script src="https://js.stripe.com/v3/"></script>
 <style>
   :root{--mag:#ff009d;--teal:#0093ad;--purp:#4e3aa2;--ink:#1d1b26;--muted:#6b6878;--line:#e6e3ee;--soft:#f6f4fb}
@@ -18,6 +19,8 @@
   .pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
   .pill{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
   main{max-width:600px;margin:-34px auto 0;padding:0 16px 60px}
+  /* inside the website: no purple banner, transparent background */
+  html.embed body{background:transparent}html.embed .top{display:none}html.embed main{margin-top:0;padding:4px 4px 8px}
   .card{background:#fff;border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:0 6px 24px rgba(78,58,162,.08)}
   .step{display:flex;align-items:center;gap:10px;margin:0 0 14px}
   .num{width:28px;height:28px;border-radius:50%;background:var(--purp);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
@@ -159,6 +162,30 @@
 /* ====== YOUR APPS SCRIPT WEB APP LINK (same as the check-in app) ====== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwvba_1OZKz5alSsEVV8pXWKUQJN5wmur6ACjaUD1grRUbJoFN0zJJ5verK4omhuygcKw/exec';
 
+/* ====== TRACKING ======
+ * Inside the website (iframe): tells abstractorlando.com, whose own GA4 / Google Ads / Meta tags record it.
+ * Opened on its own (direct link): loads GA4 + Meta Pixel here. */
+const GA4_ID='G-HWWX6TQXWG', META_PIXEL='917533327429371', AVG_SPEND_PER_GUEST=100;
+const EMBEDDED=window.parent!==window;
+if(!EMBEDDED){
+  const s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+GA4_ID;document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config',GA4_ID);
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init',META_PIXEL);fbq('track','PageView');
+}
+function track(name,d){
+  try{
+    if(EMBEDDED){parent.postMessage({ao:'track',name,d},'*');return}
+    const v={currency:'USD',value:d.value,party_size:d.size};
+    if(name==='checkout'){gtag('event','begin_checkout',v);fbq('track','InitiateCheckout',{currency:'USD',value:d.value})}
+    if(name==='booked'){gtag('event','book_class',Object.assign({transaction_id:d.id},v));
+      fbq('track','Schedule',{currency:'USD',value:d.value},{eventID:d.id});fbq('track','Purchase',{currency:'USD',value:d.value,num_items:d.size},{eventID:d.id+'-p'})}
+  }catch(e){}
+}
+/* keep the website's frame exactly as tall as this page */
+if(EMBEDDED){let last=0;const tell=()=>{const hh=document.documentElement.scrollHeight;if(hh!==last){last=hh;parent.postMessage({ao:'height',h:hh},'*')}};
+  new ResizeObserver(tell).observe(document.body);setInterval(tell,700);}
+
 const $=id=>document.getElementById(id);
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function call(fn,...args){
@@ -232,6 +259,7 @@ $('toPay').onclick=async()=>{
       booking={id:r.bookingId,secret:r.clientSecret,key:JSON.stringify([sel,size])};
       try{sessionStorage.setItem('ao_booking',booking.id)}catch(e){}
       mountCard();
+      track('checkout',{size,value:size*AVG_SPEND_PER_GUEST});
     }
     $('detailsCard').classList.add('hide');$('payCard').classList.remove('hide');$('payCard').scrollIntoView({behavior:'smooth'});
   }catch(e){$('err1').textContent=e.message;if(/filled|left/.test(e.message))loadAvailability()}
@@ -260,11 +288,13 @@ $('book').onclick=async()=>{
 async function finish(id,siId){
   const b=await call('finishBooking',id,siId);
   try{sessionStorage.removeItem('ao_booking')}catch(e){}
+  let seen=false;try{seen=sessionStorage.getItem('ao_tracked')===b.id;sessionStorage.setItem('ao_tracked',b.id)}catch(e){}
+  if(!seen)track('booked',{id:b.id,size:b.size,value:b.size*AVG_SPEND_PER_GUEST});
   $('flow').classList.add('hide');$('confirmed').classList.remove('hide');
   $('heroTitle').textContent='See you soon!';$('heroSub').textContent='Your spot is saved.';$('heroPills').innerHTML='';
   $('cTitle').textContent=`You're booked, ${b.name.split(' ')[0]}!`;
   $('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;$('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;
-  window.scrollTo(0,0);
+  window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
 }
 
 /* ---------- manage existing booking (?b=ID&t=TOKEN) ---------- */
