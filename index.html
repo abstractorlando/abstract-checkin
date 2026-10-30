@@ -52,6 +52,7 @@
   .muted{color:var(--muted);font-size:14px}
   .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;display:none;z-index:5}
   .hide{display:none!important}
+  .daynav{display:flex;gap:8px;align-items:center;margin:0 0 10px}.daynav input{flex:1;min-width:0}.daynav .btn{min-width:44px;font-size:18px}
   .pk{max-height:300px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:6px 8px 10px}
   .pc{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px}
   .chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;margin:0 6px 6px 0;font:600 14px Poppins;cursor:pointer;color:var(--ink)}
@@ -100,7 +101,7 @@
   <h1>Abstract Check-In</h1>
   <nav>
     <button id="tabNew" class="on" onclick="show('new')">Check In</button>
-    <button id="tabToday" onclick="show('today')">Today</button>
+    <button id="tabToday" onclick="show('today')">Checked in</button>
     <button id="tabFind" onclick="show('find')">Pickup</button>
     <button onclick="openSettings()" aria-label="Printer settings" title="Printer settings">⚙︎</button>
   </nav>
@@ -111,13 +112,19 @@
   <section id="vNew">
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-        <b style="font-size:17px">Arriving today</b>
+        <b style="font-size:17px" id="arrTitle">Arriving today</b>
         <span style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn ghost small" id="mailBtn" onclick="checkEmail()">Check email for new report</button>
         <label class="btn ghost small" style="display:inline-flex;align-items:center">Import file
           <input type="file" id="bkFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFile(this)"></label></span>
       </div>
-      <input id="bkFilter" placeholder="Search today's reservations…" oninput="renderArrivals()" autocomplete="off">
+      <div class="daynav">
+        <button type="button" class="btn ghost small" onclick="shiftDay(-1)" aria-label="Previous day">‹</button>
+        <input id="arrDay" type="date" onchange="setArrDay(this.value)">
+        <button type="button" class="btn ghost small" onclick="shiftDay(1)" aria-label="Next day">›</button>
+        <button type="button" class="btn ghost small" onclick="setArrDay(today())">Today</button>
+      </div>
+      <input id="bkFilter" placeholder="Search reservations…" oninput="renderArrivals()" autocomplete="off">
       <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
     </div>
     <div class="card" id="formTop">
@@ -128,7 +135,7 @@
         <div><label class="l" for="em">Email</label><input id="em" type="email" placeholder="name@email.com" autocomplete="off" autocapitalize="off"></div>
       </div>
       <div class="row" style="margin-top:12px">
-        <div><label class="l" for="dt">Class day</label><input id="dt" type="date" onchange="loadArrivals()"></div>
+        <div><label class="l" for="dt">Class day</label><input id="dt" type="date" onchange="setArrDay(this.value)"></div>
         <div><label class="l" for="tm">Class time</label><select id="tm"></select></div>
       </div>
     </div>
@@ -490,6 +497,10 @@ async function find(){const q=$('q').value.trim();if(q.length<2){$('findList').i
 
 /* ---------- Toast bookings: arriving today ---------- */
 let arrivals=[],picked=null;
+function setArrDay(d){if(!d)return;$('dt').value=d;$('arrDay').value=d;
+  $('arrTitle').textContent=d===today()?'Arriving today':'Arriving '+niceDate(d);picked=null;arrivals=[];loadArrivals()}
+function shiftDay(n){const [y,m,dd]=$('arrDay').value.split('-').map(Number);const x=new Date(y,m-1,dd+n);
+  setArrDay(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'))}
 async function loadArrivals(quiet){
   if(!quiet&&!arrivals.length)$('arrivals').innerHTML='<p class="muted">Loading bookings…</p>';
   try{arrivals=await call('getBookings',$('dt').value);renderArrivals()}
@@ -584,7 +595,7 @@ async function importFile(inp){
 
 /* ---------- init ---------- */
 $('tm').innerHTML=CLASS_TIMES.map(t=>`<option>${t}</option>`).join('');
-$('dt').value=today();$('dayPick').value=today();
+$('dt').value=today();$('arrDay').value=today();$('dayPick').value=today();
 resetForm();
 if(hasGAS&&!PIN)askPin();
 show('new');
