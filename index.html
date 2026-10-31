@@ -79,7 +79,7 @@
   .dep{display:block;font-size:13px;font-weight:700;color:#0b7a3e}
   .tools{display:flex;gap:6px;margin:4px 0 2px 4px;flex-wrap:wrap}.tl{border:0;background:none;color:var(--muted);font:600 13px Poppins;padding:4px 8px;border-radius:8px;cursor:pointer}.tl:hover{background:var(--soft);color:var(--ink)}
   .mv{display:flex;gap:8px;margin:6px 0 4px;flex-wrap:wrap}.mv input,.mv select{flex:1;min-width:140px;min-height:44px;padding:8px 10px;font-size:15px}
-  .arrw{margin-bottom:8px}.arrw .arr{margin-bottom:0}.feebtn{margin:6px 0 4px;border-color:#c40056;color:#c40056}.feeln{font-size:13px;color:#1a8a3a;font-weight:600;margin:4px 0 0 4px}
+  .arrw{margin-bottom:8px}.arrw .arr{margin-bottom:0}.feebtn{margin:6px 0 4px;border-color:#c40056;color:#c40056}.feerow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0 4px 4px}.feerow .feebtn{margin:0}.feebtn.waive{border-color:var(--line);color:var(--muted)}.feeln{font-size:13px;color:#1a8a3a;font-weight:600;margin:4px 0 0 4px}
   .arr:disabled{cursor:default}.party.isnew{border:2px solid var(--mag)}
   .tag.FT{background:var(--teal)}.tag.RG{background:var(--mag)}
   .muted{color:var(--muted);font-size:14px}
@@ -598,9 +598,10 @@ function renderArrivals(){
     const dep=b.source==='FareHarbor'?`<span class="dep">${b.deposit?'$'+money(b.deposit)+' deposit paid · take off bill':'FareHarbor booking · check deposit'}</span>`:'';
     const st=b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
     const fee=FEE_PER_GUEST*b.size;
-    const act=!b.card?'':b.fee?`<div class="feeln">✓ Fee charged: ${esc(b.fee.split(' · ')[0])}</div>`
-      :b.status==='Late cancel'?`<button class="btn ghost small feebtn" onclick="chargeFee('${b.bookingId}','late',${fee},'${esc(b.reservation)}')">Charge $${fee} late-cancel fee</button>`
-      :b.status==='No-show'?`<button class="btn ghost small feebtn" onclick="chargeFee('${b.bookingId}','noshow',${fee},'${esc(b.reservation)}')">Charge $${fee} no-show fee</button>`:'';
+    const feeKind=b.status==='Late cancel'?'late':b.status==='No-show'?'noshow':'';
+    const fb=(label,amt,cls)=>`<button class="btn ghost small feebtn${cls||''}" onclick="chargeFee('${b.bookingId}','${feeKind}',${fee},${amt})">${label}</button>`;
+    const act=!b.card?'':b.fee?`<div class="feeln">${/^Waived/.test(b.fee)?'Fee waived':'✓ Fee charged: '+esc(b.fee.split(' · ')[0])}</div>`
+      :feeKind?`<div class="feerow"><span class="muted" style="font-size:13px">${feeKind==='late'?'Late-cancel':'No-show'} fee:</span>${fb('Charge full $'+fee,'null')}${fb('Partial…','-1')}${fb('Waive','0',' waive')}</div>`:'';
     const k=encodeURIComponent(b.key);
     const tools=b.partyId?'':b.status==='Confirmed'
       ?`<div class="tools"><button class="tl" onclick="staffAct('${k}','noshow')">No-show</button><button class="tl" onclick="staffAct('${k}','cancel')">Cancel</button><button class="tl" onclick="openMove('${k}')">Move</button></div><div id="mv_${k}"></div>`
@@ -633,9 +634,14 @@ async function saveMove(k){
     toast(`Moved to ${niceDate(date)} · ${time}`,3500);loadArrivals()}
   catch(e){toast('Could not move: '+(e.message||e),5000)}
 }
-async function chargeFee(id,kind,amt,name){
-  if(!confirm(`Charge ${name} $${amt} for ${kind==='noshow'?'not showing up':'cancelling late'}?\nThis charges the card they saved when booking.`))return;
-  try{const r=await call('chargeFee',id,kind);toast(`Charged $${r.charged} ✓`,4000);loadArrivals()}
+async function chargeFee(id,kind,full,amt){
+  const bk=arrivals.find(x=>x.bookingId===id),name=bk?bk.reservation:'this guest';
+  const why=kind==='noshow'?'not showing up':'cancelling late';
+  if(amt===-1){const v=prompt(`How much should we charge ${name} for ${why}? (up to $${full})`,'');if(v===null)return;
+    amt=parseFloat(String(v).replace(/[^\d.]/g,''));if(!(amt>0&&amt<=full)){toast(`Enter an amount between $1 and $${full}`,4000);return}}
+  if(amt===0){if(!confirm(`Waive the fee for ${name}? Nothing will be charged.`))return}
+  else if(!confirm(`Charge ${name} $${amt===null?full:amt} for ${why}?\nThis charges the card they saved when booking.`))return;
+  try{const r=await call('chargeFee',id,kind,amt);toast(r.waived?'Fee waived ✓':`Charged $${r.charged} ✓`,4000);loadArrivals()}
   catch(e){toast('Not charged: '+(e.message||e),6000)}
 }
 async function openParty(id,date){
