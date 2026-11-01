@@ -616,7 +616,7 @@ async function staffAct(k,action){
   const b=bookingByKey(k);if(!b)return;const web=b.source==='Website'&&b.email;let email=false;
   if(action==='noshow'&&!confirm(`Mark ${b.reservation} as a NO-SHOW?`+(b.card?`\n\nYou'll then see a button to charge the $${FEE_PER_GUEST*b.size} no-show fee.`:'')))return;
   if(action==='cancel'){if(!confirm(`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir seats open up again. No fee is charged.`))return;
-    if(web)email=confirm(`Email ${b.reservation} that their booking is cancelled?`)}
+    if(web)email=confirm(`Let ${b.reservation} know their booking is cancelled?`)}
   try{await call('staffUpdate',b.key,action,{email});toast({noshow:'Marked no-show',cancel:'Booking cancelled',restore:'Back on the list'}[action]);showDone=action!=='restore'?showDone:false;loadArrivals()}
   catch(e){toast('Could not update: '+(e.message||e),5000)}
 }
@@ -627,7 +627,7 @@ function openMove(k){
 }
 async function saveMove(k){
   const b=bookingByKey(k),date=$('mvd_'+k).value,time=$('mvt_'+k).value;const web=b.source==='Website'&&b.email;
-  const email=web&&confirm(`Email ${b.reservation} their new time (${niceDate(date)} · ${time})?`);
+  const email=web&&confirm(`Let ${b.reservation} know their new time (${niceDate(date)} · ${time})?`);
   try{let r=await call('staffUpdate',b.key,'move',{date,time,email});
     if(r.needsForce){if(!confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for a party of ${b.size}. Move them anyway?`))return;
       r=await call('staffUpdate',b.key,'move',{date,time,email,force:true})}
