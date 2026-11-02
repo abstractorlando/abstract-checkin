@@ -357,9 +357,9 @@ async function finish(id,siId){
   clearInterval(holdTimer);
   $('heroTitle').textContent='We can\'t wait to see you!';$('heroSub').textContent='Your reservation is confirmed.';$('heroPills').innerHTML='';
   const ph=b.phone||fullPhone();
-  $('cText').innerHTML=ph?`We'll text your booking details to <b>${esc(ph)}</b>. Wrong number? Text us at <a href="sms:+16893488239">(689) 348-8239</a>.`:'';
+  $('cText').innerHTML=ph?`We'll text your booking details to <b>${esc(ph)}</b>.`:'';
   $('cWine').classList.toggle('hide',!/wine/.test(b.addons||''));
-  $('cWine').textContent=b.paid?'🥂 Your sparkling wine is paid for and will be chilled and waiting.':'🥂 Your sparkling wine will be chilled and waiting ($30, we\'ll collect it at the studio).';
+  $('cWine').textContent=b.paid?'🥂 Your sparkling wine is paid and will be chilled and waiting for you.':'🥂 Your sparkling wine will be chilled and waiting for you.';
   $('cTitle').textContent=`You're booked, ${b.name.split(' ')[0]}!`;
   $('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;$('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;
   window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
