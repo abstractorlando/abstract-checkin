@@ -46,7 +46,7 @@
   .time.on{border-color:var(--mag);background:#fff0f8}
   label.l{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
   input,textarea{width:100%;font:500 17px Poppins;padding:13px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
-  textarea{min-height:70px;resize:vertical}
+  textarea{min-height:96px;resize:vertical}
   input:focus,textarea:focus{outline:none;border-color:var(--teal)}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .policy{background:var(--soft);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.5;margin:16px 0}
@@ -65,27 +65,36 @@
   .hide{display:none!important}
   .lock{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
   #pay{min-height:120px}
+  .phonerow{display:flex;gap:8px}.phonerow select{flex:none;width:118px;font:500 16px Poppins;padding:0 8px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+  .hint{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--purp)}
+  .addon{display:flex;gap:12px;align-items:flex-start;border:2px solid var(--line);border-radius:14px;padding:14px;margin:16px 0 0;cursor:pointer}
+  .addon input{width:22px;height:22px;flex:none;margin-top:2px}.addon:has(input:checked){border-color:var(--mag);background:#fff0f8}
+  .addon .price{background:#e8f6ec;color:#0b7a3e;font-weight:700;border-radius:8px;padding:1px 8px;margin-right:6px}
+  .addon small{display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.4}
+  .pol{margin:10px 0 0;padding-left:18px}.pol li{margin:4px 0}
+  .timer{background:#fff0f8;color:#b8006f;border-radius:12px;padding:10px 14px;font-weight:700;font-size:15px;margin:0 0 12px;text-align:center}
+  .timer.out{background:#fff5e6;color:#8a5a00}
   .closed{padding:14px;border-radius:14px;background:#fff5e6;font-size:14px}
 </style>
 </head>
 <body>
 <div class="top">
   <div class="brand">ABSTRACT ORLANDO</div>
-  <h1 id="heroTitle">Book your class</h1>
-  <p id="heroSub">Pour your own one-of-a-kind art. No experience needed.</p>
-  <div class="pills" id="heroPills"><span class="pill">$0 today</span><span class="pill">Projects from $50</span><span class="pill">About 60 minutes</span></div>
+  <h1 id="heroTitle">Book your experience</h1>
+  <p id="heroSub">Pour your own one-of-a-kind artwork! Pick your project and colors, and we'll guide you step by step. No experience needed.</p>
+  <div class="pills" id="heroPills"><span class="pill">$0 to book</span><span class="pill">Projects from $50</span><span class="pill">About 60 minutes</span></div>
 </div>
 
 <main>
   <!-- ============ BOOKING FLOW ============ -->
   <section id="flow">
     <div class="card">
-      <div class="step"><div class="num">1</div><h2>How many are painting?</h2></div>
+      <div class="step"><div class="num">1</div><h2>How many artists?</h2></div>
       <div class="stepper">
         <button type="button" id="minus" aria-label="Fewer guests">−</button>
         <div class="v" id="size">2</div>
         <button type="button" id="plus" aria-label="More guests">+</button>
-        <div class="muted" id="sizeNote">guests</div>
+        <div class="muted" id="sizeNote">artists</div>
       </div>
       <p class="muted" id="bigParty" style="margin:12px 0 0">Bigger group? Text us at <a href="sms:+16893488239">(689) 348-8239</a>.</p>
     </div>
@@ -107,25 +116,29 @@
         <div><label class="l" for="last">Last name</label><input id="last" autocomplete="family-name"></div>
       </div>
       <label class="l" for="phone">Mobile number</label>
-      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(407) 555-1234">
-      <p class="muted" style="margin:6px 0 0;font-size:13px">We'll text your confirmation and booking updates here. Reply STOP anytime.</p>
+      <div class="phonerow"><select id="cc" aria-label="Country code"></select>
+        <input id="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(407) 555-1234"></div>
+      <p class="hint">📱 Please double-check your number. Your confirmation and reminders are texted here.</p>
       <label class="l" for="email">Email</label>
       <input id="email" type="email" autocomplete="email" autocapitalize="off" placeholder="you@email.com">
       <div id="guestNames"></div>
-      <label class="l" for="note">Celebrating something? <span class="muted">(optional)</span></label>
-      <textarea id="note" placeholder="Birthday, date night, anniversary…"></textarea>
+      <div id="addons"></div>
+      <label class="l" for="note">Anything we should know? <span class="muted">(optional)</span></label>
+      <textarea id="note" placeholder="Celebrating something? Bringing someone special? Have a request? Tell us here."></textarea>
       <p class="err" id="err1"></p>
       <button class="go" id="toPay">Continue</button>
+      <p class="lock" style="margin-top:12px">A card holds your reservation. Free to cancel or reschedule up to 24 hours before.</p>
     </div>
 
     <div class="card hide" id="payCard">
       <div class="step"><div class="num">5</div><h2>Hold your spot</h2></div>
+      <div class="timer" id="timer"></div>
       <div id="summary"></div>
       <div class="policy" id="policyText"></div>
       <div id="pay"></div>
       <label class="chk" style="margin-top:14px"><input type="checkbox" id="agree"> <span id="agreeText"></span></label>
       <p class="err" id="err2"></p>
-      <button class="go" id="book">Book my spot · $0 today</button>
+      <button class="go" id="book">Confirm my reservation</button>
       <button class="ghost" id="back">Back</button>
       <p class="lock">🔒 Card secured by Stripe. We never see your card number.</p>
     </div>
@@ -138,7 +151,9 @@
       <h2 id="cTitle">You're booked!</h2>
       <p id="cWhen" style="font-size:18px;font-weight:700;margin:4px 0"></p>
       <p class="muted" id="cParty"></p>
-      <p style="margin:18px 0 0">Your confirmation is on its way. Arrive about 10 minutes early to pick your project and colors.</p>
+      <p style="margin:18px 0 0" id="cText"></p>
+      <p style="margin:12px 0 0">Please arrive 10 minutes early to pick your project and colors.</p>
+      <p class="hide" id="cWine" style="margin:12px 0 0">🥂 Your sparkling wine will be chilled and waiting ($30, paid at the studio).</p>
     </div>
     <div class="card">
       <p style="margin:0 0 8px"><b>12211 Regency Village Dr, Suite 11</b><br>Orlando, FL 32821</p>
@@ -199,9 +214,42 @@ function niceDate(s){return dObj(s).toLocaleDateString('en-US',{weekday:'long',m
 
 let AV=null,size=2,sel={date:null,time:null},booking=null,stripe=null,elements=null;
 
+/* ---------- phone: country code ---------- */
+const CC=[['US','🇺🇸','+1'],['CA','🇨🇦','+1'],['PR','🇵🇷','+1'],['GB','🇬🇧','+44'],['MX','🇲🇽','+52'],['BR','🇧🇷','+55'],['CO','🇨🇴','+57'],
+  ['AR','🇦🇷','+54'],['DE','🇩🇪','+49'],['FR','🇫🇷','+33'],['ES','🇪🇸','+34'],['IT','🇮🇹','+39'],['NL','🇳🇱','+31'],['IE','🇮🇪','+353'],['AU','🇦🇺','+61'],['IN','🇮🇳','+91']];
+$('cc').innerHTML=CC.map(([c,f,d],i)=>`<option value="${i}">${f} ${d}</option>`).join('');
+$('cc').onchange=()=>{$('phone').placeholder=CC[$('cc').value][2]==='+1'?'(407) 555-1234':'Mobile number'};
+/** Number as we store it: US/Canada "(407) 555-1234", everyone else "+44 7700900123". */
+function fullPhone(){const raw=$('phone').value.trim(),d=raw.replace(/\D/g,''),code=CC[$('cc').value][2];
+  if(raw.startsWith('+'))return '+'+d;
+  if(code==='+1'){const n=d.replace(/^1(?=\d{10}$)/,'');return n.length===10?`(${n.slice(0,3)}) ${n.slice(3,6)}-${n.slice(6)}`:''}
+  return d.length>=6?code+' '+d.replace(/^0/,''):'';}
+
+/* ---------- add-ons (paid at the studio) ---------- */
+function renderAddons(){
+  const box=$('addons');if(!AV||!AV.addOns||!AV.addOns.length){box.innerHTML='';return}
+  const on=new Set([...box.querySelectorAll('input:checked')].map(i=>i.value));
+  box.innerHTML=AV.addOns.map(a=>`<label class="addon"><input type="checkbox" value="${esc(a.id)}"${on.has(a.id)?' checked':''}>
+    <span><span class="price">$${a.price}</span><b>${esc(a.label)}</b><small>${esc(a.blurb||'')} Charged when you book; refunded if you cancel 24+ hours ahead.</small></span></label>`).join('');
+}
+function addons(){return [...$('addons').querySelectorAll('input:checked')].map(i=>i.value)}
+function addonTotal(){return addons().reduce((s,id)=>s+((AV.addOns||[]).find(a=>a.id===id)||{price:0}).price,0)}
+
+/* ---------- hold countdown ---------- */
+let holdTimer=null;
+function startHold(until){
+  clearInterval(holdTimer);const t=$('timer');t.classList.remove('out');$('book').disabled=false;
+  const tick=()=>{const s=Math.max(0,Math.round((until-Date.now())/1000));
+    if(s>0){t.textContent=`⏳ We're holding your spots for ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;return}
+    clearInterval(holdTimer);booking=null;t.classList.add('out');$('book').disabled=true;
+    t.innerHTML='Your hold ended. <a href="#" id="rehold">Hold my spots again</a>';
+    $('rehold').onclick=e=>{e.preventDefault();$('payCard').classList.add('hide');$('detailsCard').classList.remove('hide');$('toPay').click()};
+  };tick();holdTimer=setInterval(tick,1000);
+}
+
 /* ---------- step 1: party size ---------- */
 function setSize(n){
-  size=Math.max(1,Math.min(AV?AV.maxParty:8,n));$('size').textContent=size;$('sizeNote').textContent=size>1?'guests':'guest';
+  size=Math.max(1,Math.min(AV?AV.maxParty:8,n));$('size').textContent=size;$('sizeNote').textContent=size>1?'artists':'artist';
   $('minus').disabled=size<=1;$('plus').disabled=AV&&size>=AV.maxParty;renderDays();renderNames();
 }
 $('minus').onclick=()=>setSize(size-1);$('plus').onclick=()=>setSize(size+1);
@@ -217,7 +265,8 @@ function dayButtons(el,days,current,onPick,need){
 function timeButtons(el,day,current,onPick,need){
   if(!day){el.innerHTML='<p class="muted">Pick a day first.</p>';return}
   el.innerHTML=day.times.map(t=>{const can=t.left>=need;return `<button type="button" class="time${current===t.time?' on':''}${can&&t.left<=3?' low':''}" data-t="${t.time}" ${can?'':'disabled'}>
-    <b>${t.time}</b><span>${!can?(t.left?'Not enough room':'Full'):t.left<=3?'Only '+t.left+' left':t.left+' spots open'}</span></button>`}).join('');
+    <b>${t.time}</b><span>${!can?(t.left?'Only '+t.left+' left':'Full'):t.left<=3?'Only '+t.left+' left':t.left+' spots open'}</span></button>`}).join('')+
+    (day.times.some(t=>t.left>0&&t.left<need)?`<p class="hint" style="grid-column:1/-1">Need a few more spots than you see? Text us at <a href="sms:+16893488239">(689) 348-8239</a> and we'll do our best to fit your whole group.</p>`:'');
   el.querySelectorAll('.time').forEach(b=>b.onclick=()=>onPick(b.dataset.t));
 }
 function renderDays(){
@@ -234,30 +283,35 @@ function renderDays(){
 function renderNames(){
   const box=$('guestNames');const have=[...box.querySelectorAll('input')].map(i=>i.value);
   if(size<2){box.innerHTML='';return}
-  box.innerHTML=`<label class="l">Who's painting with you? <span class="muted">(optional, first names)</span></label>
+  box.innerHTML=`<label class="l">Who's creating with you? <span class="muted">(optional, first names)</span></label>
     <div class="row">${Array.from({length:size-1},(_,i)=>`<input placeholder="Guest ${i+2}" value="${esc(have[i]||'')}" autocapitalize="words">`).join('')}</div>`;
 }
 $('toPay').onclick=async()=>{
   $('err1').textContent='';
-  const first=$('first').value.trim(),last=$('last').value.trim(),phone=$('phone').value.trim(),email=$('email').value.trim();
+  const first=$('first').value.trim(),last=$('last').value.trim(),phone=fullPhone(),email=$('email').value.trim();
   if(!sel.date||!sel.time)return $('err1').textContent='Please pick a day and time.';
   if(!first||!last)return $('err1').textContent='Please add your first and last name.';
-  if(phone.replace(/\D/g,'').length<10)return $('err1').textContent='Please check your mobile number.';
+  if(!phone)return $('err1').textContent='Please check your mobile number. Your confirmation is texted there.';
   if(!/^\S+@\S+\.\S+$/.test(email))return $('err1').textContent='Please check your email.';
   const fee=AV.feePerGuest,h=AV.lateHours;
   $('summary').innerHTML=`<div class="sum"><span>Day</span><b>${esc(niceDate(sel.date))}</b></div>
     <div class="sum"><span>Time</span><b>${esc(sel.time)}</b></div><div class="sum"><span>Party</span><b>${size} guest${size>1?'s':''}</b></div>
-    <div class="sum"><span>Due today</span><b>$0</b></div>`;
-  $('policyText').innerHTML=`<b>Nothing is charged today.</b> You pick your project at the studio (from $50) and pay there.<br><br>
-    We save your card to hold your spot. Need to cancel or move your booking? Do it anytime up to <b>${h} hours before</b> and nothing is charged. Inside ${h} hours, or if you don't show up, it's <b>$${fee} per guest</b> ($${fee*size} for your party).`;
-  $('agreeText').textContent=`I agree to the cancellation policy and allow Abstract Orlando to charge my card $${fee} per guest if I cancel within ${h} hours or don't show up.`;
+    <div class="sum"><span>Due today</span><b>$${addonTotal()}</b></div>`;
+  const extra=addonTotal();
+  $('policyText').innerHTML=`<b>A card holds your spot.</b> ${extra?`Your sparkling wine ($${extra}) is charged now. Nothing else is charged today.`:'Nothing is charged today.'}
+    <ul class="pol"><li><b>Free changes</b> up to ${h} hours before your experience.</li>
+    <li><b>Within ${h} hours or no-show: $${fee} per guest.</b> This includes cancelling, rescheduling and changing your party size.</li>
+    <li>You'll pick your project at the studio (from $50 per guest). <a href="https://www.abstractorlando.com/#Radio-2" target="_blank" rel="noopener">See project options</a></li></ul>`;
+  $('book').textContent=extra?`Confirm & pay $${extra}`:'Confirm my reservation';
+  $('agreeText').textContent=`I understand and agree to the cancellation policy. I authorize Abstract Orlando to charge my card $${fee} per guest if I cancel or reschedule within ${h} hours of my experience, or if I don't show up.`;
   const btn=$('toPay');btn.disabled=true;btn.textContent='Holding your spot…';
   try{
-    if(booking&&booking.key!==JSON.stringify([sel,size]))booking=null;
+    if(booking&&booking.key!==JSON.stringify([sel,size,phone,addons()]))booking=null;
     if(!booking){
       const guests=[first,...[...$('guestNames').querySelectorAll('input')].map(i=>i.value.trim())];
-      const r=await call('startBooking',{date:sel.date,time:sel.time,size,name:first+' '+last,phone,email,guests,note:$('note').value,policy:true});
-      booking={id:r.bookingId,secret:r.clientSecret,key:JSON.stringify([sel,size])};
+      const r=await call('startBooking',{date:sel.date,time:sel.time,size,name:first+' '+last,phone,email,guests,note:$('note').value,addons:addons(),policy:true});
+      booking={id:r.bookingId,secret:r.clientSecret,key:JSON.stringify([sel,size,phone,addons()])};
+      startHold(Date.now()+(AV.holdMinutes||10)*60000);
       try{sessionStorage.setItem('ao_booking',booking.id)}catch(e){}
       mountCard();
       track('checkout',{size,value:size*AVG_SPEND_PER_GUEST});
@@ -292,7 +346,12 @@ async function finish(id,siId){
   let seen=false;try{seen=sessionStorage.getItem('ao_tracked')===b.id;sessionStorage.setItem('ao_tracked',b.id)}catch(e){}
   if(!seen)track('booked',{id:b.id,size:b.size,value:b.size*AVG_SPEND_PER_GUEST});
   $('flow').classList.add('hide');$('confirmed').classList.remove('hide');
-  $('heroTitle').textContent='See you soon!';$('heroSub').textContent='Your spot is saved.';$('heroPills').innerHTML='';
+  clearInterval(holdTimer);
+  $('heroTitle').textContent='We can\'t wait to see you!';$('heroSub').textContent='Your reservation is confirmed.';$('heroPills').innerHTML='';
+  const ph=b.phone||fullPhone();
+  $('cText').innerHTML=ph?`We'll text your booking details to <b>${esc(ph)}</b>. Wrong number? Text us at <a href="sms:+16893488239">(689) 348-8239</a>.`:'';
+  $('cWine').classList.toggle('hide',!/wine/.test(b.addons||''));
+  $('cWine').textContent=b.paid?'🥂 Your sparkling wine is paid for and will be chilled and waiting.':'🥂 Your sparkling wine will be chilled and waiting ($30, we\'ll collect it at the studio).';
   $('cTitle').textContent=`You're booked, ${b.name.split(' ')[0]}!`;
   $('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;$('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;
   window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
@@ -339,7 +398,7 @@ $('mSave').onclick=async()=>{
 /* ---------- start ---------- */
 async function loadAvailability(){
   try{AV=await call('availability');}catch(e){$('days').innerHTML=`<p class="closed">${esc(e.message)}</p>`;return}
-  setSize(size);if(!$('moveCard').classList.contains('hide'))renderMove();
+  setSize(size);renderAddons();if(!$('moveCard').classList.contains('hide'))renderMove();
 }
 (async()=>{
   const q=new URLSearchParams(location.search);
