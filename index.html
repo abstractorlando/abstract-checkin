@@ -97,6 +97,10 @@
   .scap{padding:0 12px 0 0}.scap input{width:74px;border:0;text-align:center;font:800 22px Poppins;min-height:48px;padding:0;background:transparent}
   .scap input:focus{outline:none}.scap:focus-within{border-color:var(--teal)}.seatl{font-size:13px;color:var(--muted);font-weight:600}
   .scap input.saving{color:var(--muted)}
+  .snote{display:block;font-size:13px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:3px 8px;margin-top:4px;font-style:normal}
+  .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
+  .cnote{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .priv{border-color:var(--purp);background:#f7f4ff;display:grid;gap:10px}.prow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
   @media (max-width:640px){.scls{grid-template-columns:1fr auto;}.sbar{grid-column:1/-1;order:3}.scount{order:4}}
   .daynav{display:flex;gap:8px;align-items:center;margin:0 0 10px}.daynav input{flex:1;min-width:0}.daynav .btn{min-width:44px;font-size:18px}
   .pk{max-height:300px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:6px 8px 10px}
@@ -604,15 +608,46 @@ function renderArrivals(){
     const act=!b.card?'':b.fee?`<div class="feeln">${/^Waived/.test(b.fee)?'Fee waived':'✓ Fee charged: '+esc(b.fee.split(' · ')[0])}</div>`
       :feeKind?`<div class="feerow"><span class="muted" style="font-size:13px">${feeKind==='late'?'Late-cancel':'No-show'} fee:</span>${fb('Charge full $'+fee,'null')}${fb('Partial…','-1')}${fb('Waive','0',' waive')}</div>`:'';
     const k=encodeURIComponent(b.key);
-    const tools=b.partyId?'':b.status==='Confirmed'
-      ?`<div class="tools"><button class="tl" onclick="staffAct('${k}','noshow')">No-show</button><button class="tl" onclick="staffAct('${k}','cancel')">Cancel</button><button class="tl" onclick="openMove('${k}')">Move</button></div><div id="mv_${k}"></div>`
-      :`<div class="tools"><button class="tl" onclick="staffAct('${k}','restore')">Undo · put back on the list</button></div>`;
+    const g=b.guest||{},gt='';
+    const hist=g.visits?` <span class="tag GV">${g.visits} visit${g.visits>1?'s':''}</span>`:'';
+    const ns=g.noShows?` <span class="tag LATE">${g.noShows} no-show${g.noShows>1?'s':''}</span>`:'';
+    const snote=b.staffNote?`<span class="snote">📝 ${esc(b.staffNote)}</span>`:'';
+    const always=`<button class="tl" onclick="editNote('${k}')">${b.staffNote?'Edit note':'Add note'}</button><button class="tl" onclick="openGuest('${k}')">Guest profile${g.hasNotes?' •':''}</button>`;
+    const tools=b.partyId?`<div class="tools">${always}</div>`:b.status==='Confirmed'
+      ?`<div class="tools"><button class="tl" onclick="staffAct('${k}','noshow')">No-show</button><button class="tl" onclick="staffAct('${k}','cancel')">Cancel</button><button class="tl" onclick="openMove('${k}')">Move</button>${always}</div><div id="mv_${k}"></div>`
+      :`<div class="tools"><button class="tl" onclick="staffAct('${k}','restore')">Undo · put back on the list</button>${always}</div>`;
     return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" ${off?'disabled':''} onclick="pick(${b.row})">
-    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${dep}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
+    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
 }
 function bookingByKey(k){return arrivals.find(b=>b.key===decodeURIComponent(k))}
+/* ---------- staff notes + guest profiles (never shown to guests) ---------- */
+async function editNote(k){
+  const b=bookingByKey(k);if(!b)return;
+  const v=prompt(`Private staff note for ${b.reservation}\n(only your team sees this)`,b.staffNote||'');if(v===null)return;
+  try{await call('setBookingNote',b.key,v);toast(v.trim()?'Note saved ✓':'Note removed');loadArrivals()}catch(e){toast('Could not save: '+(e.message||e),5000)}
+}
+let GUEST=null,GUESTB=null;
+async function openGuest(k){
+  const b=bookingByKey(k);if(!b)return;GUESTB=b;
+  try{GUEST=await call('getGuest',b.phone,b.email,b.reservation)}catch(e){toast(e.message||String(e),5000);return}
+  const g=GUEST,s=g.stats,tags=[...new Set([...g.allTags,...g.tags])];
+  const line=[s.visits?`${s.visits} visit${s.visits>1?'s':''} (${s.visitsYear} in the last year)`:'First visit',
+    s.lastVisit?'last '+niceDate(s.lastVisit):'',s.guestsBrought?s.guestsBrought+' artists in their parties':'',
+    s.noShows?s.noShows+' no-show'+(s.noShows>1?'s':''):'',s.lateCancels?s.lateCancels+' late cancel'+(s.lateCancels>1?'s':''):''].filter(Boolean).join(' · ');
+  const m=document.createElement('div');m.className='modal';m.id='guestModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px">
+    <b style="font-size:20px">${esc(b.reservation)}</b><p class="muted" style="margin:4px 0 12px">${esc(line)}</p>
+    <label class="l" for="gColors">Favorite colors</label><input id="gColors" value="${esc(g.colors||'')}" placeholder="e.g. teal, gold, white" style="margin-bottom:12px">
+    <label class="l" for="gNotes">Notes to help us take care of them (only staff see this)</label><textarea id="gNotes" style="width:100%;min-height:110px;font:500 16px Poppins;padding:12px;border:2px solid var(--line);border-radius:12px" placeholder="e.g. Loves glitter. Celebrated her daughter's birthday here. Prefers a stool to sit on.">${esc(g.notes||'')}</textarea>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" style="flex:1" onclick="$('guestModal').remove()">Close</button><button class="btn main" style="flex:1" onclick="saveGuest()">Save</button></div></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+async function saveGuest(){
+  try{await call('saveGuest',GUESTB.phone,GUESTB.email,GUESTB.reservation,{tags:[],colors:$('gColors').value,notes:$('gNotes').value});
+    $('guestModal').remove();toast('Profile saved ✓');loadArrivals()}catch(e){toast('Could not save: '+(e.message||e),5000)}
+}
 function dateTime(d,t){const [y,m,dd]=d.split('-').map(Number);let [hh,mm]=t.split(/[: ]/);hh=+hh%12+(/PM/.test(t)?12:0);return new Date(y,m-1,dd,hh,+mm).getTime()}
 async function staffAct(k,action){
   const b=bookingByKey(k);if(!b)return;const web=b.source==='Website'&&b.email;let email=false;
@@ -659,7 +694,8 @@ function pick(row){
   if(b.partyId){openParty(b.partyId,b.date);return}
   if(b.source==='FareHarbor')toast(b.deposit?`FareHarbor booking · $${money(b.deposit)} deposit already paid`:'FareHarbor booking',4000);
   picked=b;$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
-  if(timesFor($('dt').value).includes(b.time))$('tm').value=b.time;
+  if(![...$('tm').options].some(o=>o.value===b.time)){const o=document.createElement('option');o.textContent=b.time;$('tm').appendChild(o)}
+  $('tm').value=b.time;
   const names=b.guests?b.guests.split(/,\s*/):[b.reservation.split(' ')[0]];
   $('guests').innerHTML='';for(let i=0;i<b.size;i++)addGuest(names[i]||'');
   renderArrivals();$('formTop').scrollIntoView({behavior:'smooth'});
@@ -758,12 +794,44 @@ async function loadSched(){
   $('schedBox').innerHTML='<p class="muted">Loading…</p>';
   try{SCH=await call('getSchedule',$('schedDay').value);renderSched()}catch(e){$('schedBox').innerHTML=`<p class="muted">Could not load: ${esc(e.message||e)}</p>`}
 }
+function privHtml(d){
+  const list=(d.privates||[]).map(p=>`<div class="card priv">
+      <div class="prow"><div class="stime"><b>🔒 ${esc(p.time)}</b><span class="muted">Private${p.name?' · '+esc(p.name):''} · ${p.booked} booked</span></div>
+        <div class="scap"><input type="number" min="0" inputmode="numeric" value="${p.cap}" data-t="${esc(p.time)}" aria-label="Seats for private ${esc(p.time)}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div></div>
+      <div class="prow"><button class="btn ghost small" onclick="copyLink('${esc(p.link)}')">Copy link</button>
+        <button class="tl" onclick="if(confirm('Remove this private class? Bookings already made stay.'))privCall('removePrivate','${p.code}')">Remove</button></div>
+    </div>`).join('');
+  const times=timesFor(d.date);
+  return list+`<div class="card"><details id="privForm"><summary class="btn ghost small" style="display:inline-flex">+ Private class (link only)</summary>
+    <p class="muted" style="margin:10px 0">Only people with the link can see and book it. If you pick a regular time, it disappears from the public booking page.</p>
+    <div class="mv"><select id="pvTime">${times.map(t=>`<option>${t}</option>`).join('')}<option value="other">Other time…</option></select>
+      <input id="pvOther" class="hide" placeholder="e.g. 7:00 PM"><input id="pvSeats" type="number" min="1" inputmode="numeric" value="${d.defaultCap}" style="max-width:110px" aria-label="Seats">
+      <input id="pvName" placeholder="Group name (optional)"></div>
+    <button class="btn main" style="margin-top:8px" onclick="makePrivate()">Create private class + copy link</button></details></div>`;
+}
+function dayNote(d){const n=(d.notes||{})['*'];return `<div style="margin-top:6px">${n?`<span class="snote">📝 ${esc(n)}</span> `:''}<button class="tl" style="padding-left:0" onclick="classNote('*')">${n?'Edit day note':'Add day note'}</button></div>`}
+async function classNote(time){
+  const cur=(SCH.notes||{})[time]||'';
+  const v=prompt(time==='*'?`Note for the whole day (only staff see it), e.g. Thanksgiving`:`Note for ${time} (only staff see it)`,cur);if(v===null)return;
+  try{SCH=await call('setClassNote',SCH.date,time,v);renderSched()}catch(e){toast(e.message||String(e),5000)}
+}
+async function privCall(fn,...a){try{SCH=await call(fn,...a,SCH.date);renderSched()}catch(e){toast(e.message||String(e),5000)}}
+async function makePrivate(){
+  const t=$('pvTime').value==='other'?$('pvOther').value:$('pvTime').value;
+  try{SCH=await call('createPrivate',SCH.date,t,$('pvSeats').value,$('pvName').value);renderSched();
+    const p=(SCH.privates||[]).find(x=>x.time.toUpperCase()===String(t).trim().toUpperCase().replace(/^(\d{1,2})\s*(AM|PM)$/,'$1:00 $2'))||(SCH.privates||[]).slice(-1)[0];
+    if(p)copyLink(p.link)}catch(e){toast(e.message||String(e),5000)}
+}
+function copyLink(u){(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Link copied ✓ Paste it in a text or email',4000),()=>prompt('Copy this link:',u))}
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='pvTime')$('pvOther').classList.toggle('hide',e.target.value!=='other')});
 function renderSched(){
   const d=SCH,title=niceDate(d.date);
   if(!d.dayOpen){$('schedBox').innerHTML=`<div class="card sday closed"><div><b style="font-size:20px">${esc(title)}</b><br>
-    <span class="muted">${d.regular?'Closed for booking':'Not a regular class day'}</span></div>
-    <button class="btn main" style="width:auto;padding:0 22px" onclick="setCap('*',${d.regular?'null':d.defaultCap})">Open this day</button></div>`;return}
-  $('schedBox').innerHTML=`<div class="card sday"><div><b style="font-size:20px">${esc(title)}</b><br><span class="muted">Online booking is open</span></div>
+    <span class="muted">${d.regular?'Closed for booking':'Not a regular class day'}</span>${dayNote(d)}</div>
+    <button class="btn main" style="width:auto;padding:0 22px" onclick="setCap('*',${d.regular?'null':d.defaultCap})">Open this day</button></div>`+privHtml(d);return}
+  const nt=d.notes||{};
+  $('schedBox').innerHTML=`<div class="card sday"><div><b style="font-size:20px">${esc(title)}</b><br><span class="muted">Online booking is open</span>${dayNote(d)}</div>
       <button class="btn ghost" style="border-color:#c40056;color:#c40056" onclick="if(confirm('Close ALL classes on ${esc(title)} for new bookings?'))setCap('*',0)">Close whole day</button></div>`+
     d.classes.map(c=>{const closed=c.cap===0,full=!closed&&c.booked>=c.cap,pct=c.cap?Math.min(100,c.booked/c.cap*100):100;
       return `<div class="card scls${closed?' off':''}">
@@ -774,7 +842,8 @@ function renderSched(){
           onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div>
         <button class="btn ghost small" onclick="setCap('${c.time}',${closed?d.defaultCap:0})">${closed?'Open':'Close'}</button>
         ${c.custom?`<button class="tl" onclick="setCap('${c.time}',null)">Reset to ${d.defaultCap}</button>`:''}
-      </div>`}).join('');
+        <div class="cnote">${nt[c.time]?`<span class="snote">📝 ${esc(nt[c.time])}</span>`:''}<button class="tl" onclick="classNote('${c.time}')">${nt[c.time]?'Edit note':'Add note'}</button></div>
+      </div>`}).join('')+privHtml(d);
 }
 function capInput(el){
   const n=parseInt(el.value,10),c=SCH.classes.find(x=>x.time===el.dataset.t);
