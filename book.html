@@ -346,10 +346,28 @@ $('book').onclick=async()=>{
       confirmParams:{return_url:location.origin+location.pathname+'?done='+booking.id}});
     if(error)throw new Error(error.message);
     await finish(booking.id,setupIntent.id);
-  }catch(e){$('err2').textContent=e.message;btn.disabled=false;btn.textContent='Book my spot · $0 today'}
+  }catch(e){
+    btn.disabled=false;btn.textContent=addonTotal()?`Confirm & pay $${addonTotal()}`:'Confirm my reservation';
+    if(/ADDON_DECLINED/.test(e.message))return showDecline();
+    if(/PREPAID/.test(e.message)){startHold(Date.now()+(AV.holdMinutes||10)*60000);
+      $('err2').textContent='This card can\'t be used to hold a reservation. Please try a different credit or debit card.';
+      try{const r=await call('newCardFor',booking.id);booking.secret=r.clientSecret;mountCard()}catch(x){}return}
+    $('err2').textContent=e.message}
 };
-async function finish(id,siId){
-  const b=await call('finishBooking',id,siId);
+/* card declined for the wine: try another card, or book without it */
+function showDecline(){
+  startHold(Date.now()+(AV.holdMinutes||10)*60000);
+  $('err2').innerHTML=`Your card was declined for the $${addonTotal()} sparkling wine, so your reservation isn't confirmed yet.
+    <span style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="ghost" style="flex:1;margin:0" id="dNew">Use a different card</button>
+    <button type="button" class="ghost" style="flex:1;margin:0" id="dSkip">Book without the wine</button></span>`;
+  $('dNew').onclick=async()=>{try{const r=await call('newCardFor',booking.id);booking.secret=r.clientSecret;mountCard();$('err2').textContent='Enter a different card, then tap Confirm.'}catch(e){$('err2').textContent=e.message}};
+  $('dSkip').onclick=async()=>{$('err2').textContent='Booking…';
+    try{$('addons').querySelectorAll('input').forEach(i=>i.checked=false);await finish(booking.id,lastSI,{skipAddons:true})}catch(e){$('err2').textContent=e.message}};
+}
+let lastSI='';
+async function finish(id,siId,opts){
+  lastSI=siId;
+  const b=await call('finishBooking',id,siId,opts||{});
   try{sessionStorage.removeItem('ao_booking')}catch(e){}
   let seen=false;try{seen=sessionStorage.getItem('ao_tracked')===b.id;sessionStorage.setItem('ao_tracked',b.id)}catch(e){}
   if(!seen)track('booked',{id:b.id,size:b.size,value:b.size*AVG_SPEND_PER_GUEST});
