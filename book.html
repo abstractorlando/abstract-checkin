@@ -250,7 +250,7 @@ function startHold(until){
 
 /* ---------- step 1: party size ---------- */
 /** Spots left at the picked time (0 = no time picked yet). */
-function spotsLeft(){const d=AV&&AV.days.find(x=>x.date===sel.date),t=d&&d.times.find(x=>x.time===sel.time);return t?Math.min(t.left,AV.maxParty):0}
+function spotsLeft(){const d=AV&&AV.days.find(x=>x.date===sel.date),t=d&&d.times.find(x=>x.time===sel.time);return t?t.left:0}
 function setSize(n){
   const max=spotsLeft()||1;
   size=Math.max(1,Math.min(max,n));$('size').textContent=size;$('sizeNote').textContent=size>1?'artists':'artist';
@@ -260,7 +260,7 @@ function setSize(n){
   $('bigParty').innerHTML=`Have a bigger group? Text us at ${txt}.`;
   renderNames();
 }
-$('minus').onclick=()=>setSize(size-1);$('plus').onclick=()=>setSize(size+1);
+$('minus').onclick=()=>{backToDetails();setSize(size-1)};$('plus').onclick=()=>{backToDetails();setSize(size+1)};
 
 /* ---------- step 2 & 3: day and time ---------- */
 function dayButtons(el,days,current,onPick,need){
@@ -277,12 +277,13 @@ function timeButtons(el,day,current,onPick,need){
     (day.times.some(t=>t.left>0&&t.left<need)?`<p class="hint" style="grid-column:1/-1">Need a few more spots than you see? Text us at <a href="sms:+16893488239">(689) 348-8239</a> and we'll do our best to fit your whole group.</p>`:'');
   el.querySelectorAll('.time').forEach(b=>b.onclick=()=>onPick(b.dataset.t));
 }
+function backToDetails(){if(!$('payCard').classList.contains('hide')){clearInterval(holdTimer);booking=null;$('payCard').classList.add('hide');$('detailsCard').classList.remove('hide')}}
 function renderDays(){
   if(!AV)return;
-  dayButtons($('days'),AV.days,sel.date,d=>{sel.date=d;sel.time=null;renderDays();$('timeCard').scrollIntoView({behavior:'smooth',block:'start'})},1);
+  dayButtons($('days'),AV.days,sel.date,d=>{backToDetails();sel.date=d;sel.time=null;renderDays();$('timeCard').scrollIntoView({behavior:'smooth',block:'start'})},1);
   const d2=AV.days.find(d=>d.date===sel.date);
   const tt=d2&&d2.times.find(t=>t.time===sel.time);if(sel.time&&(!tt||tt.left<1))sel.time=null;
-  timeButtons($('times'),d2,sel.time,t=>{sel.time=t;renderDays();$('sizeCard').scrollIntoView({behavior:'smooth',block:'start'})},1);
+  timeButtons($('times'),d2,sel.time,t=>{backToDetails();sel.time=t;renderDays();$('sizeCard').scrollIntoView({behavior:'smooth',block:'start'})},1);
   setSize(size);
 }
 
@@ -316,7 +317,7 @@ $('toPay').onclick=async()=>{
     if(booking&&booking.key!==JSON.stringify([sel,size,phone,addons()]))booking=null;
     if(!booking){
       const guests=[first,...[...$('guestNames').querySelectorAll('input')].map(i=>i.value.trim())];
-      const r=await call('startBooking',{date:sel.date,time:sel.time,size,name:first+' '+last,phone,email,guests,note:$('note').value,addons:addons(),policy:true});
+      const r=await call('startBooking',{date:sel.date,time:sel.time,size,name:first+' '+last,phone,email,guests,note:$('note').value,addons:addons(),code:(AV.private&&AV.private.code)||'',policy:true});
       booking={id:r.bookingId,secret:r.clientSecret,key:JSON.stringify([sel,size,phone,addons()])};
       startHold(Date.now()+(AV.holdMinutes||10)*60000);
       try{sessionStorage.setItem('ao_booking',booking.id)}catch(e){}
@@ -404,7 +405,11 @@ $('mSave').onclick=async()=>{
 
 /* ---------- start ---------- */
 async function loadAvailability(){
-  try{AV=await call('availability');}catch(e){$('days').innerHTML=`<p class="closed">${esc(e.message)}</p>`;return}
+  const pcode=new URLSearchParams(location.search).get('p')||'';
+  try{AV=pcode?await call('availability',pcode):await call('availability');}catch(e){$('days').innerHTML=`<p class="closed">${esc(e.message)}</p>`;return}
+  if(AV.private){$('heroTitle').textContent=AV.private.name?`Book your private experience`:'Book your private experience';
+    $('heroSub').textContent=AV.private.name?`This class is reserved for ${AV.private.name}.`:'This class is reserved for your group.';
+    if(!sel.date&&AV.days[0]){sel.date=AV.days[0].date;sel.time=AV.days[0].times[0].time}}
   renderDays();renderAddons();if(!$('moveCard').classList.contains('hide'))renderMove();
 }
 (async()=>{
