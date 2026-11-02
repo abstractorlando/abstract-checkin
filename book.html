@@ -71,6 +71,7 @@
   .addon input{width:22px;height:22px;flex:none;margin-top:2px}.addon:has(input:checked){border-color:var(--mag);background:#fff0f8}
   .addon .price{background:#e8f6ec;color:#0b7a3e;font-weight:700;border-radius:8px;padding:1px 8px;margin-right:6px}
   .addon small{display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.4}
+  #sizeCard.off .stepper{opacity:.35;pointer-events:none}
   .pol{margin:10px 0 0;padding-left:18px}.pol li{margin:4px 0}
   .timer{background:#fff0f8;color:#b8006f;border-radius:12px;padding:10px 14px;font-weight:700;font-size:15px;margin:0 0 12px;text-align:center}
   .timer.out{background:#fff5e6;color:#8a5a00}
@@ -89,24 +90,24 @@
   <!-- ============ BOOKING FLOW ============ -->
   <section id="flow">
     <div class="card">
-      <div class="step"><div class="num">1</div><h2>How many artists?</h2></div>
+      <div class="step"><div class="num">1</div><h2>Pick a day</h2></div>
+      <div class="days" id="days"><p class="muted">Loading open days…</p></div>
+    </div>
+
+    <div class="card" id="timeCard">
+      <div class="step"><div class="num">2</div><h2>Pick a time</h2></div>
+      <div class="times" id="times"><p class="muted">Pick a day first.</p></div>
+    </div>
+
+    <div class="card" id="sizeCard">
+      <div class="step"><div class="num">3</div><h2>How many artists?</h2></div>
       <div class="stepper">
         <button type="button" id="minus" aria-label="Fewer guests">−</button>
         <div class="v" id="size">2</div>
         <button type="button" id="plus" aria-label="More guests">+</button>
         <div class="muted" id="sizeNote">artists</div>
       </div>
-      <p class="muted" id="bigParty" style="margin:12px 0 0">Bigger group? Text us at <a href="sms:+16893488239">(689) 348-8239</a>.</p>
-    </div>
-
-    <div class="card">
-      <div class="step"><div class="num">2</div><h2>Pick a day</h2></div>
-      <div class="days" id="days"><p class="muted">Loading open days…</p></div>
-    </div>
-
-    <div class="card" id="timeCard">
-      <div class="step"><div class="num">3</div><h2>Pick a time</h2></div>
-      <div class="times" id="times"><p class="muted">Pick a day first.</p></div>
+      <p class="muted" id="bigParty" style="margin:12px 0 0"></p>
     </div>
 
     <div class="card" id="detailsCard">
@@ -248,9 +249,16 @@ function startHold(until){
 }
 
 /* ---------- step 1: party size ---------- */
+/** Spots left at the picked time (0 = no time picked yet). */
+function spotsLeft(){const d=AV&&AV.days.find(x=>x.date===sel.date),t=d&&d.times.find(x=>x.time===sel.time);return t?Math.min(t.left,AV.maxParty):0}
 function setSize(n){
-  size=Math.max(1,Math.min(AV?AV.maxParty:8,n));$('size').textContent=size;$('sizeNote').textContent=size>1?'artists':'artist';
-  $('minus').disabled=size<=1;$('plus').disabled=AV&&size>=AV.maxParty;renderDays();renderNames();
+  const max=spotsLeft()||1;
+  size=Math.max(1,Math.min(max,n));$('size').textContent=size;$('sizeNote').textContent=size>1?'artists':'artist';
+  $('minus').disabled=size<=1;$('plus').disabled=size>=max;
+  $('sizeCard').classList.toggle('off',!spotsLeft());
+  const txt='<a href="sms:+16893488239">(689) 348-8239</a>';
+  $('bigParty').innerHTML=`Have a bigger group? Text us at ${txt}.`;
+  renderNames();
 }
 $('minus').onclick=()=>setSize(size-1);$('plus').onclick=()=>setSize(size+1);
 
@@ -271,12 +279,11 @@ function timeButtons(el,day,current,onPick,need){
 }
 function renderDays(){
   if(!AV)return;
-  const day=AV.days.find(d=>d.date===sel.date);
-  if(day&&!day.times.some(t=>t.left>=size)){sel.date=null;sel.time=null}
-  dayButtons($('days'),AV.days,sel.date,d=>{sel.date=d;sel.time=null;renderDays();$('timeCard').scrollIntoView({behavior:'smooth',block:'start'})},size);
+  dayButtons($('days'),AV.days,sel.date,d=>{sel.date=d;sel.time=null;renderDays();$('timeCard').scrollIntoView({behavior:'smooth',block:'start'})},1);
   const d2=AV.days.find(d=>d.date===sel.date);
-  const tt=d2&&d2.times.find(t=>t.time===sel.time);if(sel.time&&(!tt||tt.left<size))sel.time=null;
-  timeButtons($('times'),d2,sel.time,t=>{sel.time=t;renderDays();$('detailsCard').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('first').focus(),400)},size);
+  const tt=d2&&d2.times.find(t=>t.time===sel.time);if(sel.time&&(!tt||tt.left<1))sel.time=null;
+  timeButtons($('times'),d2,sel.time,t=>{sel.time=t;renderDays();$('sizeCard').scrollIntoView({behavior:'smooth',block:'start'})},1);
+  setSize(size);
 }
 
 /* ---------- step 4: details ---------- */
@@ -398,7 +405,7 @@ $('mSave').onclick=async()=>{
 /* ---------- start ---------- */
 async function loadAvailability(){
   try{AV=await call('availability');}catch(e){$('days').innerHTML=`<p class="closed">${esc(e.message)}</p>`;return}
-  setSize(size);renderAddons();if(!$('moveCard').classList.contains('hide'))renderMove();
+  renderDays();renderAddons();if(!$('moveCard').classList.contains('hide'))renderMove();
 }
 (async()=>{
   const q=new URLSearchParams(location.search);
