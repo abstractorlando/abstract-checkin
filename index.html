@@ -222,6 +222,7 @@
       <div class="slots" id="slotChips"></div>
       <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
     </div>
+    <div id="ciForm" class="hide">
     <div class="card" id="formTop">
       <div id="pickBar" class="pickbar hide"></div>
       <label class="l" for="res">Reservation name</label>
@@ -243,6 +244,8 @@
     </div>
     <button id="saveBtn" class="btn main" onclick="saveAndPrint()">Check in &amp; print labels</button>
     <p class="muted" style="text-align:center">Saves to the Google Sheet, then opens the print dialog.</p>
+    </div>
+    <p class="muted" id="ciHint" style="text-align:center;font-size:14px">Tap a booking to check it in. Walk-in? Tap <b>+ Add booking</b>.</p>
   </section>
 
   <!-- TODAY -->
@@ -412,7 +415,8 @@ function addGuest(name='',type='FT',projects=1){
 }
 function addMany(){for(let i=0;i<4;i++)addGuest()}
 function renum(){[...$('guests').children].forEach((g,i)=>g.querySelector('.n').textContent=i+1)}
-function resetForm(){picked=null;if($('pickBar'))$('pickBar').classList.add('hide');['res','ph','em'].forEach(k=>$(k).value='');$('guests').innerHTML='';addGuest();$('tm').value=nearestTime();$('res').focus()}
+function showForm(on){$('ciForm').classList.toggle('hide',!on);$('ciHint').classList.toggle('hide',on)}
+function resetForm(){picked=null;showForm(false);if($('pickBar'))$('pickBar').classList.add('hide');['res','ph','em'].forEach(k=>$(k).value='');$('guests').innerHTML='';addGuest();$('tm').value=nearestTime()}
 
 async function saveAndPrint(){
   const reservation=$('res').value.trim();
@@ -638,13 +642,16 @@ function shiftDay(n){SLOT='';const [y,m,dd]=$('arrDay').value.split('-').map(Num
 let SLOT='';
 /* ---------- staff: add a booking ---------- */
 function openAddBooking(date,time){
-  date=date||$('dt').value||today();
+  date=date||$('dt').value||today();AB_G=null;
   const ts=timesFor(date),m=document.createElement('div');m.className='modal';m.id='addModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:460px">
     <b style="font-size:20px">Add a booking</b><p class="muted" id="abSub" style="margin:4px 0 12px"></p>
     <div class="row"><div><label class="l">Day</label><input type="date" id="abDate" value="${date}" onchange="fillTimes($('abTime'),this.value,$('abTime').value);abMode()"></div>
       <div><label class="l">Time</label><select id="abTime">${ts.map(t=>`<option${t===time?' selected':''}>${t}</option>`).join('')}</select></div></div>
     <label class="chk" id="abWalkRow" style="margin-top:12px"><input type="checkbox" id="abWalk" checked onchange="abMode()"> They're here now (walk-in, no card needed)</label>
+    <label class="l" style="margin-top:12px">Been here before?</label>
+    <input id="abFind" type="search" placeholder="Search past guests: name, phone or email" autocomplete="off" oninput="abSearch()">
+    <div id="abFound"></div>
     <label class="l" style="margin-top:10px">Name</label><input id="abName" placeholder="First and last name" autocapitalize="words">
     <label class="l" style="margin-top:10px">Mobile</label>
     <div style="display:flex;gap:8px"><select id="abCC" aria-label="Country code" style="width:auto;flex:none;padding:0 8px" onchange="$('abPhone').placeholder=CC[this.value][2]==='+1'?'(407) 555-1234':'Mobile number'">${CC.map(([c,f,d],i)=>`<option value="${i}">${f} ${d}</option>`).join('')}</select>
@@ -653,17 +660,37 @@ function openAddBooking(date,time){
     <label class="l" style="margin-top:10px">Artists</label><input id="abSize" type="number" min="1" value="2" inputmode="numeric" style="max-width:140px">
     <label class="l" style="margin-top:10px">Email</label><input id="abEmail" type="email" autocapitalize="off" placeholder="name@email.com">
     <label class="l" style="margin-top:10px">Note <span class="muted">(optional, only staff see this)</span></label><input id="abNote" placeholder="e.g. Booked their next visit at checkout">
+    <div id="abCardRow" class="hide" style="margin-top:12px"></div>
     <label class="chk" id="abNotifyRow" style="margin-top:12px"><input type="checkbox" id="abNotify" checked> Text them a confirmation</label>
     <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('addModal').remove()">Cancel</button>
       <button class="btn main" style="flex:1" id="abSave" onclick="saveAddBooking()">Add booking</button></div></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);abMode();setTimeout(()=>$('abName').focus(),50);
 }
 /* walk-in today = no card; booking ahead = guest gets a link to save a card (spot held 15 minutes) */
+let AB_G=null,abT;
+function abSearch(){clearTimeout(abT);const q=$('abFind').value.trim();if(q.length<2){$('abFound').innerHTML='';return}
+  $('abFound').innerHTML='<p class="muted" style="font-size:14px;margin:6px 0">Searching…</p>';
+  abT=setTimeout(async()=>{let L;try{L=await call('findGuests',q)}catch(e){$('abFound').innerHTML=`<p class="muted">${esc(e.message||e)}</p>`;return}
+    if($('abFind').value.trim()!==q)return;window.AB_L=L;
+    $('abFound').innerHTML=L.length?L.map((g,i)=>`<button type="button" class="ev" style="padding:8px 4px" onclick="abPick(${i})"><i>👤</i><span><b>${esc(g.name)}</b>${g.owes?' <span class="tag LATE">OWES $'+g.owes+'</span>':''}<small>${esc(fmtPhone(g.phone))} · ${esc(g.email)}${g.visits?' · '+g.visits+' visit'+(g.visits>1?'s':''):''}${g.cards.length?' · 💳 card on file':''}</small></span></button>`).join('')
+      :'<p class="muted" style="font-size:14px;margin:6px 0">No past guest found. Fill in their details below.</p>'},350)}
+function abPick(i){const g=window.AB_L[i];AB_G=g;$('abFind').value='';$('abFound').innerHTML='';
+  $('abName').value=g.name;$('abEmail').value=g.email;
+  const intl=/^\+/.test(g.phone)&&!/^\+1/.test(g.phone);$('abCC').value='0';$('abPhone').value=intl?g.phone:fmtPhone(g.phone);
+  if(g.owes)toast(`${g.name} still owes $${g.owes} from a past no-show or late cancel.`,6000);abMode()}
 function abMode(){
   const isToday=$('abDate').value===today();$('abWalkRow').classList.toggle('hide',!isToday);
-  const walk=isToday&&$('abWalk').checked;$('abNotifyRow').classList.toggle('hide',!walk);
+  const walk=isToday&&$('abWalk').checked,cards=(!walk&&AB_G&&AB_G.cards)||[];
+  $('abCardRow').classList.toggle('hide',!cards.length);
+  if(cards.length&&$('abCardRow').dataset.k!==AB_G.key){$('abCardRow').dataset.k=AB_G.key;
+    $('abCardRow').innerHTML=`<label class="l">Card to hold their spot</label>`+cards.map((c,i)=>`<label class="chk" style="margin:6px 0"><input type="radio" name="abCard" value="${c.pm}"${i?'':' checked'} onchange="abMode()"> 💳 ${esc(c.label)} (on file)</label>`).join('')+
+      `<label class="chk" style="margin:6px 0"><input type="radio" name="abCard" value="" onchange="abMode()"> Send them a link to add a new card</label>
+      <p class="muted" style="font-size:13px;margin:4px 0 0">Let them know the same cancellation policy applies ($${FEE_PER_GUEST} per guest within 24 hours or no-show).</p>`}
+  const pm=cards.length?(document.querySelector('input[name=abCard]:checked')||{}).value||'':'';
+  $('abNotifyRow').classList.toggle('hide',!(walk||pm));
   $('abSub').textContent=walk?'Walk-in for today. No card needed. Next you\'ll add their names and print stickers.':'We\'ll send them a secure link to save a card (nothing is charged). Their spot is held for 15 minutes, so ask them to do it right away.';
-  $('abSave').textContent=walk?'Add & check in':'Hold spot & send card link';
+  if(pm)$('abSub').textContent='Returning guest. Their card on file holds the spot, so they\'re confirmed right away.';
+  $('abSave').textContent=walk?'Add & check in':pm?'Book with card on file':'Hold spot & send card link';
 }
 /* country codes: same list as the booking page */
 const CC=[['US','🇺🇸','+1'],['CA','🇨🇦','+1'],['PR','🇵🇷','+1'],['GB','🇬🇧','+44'],['MX','🇲🇽','+52'],['BR','🇧🇷','+55'],['CO','🇨🇴','+57'],
@@ -676,15 +703,20 @@ function abPhone(){const raw=$('abPhone').value.trim(),d=raw.replace(/\D/g,''),c
 async function saveAddBooking(force){
   const walk=$('abDate').value===today()&&$('abWalk').checked;
   const d={date:$('abDate').value,time:$('abTime').value,name:$('abName').value.trim(),phone:abPhone(),email:$('abEmail').value.trim(),
-    size:$('abSize').value,staffNote:$('abNote').value,walkIn:walk,notify:walk&&$('abNotify').checked,force:!!force};
+    size:$('abSize').value,staffNote:$('abNote').value,walkIn:walk,force:!!force};
+  d.pm=!walk&&AB_G&&document.querySelector('input[name=abCard]:checked')?document.querySelector('input[name=abCard]:checked').value:'';
+  d.notify=(walk||!!d.pm)&&$('abNotify').checked;
   if(d.name.split(/\s+/).length<2)return toast('Add their first and last name');
   if(!d.phone)return toast('Check their mobile number');
   if(!/^\S+@\S+\.\S+$/.test(d.email))return toast('Add their email');
   const btn=$('abSave'),label=btn.textContent;btn.disabled=true;btn.textContent='Adding…';
   try{const r=await call('staffBook',d);
+    if(r.owes){btn.disabled=false;btn.textContent=label;
+      if(confirm(`${titleCase(d.name)} still owes $${r.owes} from a past no-show or late cancel.\n\nBook them anyway?`))return saveAddBooking(true);return}
     if(r.needsForce){btn.disabled=false;btn.textContent=label;
       if(confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for ${d.size}. Add them anyway?`))return saveAddBooking(true);return}
     $('addModal').remove();setArrDay(d.date);if(SVIEW==='week'&&!$('vSched').classList.contains('hide'))loadSched();
+    if(r.onFile){toast(`Booked ${titleCase(d.name)} · ${niceDate(d.date)} ${d.time} with their card on file ✓`,5000);return}
     if(!r.needsCard){
       // walk-in: go straight to check-in with their party filled in
       show('new');$('bkFilter').value='';SR=[];SLOT='';
@@ -961,7 +993,7 @@ function pick(row){
   if(b.date!==$('dt').value){$('dt').value=b.date;fillTimes($('tm'),b.date,b.time)}
   if(b.partyId){openParty(b.partyId,b.date);return}
   if(b.source==='FareHarbor')toast(b.deposit?`FareHarbor booking · $${money(b.deposit)} deposit already paid`:'FareHarbor booking',4000);
-  picked=b;$('pickBar').innerHTML=`<span>Checking in ${esc(b.reservation)} · ${esc(b.time)}</span><button class="tl" onclick="stopPick()">Not now ✕</button>`;$('pickBar').classList.remove('hide');$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
+  showForm(true);picked=b;$('pickBar').innerHTML=`<span>Checking in ${esc(b.reservation)} · ${esc(b.time)}</span><button class="tl" onclick="stopPick()">Not now ✕</button>`;$('pickBar').classList.remove('hide');$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
   if(![...$('tm').options].some(o=>o.value===b.time)){const o=document.createElement('option');o.textContent=b.time;$('tm').appendChild(o)}
   $('tm').value=b.time;
   const names=b.guests?b.guests.split(/,\s*/):[b.reservation.split(' ')[0]];
