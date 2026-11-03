@@ -649,8 +649,8 @@ function openAddBooking(date,time){
     <div class="row"><div><label class="l">Day</label><input type="date" id="abDate" value="${date}" onchange="fillTimes($('abTime'),this.value,$('abTime').value);abMode()"></div>
       <div><label class="l">Time</label><select id="abTime">${ts.map(t=>`<option${t===time?' selected':''}>${t}</option>`).join('')}</select></div></div>
     <label class="chk" id="abWalkRow" style="margin-top:12px"><input type="checkbox" id="abWalk" checked onchange="abMode()"> They're here now (walk-in, no card needed)</label>
-    <label class="l" style="margin-top:12px">Been here before?</label>
-    <input id="abFind" type="search" placeholder="Search past guests: name, phone or email" autocomplete="off" oninput="abSearch()">
+    <label class="l" style="margin-top:12px">Returning guest? <span class="muted">(optional)</span></label>
+    <input id="abFind" type="search" placeholder="Find them by name, phone or email" autocomplete="off" oninput="abSearch()">
     <div id="abFound"></div>
     <label class="l" style="margin-top:10px">Name</label><input id="abName" placeholder="First and last name" autocapitalize="words">
     <label class="l" style="margin-top:10px">Mobile</label>
