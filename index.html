@@ -646,8 +646,11 @@ function openAddBooking(date,time){
       <div><label class="l">Time</label><select id="abTime">${ts.map(t=>`<option${t===time?' selected':''}>${t}</option>`).join('')}</select></div></div>
     <label class="chk" id="abWalkRow" style="margin-top:12px"><input type="checkbox" id="abWalk" checked onchange="abMode()"> They're here now (walk-in, no card needed)</label>
     <label class="l" style="margin-top:10px">Name</label><input id="abName" placeholder="First and last name" autocapitalize="words">
-    <div class="row" style="margin-top:10px"><div><label class="l">Mobile</label><input id="abPhone" type="tel" placeholder="(407) 555-1234"></div>
-      <div><label class="l">Artists</label><input id="abSize" type="number" min="1" value="2" inputmode="numeric"></div></div>
+    <label class="l" style="margin-top:10px">Mobile</label>
+    <div style="display:flex;gap:8px"><select id="abCC" aria-label="Country code" style="width:auto;flex:none;padding:0 8px" onchange="$('abPhone').placeholder=CC[this.value][2]==='+1'?'(407) 555-1234':'Mobile number'">${CC.map(([c,f,d],i)=>`<option value="${i}">${f} ${d}</option>`).join('')}</select>
+      <input id="abPhone" type="tel" placeholder="(407) 555-1234" style="flex:1"></div>
+    <p class="muted" style="font-size:13px;margin:4px 0 0">Double-check the number. Their texts go here.</p>
+    <label class="l" style="margin-top:10px">Artists</label><input id="abSize" type="number" min="1" value="2" inputmode="numeric" style="max-width:140px">
     <label class="l" style="margin-top:10px">Email</label><input id="abEmail" type="email" autocapitalize="off" placeholder="name@email.com">
     <label class="l" style="margin-top:10px">Note <span class="muted">(optional, only staff see this)</span></label><input id="abNote" placeholder="e.g. Booked their next visit at checkout">
     <label class="chk" id="abNotifyRow" style="margin-top:12px"><input type="checkbox" id="abNotify" checked> Text them a confirmation</label>
@@ -659,22 +662,35 @@ function openAddBooking(date,time){
 function abMode(){
   const isToday=$('abDate').value===today();$('abWalkRow').classList.toggle('hide',!isToday);
   const walk=isToday&&$('abWalk').checked;$('abNotifyRow').classList.toggle('hide',!walk);
-  $('abSub').textContent=walk?'Walk-in for today. No card needed.':'We\'ll send them a secure link to save a card (nothing is charged). Their spot is held for 15 minutes, so ask them to do it right away.';
-  $('abSave').textContent=walk?'Add booking':'Hold spot & send card link';
+  $('abSub').textContent=walk?'Walk-in for today. No card needed. Next you\'ll add their names and print stickers.':'We\'ll send them a secure link to save a card (nothing is charged). Their spot is held for 15 minutes, so ask them to do it right away.';
+  $('abSave').textContent=walk?'Add & check in':'Hold spot & send card link';
 }
+/* country codes: same list as the booking page */
+const CC=[['US','🇺🇸','+1'],['CA','🇨🇦','+1'],['PR','🇵🇷','+1'],['GB','🇬🇧','+44'],['MX','🇲🇽','+52'],['BR','🇧🇷','+55'],['CO','🇨🇴','+57'],
+  ['AR','🇦🇷','+54'],['DE','🇩🇪','+49'],['FR','🇫🇷','+33'],['ES','🇪🇸','+34'],['IT','🇮🇹','+39'],['NL','🇳🇱','+31'],['IE','🇮🇪','+353'],['AU','🇦🇺','+61'],['IN','🇮🇳','+91']];
+/** US/Canada "(407) 555-1234", everyone else "+44 7700900123"; '' if it doesn't look right */
+function abPhone(){const raw=$('abPhone').value.trim(),d=raw.replace(/\D/g,''),code=CC[$('abCC').value][2];
+  if(raw.startsWith('+'))return d.length>=8&&d.length<=15?'+'+d:'';
+  if(code==='+1'){const n=d.replace(/^1(?=\d{10}$)/,'');return n.length===10?`(${n.slice(0,3)}) ${n.slice(3,6)}-${n.slice(6)}`:''}
+  return d.length>=6?code+' '+d.replace(/^0/,''):''}
 async function saveAddBooking(force){
   const walk=$('abDate').value===today()&&$('abWalk').checked;
-  const d={date:$('abDate').value,time:$('abTime').value,name:$('abName').value.trim(),phone:$('abPhone').value.trim(),email:$('abEmail').value.trim(),
+  const d={date:$('abDate').value,time:$('abTime').value,name:$('abName').value.trim(),phone:abPhone(),email:$('abEmail').value.trim(),
     size:$('abSize').value,staffNote:$('abNote').value,walkIn:walk,notify:walk&&$('abNotify').checked,force:!!force};
   if(d.name.split(/\s+/).length<2)return toast('Add their first and last name');
-  if(d.phone.replace(/\D/g,'').length<10)return toast('Add their mobile number');
+  if(!d.phone)return toast('Check their mobile number');
   if(!/^\S+@\S+\.\S+$/.test(d.email))return toast('Add their email');
   const btn=$('abSave'),label=btn.textContent;btn.disabled=true;btn.textContent='Adding…';
   try{const r=await call('staffBook',d);
     if(r.needsForce){btn.disabled=false;btn.textContent=label;
       if(confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for ${d.size}. Add them anyway?`))return saveAddBooking(true);return}
     $('addModal').remove();setArrDay(d.date);if(SVIEW==='week'&&!$('vSched').classList.contains('hide'))loadSched();
-    if(!r.needsCard){toast(`Booked ${titleCase(d.name)} · ${niceDate(d.date)} ${d.time} ✓`,4000);return}
+    if(!r.needsCard){
+      // walk-in: go straight to check-in with their party filled in
+      show('new');$('bkFilter').value='';SR=[];SLOT='';
+      for(let t=0;t<24;t++){await new Promise(z=>setTimeout(z,250));const b=arrivals.find(x=>x.bookingId===r.id);
+        if(b){pick(b.row);toast(`${titleCase(d.name)} added. Add their names, then Check in & print.`,5000);return}}
+      toast(`Booked ${titleCase(d.name)} · ${d.time} ✓`,4000);return}
     cardSentModal(titleCase(d.name),r.sent,r.link);
   }catch(e){btn.disabled=false;btn.textContent=label;toast('Could not add: '+(e.message||e),5000)}
 }
