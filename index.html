@@ -128,6 +128,33 @@
   .arr .sz{background:var(--soft);border-radius:999px;padding:2px 10px;font-weight:700;font-size:14px}
   .arr.in{opacity:.45}
   .arr.sel{border-color:var(--mag);background:#fff0f8}
+  .bk{max-width:820px;max-height:92vh;overflow:auto;text-align:left;padding:20px 22px;position:relative}
+  .bkx{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:0;background:var(--soft);font:700 20px Poppins;cursor:pointer;color:var(--ink)}
+  .bkl{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;margin:12px 0 4px;font-size:15px}.bkl span{color:var(--muted)}.bkl a{color:var(--teal);font-weight:600;text-decoration:none}
+  .bka{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px}.bka .btn{width:auto;min-height:42px;font-size:15px;padding:0 14px}
+  .bkh{font:700 13px Poppins;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+  .msg{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:14px}
+  .msg summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center}.msg summary::-webkit-details-marker{display:none}
+  .msg p{margin:8px 0 0;white-space:pre-wrap;color:var(--ink);background:var(--soft);border-radius:10px;padding:8px 10px}
+  .ms{font:700 11.5px Poppins;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap;background:#eef3ff;color:#3b5bdb}
+  .ms.ok{background:#e6f6ea;color:#1a8a3a}.ms.bad{background:#fde7ef;color:#c40056}.ms.wait{background:#fff5d6;color:#8a6a00}.ms.off{background:#f0eff3;color:var(--muted)}
+  .mvw{border:1px solid var(--line);border-radius:14px;padding:10px;margin-top:10px}
+  .mvh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.mvh .btn{width:auto;min-height:38px;padding:0 14px}
+  .mvg{display:grid;grid-template-columns:repeat(7,minmax(96px,1fr));gap:6px;overflow-x:auto}
+  .mvc{display:flex;flex-direction:column;gap:5px}.mvd{text-align:center;font-size:13px;padding:4px 0}
+  .mvs{border:2px solid #9fd8b0;background:#eefaf1;border-radius:10px;padding:6px 4px;font:500 12.5px Poppins;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:1px}
+  .mvs b{font-size:13.5px}.mvs span{color:#1a8a3a;font-weight:600}
+  .mvs.full{border-color:var(--line);background:#f3f3f5}.mvs.full span{color:var(--muted)}
+  .mvs.off{border-color:var(--line);background:#fafafa;color:#aaa;cursor:default}.mvs.off span{color:#aaa}
+  .mvs.cur{border-color:var(--purp);background:#efeafd;cursor:default}.mvs.cur span{color:var(--purp)}
+  .bell{position:relative;font-size:17px}.bn{position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--mag);color:#fff;font:700 12.5px/22px Poppins;border:2px solid var(--purp)}
+  .bell.ring{animation:ring 1s ease 3}@keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-18deg)}40%{transform:rotate(14deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(4deg)}}
+  .ev{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:12px 4px;font:500 15px Poppins;color:var(--ink);cursor:pointer}
+  .ev.new{background:#fff0f8;border-radius:10px}.ev i{font-style:normal;font-size:20px;line-height:1.2}.ev small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+  .tday{display:inline-block;background:#c40056;color:#fff;font:700 11px Poppins;letter-spacing:.05em;padding:2px 7px;border-radius:999px;margin-left:4px;vertical-align:2px}
+  .newbar{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#c40056;color:#fff;border-radius:12px;padding:10px 14px;margin:0 0 12px;font-weight:600;cursor:pointer}
+  .pickbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff0f8;border:2px solid var(--mag);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-weight:600}
+  .ne{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
   .loc{display:inline-block;background:var(--purp);color:#fff;font-weight:800;font-size:18px;padding:4px 12px;border-radius:10px;letter-spacing:.5px}
   .st{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--soft);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
   .sf{margin-top:10px;padding:12px;border:2px solid var(--teal);border-radius:12px;display:grid;gap:10px}
@@ -160,7 +187,8 @@
 <body>
 <header>
   <h1>Abstract Check-In</h1>
-  <button class="gear" onclick="openSettings()" aria-label="Printer settings" title="Printer settings">⚙︎</button>
+  <button class="gear bell" id="bellBtn" onclick="openBell()" aria-label="New bookings" title="New bookings">🔔<span id="bellN" class="bn hide"></span></button>
+  <button class="gear" onclick="openSettings()" aria-label="Settings" title="Settings">⚙︎</button>
   <nav>
     <button id="tabNew" class="on" onclick="show('new')"><i>✚</i><span>Check in</span></button>
     <button id="tabToday" onclick="show('today')"><i>✓</i><span>Checked in</span></button>
@@ -170,6 +198,7 @@
 </header>
 
 <main>
+  <div id="todayAlert" class="newbar hide" onclick="openBell()"></div>
   <!-- CHECK IN -->
   <section id="vNew">
     <div class="card">
@@ -193,6 +222,7 @@
       <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
     </div>
     <div class="card" id="formTop">
+      <div id="pickBar" class="pickbar hide"></div>
       <label class="l" for="res">Reservation name</label>
       <input id="res" placeholder="e.g. Beatriz Castro Silva" autocomplete="off">
       <div class="row" style="margin-top:12px">
@@ -262,10 +292,15 @@
   <button class="btn ghost" style="width:100%;margin-top:10px" onclick="$('printModal').classList.add('hide')">Cancel</button>
 </div></div>
 <div id="setModal" class="modal hide"><div class="mbox" style="text-align:left">
-  <h2 style="margin:0 0 6px">Printer settings</h2>
+  <h2 style="margin:0 0 6px">Printer</h2>
   <p class="muted" style="margin:0 0 16px">Saved on this device only.</p>
   <label class="chk" style="font-size:16px"><input type="checkbox" id="rotChk"> Turn sticker 90° (use if it prints sideways)</label>
   <div style="display:flex;gap:8px;margin-top:18px"><button class="btn ghost" style="flex:1" onclick="testPrint()">Test print</button><button class="btn main" style="flex:1" onclick="saveSettings()">Save</button></div>
+  <h2 style="margin:26px 0 6px">Booking notices</h2>
+  <p class="muted" style="margin:0 0 8px">Every new booking, reschedule, cancellation and party request is emailed to:</p>
+  <div id="notifyList"><p class="muted">Loading…</p></div>
+  <div style="display:flex;gap:8px;margin-top:10px"><input id="notifyNew" type="email" placeholder="Add an email" autocapitalize="off" style="flex:1"><button class="btn main" style="width:auto;padding:0 18px" onclick="addNotify()">Add</button></div>
+  <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('setModal').classList.add('hide')">Close</button>
 </div></div>
 <div id="toast" class="toast"></div>
 
@@ -376,7 +411,7 @@ function addGuest(name='',type='FT',projects=1){
 }
 function addMany(){for(let i=0;i<4;i++)addGuest()}
 function renum(){[...$('guests').children].forEach((g,i)=>g.querySelector('.n').textContent=i+1)}
-function resetForm(){picked=null;['res','ph','em'].forEach(k=>$(k).value='');$('guests').innerHTML='';addGuest();$('tm').value=nearestTime();$('res').focus()}
+function resetForm(){picked=null;if($('pickBar'))$('pickBar').classList.add('hide');['res','ph','em'].forEach(k=>$(k).value='');$('guests').innerHTML='';addGuest();$('tm').value=nearestTime();$('res').focus()}
 
 async function saveAndPrint(){
   const reservation=$('res').value.trim();
@@ -462,7 +497,14 @@ async function sendToPrinter(){
   f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},300)};
   f.src=url;
 }
-function openSettings(){$('rotChk').checked=ROTATE;$('setModal').classList.remove('hide')}
+function openSettings(){$('rotChk').checked=ROTATE;$('setModal').classList.remove('hide');loadNotify()}
+let NOTIFY=null;
+async function loadNotify(){try{NOTIFY=await call('getNotify');renderNotify()}catch(e){$('notifyList').innerHTML=`<p class="muted">Could not load: ${esc(e.message||e)}</p>`}}
+function renderNotify(){$('notifyList').innerHTML=`<div class="ne"><span><b>${esc(NOTIFY.always)}</b></span><span class="muted" style="font-size:13px">always</span></div>`+
+  NOTIFY.extra.map((x,i)=>`<div class="ne"><span>${esc(x)}</span><button class="tl" onclick="removeNotify(${i})">Remove</button></div>`).join('')}
+async function saveNotify(list){try{NOTIFY=await call('setNotify',list);renderNotify();toast('Saved ✓')}catch(e){toast(e.message||String(e),5000)}}
+function addNotify(){const v=$('notifyNew').value.trim();if(!v)return;$('notifyNew').value='';saveNotify(NOTIFY.extra.concat(v))}
+function removeNotify(i){if(!confirm(`Stop sending booking notices to ${NOTIFY.extra[i]}?`))return;saveNotify(NOTIFY.extra.filter((x,j)=>j!==i))}
 function saveSettings(){ROTATE=$('rotChk').checked;try{localStorage.setItem('abs_rot',ROTATE?'1':'0')}catch(e){};$('setModal').classList.add('hide');toast('Saved for this device')}
 function testPrint(){saveSettings();printLabels([{reservation:'Beatriz Castro Silva',name:'Mike',type:'FT',date:today(),time:timesFor(today())[0],num:1,size:2,projects:1}])}
 
@@ -663,11 +705,8 @@ function renderArrivals(){
     const hist=g.visits?` <span class="tag GV">${g.visits} visit${g.visits>1?'s':''}</span>`:'';
     const ns=g.noShows?` <span class="tag LATE">${g.noShows} no-show${g.noShows>1?'s':''}</span>`:'';
     const snote=b.staffNote?`<span class="snote">📝 ${esc(b.staffNote)}</span>`:'';
-    const always=`<button class="tl" onclick="editNote('${k}')">${b.staffNote?'Edit note':'Add note'}</button><button class="tl" onclick="openGuest('${k}')">Guest profile${g.hasNotes?' •':''}</button>`;
-    const tools=b.partyId?`<div class="tools">${always}</div>`:b.status==='Confirmed'
-      ?`<div class="tools"><button class="tl" onclick="staffAct('${k}','noshow')">No-show</button><button class="tl" onclick="staffAct('${k}','cancel')">Cancel</button><button class="tl" onclick="openMove('${k}')">Move</button>${always}</div><div id="mv_${k}"></div>`
-      :`<div class="tools"><button class="tl" onclick="staffAct('${k}','restore')">Undo · put back on the list</button>${always}</div>`;
-    return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" ${off?'disabled':''} onclick="pick(${b.row})">
+        const tools='';
+    return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
     <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
@@ -677,7 +716,7 @@ function bookingByKey(k){return arrivals.find(b=>b.key===decodeURIComponent(k))}
 async function editNote(k){
   const b=bookingByKey(k);if(!b)return;
   const v=prompt(`Private staff note for ${b.reservation}\n(only your team sees this)`,b.staffNote||'');if(v===null)return;
-  try{await call('setBookingNote',b.key,v);toast(v.trim()?'Note saved ✓':'Note removed');loadArrivals()}catch(e){toast('Could not save: '+(e.message||e),5000)}
+  try{await call('setBookingNote',b.key,v);b.staffNote=v.trim();toast(v.trim()?'Note saved ✓':'Note removed');loadArrivals();if($('bkModal'))viewBooking(b.row)}catch(e){toast('Could not save: '+(e.message||e),5000)}
 }
 let GUEST=null,GUESTB=null;
 async function openGuest(k){
@@ -709,22 +748,49 @@ async function staffAct(k,action){
   if(action==='cancel'&&/\|paid\|/.test(b.addons||'')){
     const hrs=(dateTime(b.date,b.time)-Date.now())/36e5;
     refund=confirm(`Refund ${b.reservation}'s $30 sparkling wine?\n\n`+(hrs<24?'They are cancelling within 24 hours, so the policy says you can keep it. OK = refund, Cancel = keep it.':'They cancelled more than 24 hours ahead, so the policy says refund it. OK = refund, Cancel = keep it.'))}
-  try{await call('staffUpdate',b.key,action,{email,refund});toast({noshow:'Marked no-show',cancel:'Booking cancelled',restore:'Back on the list'}[action]);showDone=action!=='restore'?showDone:false;loadArrivals()}
+  try{await call('staffUpdate',b.key,action,{email,refund});closeBk();toast({noshow:'Marked no-show',cancel:'Booking cancelled',restore:'Back on the list'}[action]);showDone=action!=='restore'?showDone:false;loadArrivals()}
   catch(e){toast('Could not update: '+(e.message||e),5000)}
 }
+/* Reschedule: pick a class from a week view that shows open spots (like FareHarbor's rebook) */
+let MV=null;
 function openMove(k){
-  const box=$('mv_'+k);if(box.innerHTML){box.innerHTML='';return}const b=bookingByKey(k);
-  box.innerHTML=`<div class="mv"><input type="date" id="mvd_${k}" value="${b.date}" onchange="fillTimes($('mvt_${k}'),this.value,$('mvt_${k}').value)"><select id="mvt_${k}">${timesFor(b.date).map(t=>`<option${t===b.time?' selected':''}>${t}</option>`).join('')}</select>
-    <button class="btn main" style="width:auto;font-size:15px;min-height:44px;padding:0 18px" onclick="saveMove('${k}')">Move</button></div>`;
+  const box=$('mv_'+k);if(!box)return;if(box.innerHTML){box.innerHTML='';MV=null;return}
+  const b=bookingByKey(k);MV={k,b,start:weekStart(b.date)};loadMoveWeek();
 }
-async function saveMove(k){
-  const b=bookingByKey(k),date=$('mvd_'+k).value,time=$('mvt_'+k).value;const web=b.source==='Website'&&b.email;
+function moveShift(n){const [y,m,d]=MV.start.split('-').map(Number);MV.start=ymd(new Date(y,m-1,d+7*n));loadMoveWeek()}
+async function loadMoveWeek(){
+  const box=$('mv_'+MV.k);if(!box)return;
+  box.innerHTML=`<div class="mvw"><div class="mvh"><button class="btn ghost small" onclick="moveShift(-1)" aria-label="Previous week">‹</button><b>Pick a new class</b><button class="btn ghost small" onclick="moveShift(1)" aria-label="Next week">›</button></div><p class="muted">Loading open spots…</p></div>`;
+  let W;try{W=await call('getWeek',MV.start)}catch(e){box.querySelector('p').textContent='Could not load: '+(e.message||e);return}
+  if(!MV||!$('mv_'+MV.k))return;
+  const b=MV.b,need=b.size,now=Date.now();
+  const days=W.filter(d=>d.date>=today()).map(d=>{
+    const [y,m,dd]=d.date.split('-').map(Number),dt=new Date(y,m-1,dd);
+    const head=`<div class="mvd"><b>${dt.toLocaleDateString('en-US',{weekday:'short'})}</b> ${m}/${dd}</div>`;
+    if(!d.open||!d.classes.length)return `<div class="mvc">${head}<div class="mvs off">Closed</div></div>`;
+    return `<div class="mvc">${head}`+d.classes.map(c=>{
+      const cur=d.date===b.date&&c.time===b.time,past=dateTime(d.date,c.time)<now;
+      const open=Math.max(0,c.cap-c.booked)+(cur?need:0),fits=open>=need;
+      const cls=cur?'cur':past||c.cap===0?'off':!fits?'full':'';
+      const label=cur?'Their class now':past?'Past':c.cap===0?'Closed':open+' open';
+      return `<button class="mvs ${cls}" ${cur||past||c.cap===0?'disabled':''} onclick="pickMove('${d.date}','${c.time}',${open})">${c.private?'🔒 ':''}<b>${esc(c.time)}</b><span>${label}</span></button>`}).join('')+'</div>'}).join('');
+  box.innerHTML=`<div class="mvw"><div class="mvh"><button class="btn ghost small" onclick="moveShift(-1)" aria-label="Previous week">‹</button><b>Pick a new class · party of ${need}</b><button class="btn ghost small" onclick="moveShift(1)" aria-label="Next week">›</button></div>
+    <div class="mvg">${days||'<p class="muted">This week has passed. Tap › for the next one.</p>'}</div><p class="muted" style="font-size:13px;margin:8px 0 0">Green = room for this party · grey = not enough spots</p></div>`;
+}
+function pickMove(date,time,open){
+  const b=MV.b;
+  if(open<b.size&&!confirm(`${niceDate(date)} · ${time} only has ${open} spot${open===1?'':'s'} open, and ${b.reservation} is a party of ${b.size}.\n\nBook them in anyway (over capacity)?`))return;
+  saveMove(MV.k,date,time,open<b.size);
+}
+async function saveMove(k,date,time,force){
+  const b=bookingByKey(k);if(!b)return;const web=b.source==='Website'&&b.email;
+  if(!force&&!confirm(`Reschedule ${b.reservation} (party of ${b.size}) to ${niceDate(date)} · ${time}?`))return;
   const email=web&&confirm(`Let ${b.reservation} know their new time (${niceDate(date)} · ${time})?`);
-  try{let r=await call('staffUpdate',b.key,'move',{date,time,email});
-    if(r.needsForce){if(!confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for a party of ${b.size}. Move them anyway?`))return;
+  try{let r=await call('staffUpdate',b.key,'move',{date,time,email,force:!!force});
+    if(r.needsForce){if(!confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for a party of ${b.size}. Reschedule them anyway?`))return;
       r=await call('staffUpdate',b.key,'move',{date,time,email,force:true})}
-    toast(`Moved to ${niceDate(date)} · ${time}`,3500);loadArrivals()}
-  catch(e){toast('Could not move: '+(e.message||e),5000)}
+    MV=null;closeBk();toast(`Rescheduled to ${niceDate(date)} · ${time}`,3500);loadArrivals()}
+  catch(e){toast('Could not reschedule: '+(e.message||e),5000)}
 }
 async function chargeFee(id,kind,full,amt){
   const bk=arrivals.find(x=>x.bookingId===id),name=bk?bk.reservation:'this guest';
@@ -740,11 +806,62 @@ async function openParty(id,date){
   $('dayPick').value=date;show('today');await loadDay();
   const el=$('p_'+id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.boxShadow='0 0 0 4px var(--teal)';setTimeout(()=>el.style.boxShadow='',2500)}
 }
+function closeBk(){const m=$('bkModal');if(m)m.remove()}
+function stopPick(){resetForm();renderArrivals()}
+function fmtWhen(iso){const d=new Date(iso);return isNaN(d)?'':d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+function viewBooking(row){
+  const b=arrivals.find(x=>x.row===row);if(!b)return;closeBk();
+  const k=encodeURIComponent(b.key),g=b.guest||{},active=b.status==='Confirmed'&&!b.partyId;
+  const src=b.source==='Website'?'Website':b.source==='FareHarbor'?'FareHarbor'+(b.fhId?' #'+esc(b.fhId):''):b.source==='Staff'?'Added by staff':esc(b.source);
+  const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?'🍾 Sparkling wine · paid online':/refunded/.test(b.addons)?'🍾 Sparkling wine · refunded':'🍾 Sparkling wine · collect $30 at the studio';
+  const st=b.partyId?'✓ Checked in':b.status==='Confirmed'?'Booked':b.status;
+  const ph=b.phone?`<a href="sms:${esc(b.phone.replace(/[^\d+]/g,''))}">${esc(fmtPhone(b.phone))}</a>`:'—';
+  const rows=[['When',`${niceDate(b.date)} · ${esc(b.time)}`],['Party',`${b.size} artist${b.size>1?'s':''}`],['Status',st],['Phone',ph],
+    ['Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'],b.guests?['Artists',esc(b.guests)]:null,b.note?['Their note',`“${esc(b.note)}”`]:null,
+    wine?['Add-on',wine]:null,['Booked from',src],b.bookingId?['Confirmation',esc(b.bookingId)]:null,
+    b.source==='FareHarbor'?['Deposit',b.deposit?'$'+money(b.deposit)+' paid · take off the bill':'—']:null,
+    b.card?['Card','Saved for no-show protection']:null,b.staffNote?['Staff note','📝 '+esc(b.staffNote)]:null,
+    g.visits?['History',`${g.visits} visit${g.visits>1?'s':''}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`]:null].filter(Boolean);
+  const btn=(label,fn,cls)=>`<button class="btn ${cls||'ghost'}" onclick="${fn}">${label}</button>`;
+  const main=b.partyId?btn('See their check-in',`closeBk();openParty('${b.partyId}','${b.date}')`,'main')
+    :active?btn('Check in this party',`closeBk();pick(${b.row})`,'main'):'';
+  const acts=active?[btn('Reschedule',`openMove('${k}')`),btn('Cancel',`staffAct('${k}','cancel')`),btn('No-show',`staffAct('${k}','noshow')`)]
+    :!b.partyId?[btn('Undo · put back on the list',`staffAct('${k}','restore')`)]:[];
+  acts.push(btn(b.staffNote?'Edit note':'Add note',`editNote('${k}')`),btn('Guest profile'+(g.hasNotes?' •':''),`closeBk();openGuest('${k}')`));
+  const m=document.createElement('div');m.className='modal';m.id='bkModal';
+  m.innerHTML=`<div class="mbox bk"><button class="bkx" onclick="closeBk()" aria-label="Close">×</button>
+    <b style="font-size:21px;padding-right:44px;display:block">${esc(b.reservation)}</b>
+    <div class="bkl">${rows.map(r=>`<span>${r[0]}</span><div>${r[1]}</div>`).join('')}</div>
+    ${main?`<div style="margin-top:14px">${main}</div>`:''}
+    <div class="bka">${acts.join('')}</div><div id="mv_${k}"></div>
+    <div class="bkh">Messages to the guest</div><div id="bkMsgs"><p class="muted">${b.bookingId?'Loading…':'Bookings imported from Toast or FareHarbor have no messages from this system.'}</p></div>
+    <div id="bkResend"></div>
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="closeBk()">Close</button></div>`;
+  m.onclick=e=>{if(e.target===m)closeBk()};document.body.appendChild(m);
+  if(b.bookingId)loadBkMsgs(b);
+}
+async function loadBkMsgs(b,fresh){
+  let d;try{d=fresh||await call('getBookingDetail',b.key)}catch(e){if($('bkMsgs'))$('bkMsgs').innerHTML=`<p class="muted">Could not load messages: ${esc(e.message||e)}</p>`;return}
+  if(!$('bkMsgs'))return;
+  const chip=x=>{const s=x.status;
+    if(x.channel==='Email'&&x.opened)return `<span class="ms ok">Opened ${esc(fmtWhen(x.opened))}</span>`;
+    const c=s==='Delivered'?'ok':/Failed|Not delivered/.test(s)?'bad':s==='Waiting'?'wait':s==='Cancelled'?'off':'';
+    return `<span class="ms ${c}">${esc(s==='Waiting'?'Scheduled':s)}</span>`};
+  $('bkMsgs').innerHTML=d.messages.length?d.messages.map(x=>`<details class="msg"><summary><span>${x.channel==='Email'?'✉️':'💬'} <b>${esc(x.what)}</b><br><span class="muted" style="font-size:13px">${x.channel} to ${esc(x.channel==='Text'?fmtPhone(x.to.replace(/^\+1/,'')):x.to)} · ${esc(fmtWhen(x.at))}</span></span>${chip(x)}</summary>
+    ${x.message?`<p>${esc(x.message)}</p>`:''}${x.error?`<p style="color:#c40056">${esc(x.error)}</p>`:''}${x.channel==='Email'&&!x.opened&&!x.error?'<p class="muted" style="background:none;padding:0">Not opened yet. Some email apps hide this, so it may have been read anyway.</p>':''}</details>`).join('')
+    :'<p class="muted">No texts or emails sent yet.</p>';
+  if(b.status==='Confirmed'&&!b.partyId)$('bkResend').innerHTML=`<div class="bka">${d.textsOn&&b.phone?`<button class="btn ghost" onclick="resend('${encodeURIComponent(b.key)}','text')">Resend confirmation by text</button>`:''}${b.email?`<button class="btn ghost" onclick="resend('${encodeURIComponent(b.key)}','email')">Resend by email</button>`:''}</div>`;
+}
+async function resend(k,how){
+  const b=bookingByKey(k);if(!b)return;
+  if(!confirm(`Send ${b.reservation} their booking confirmation again by ${how}?`))return;
+  try{const d=await call('resendConfirmation',b.key,how);toast(how==='text'?'Text sent ✓':'Email sent ✓');loadBkMsgs(b,d)}catch(e){toast(e.message||String(e),6000)}
+}
 function pick(row){
   const b=arrivals.find(x=>x.row===row);if(!b)return;
   if(b.partyId){openParty(b.partyId,b.date);return}
   if(b.source==='FareHarbor')toast(b.deposit?`FareHarbor booking · $${money(b.deposit)} deposit already paid`:'FareHarbor booking',4000);
-  picked=b;$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
+  picked=b;$('pickBar').innerHTML=`<span>Checking in ${esc(b.reservation)} · ${esc(b.time)}</span><button class="tl" onclick="stopPick()">Not now ✕</button>`;$('pickBar').classList.remove('hide');$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
   if(![...$('tm').options].some(o=>o.value===b.time)){const o=document.createElement('option');o.textContent=b.time;$('tm').appendChild(o)}
   $('tm').value=b.time;
   const names=b.guests?b.guests.split(/,\s*/):[b.reservation.split(' ')[0]];
@@ -935,6 +1052,54 @@ async function setCap(time,n){
 
 /* ---------- init ---------- */
 $('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();
+
+/* ---------- 🔔 new bookings bell ---------- */
+let ACT=[],ACT_SEEN='',ACT_FIRST=true,AUDIO=null;
+try{ACT_SEEN=localStorage.getItem('abs_seen')||''}catch(e){}
+const EV={confirmed:['🎨','booked'],moved:['🔁','rescheduled to'],cancelled:['✖️','cancelled'],late:['⚠️','cancelled late'],party:['🎈','sent a party request']};
+function ago(iso){const m=Math.round((Date.now()-new Date(iso))/6e4);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' hr ago':new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function chime(){try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioContext)();const t=AUDIO.currentTime;[880,1320].forEach((f,i)=>{const o=AUDIO.createOscillator(),g=AUDIO.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.0001,t+i*.18);g.gain.exponentialRampToValueAtTime(.25,t+i*.18+.02);g.gain.exponentialRampToValueAtTime(.0001,t+i*.18+.5);o.connect(g).connect(AUDIO.destination);o.start(t+i*.18);o.stop(t+i*.18+.55)})}catch(e){}}
+document.addEventListener('pointerdown',()=>{try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioContext)();AUDIO.resume()}catch(e){}},{once:true});
+async function pollActivity(){
+  if(!PIN||document.hidden&&!ACT_FIRST)return;
+  let list;try{list=await call('getActivity')}catch(e){return}
+  const before=new Set(ACT.map(a=>a.at+a.key+a.kind));const fresh=ACT_FIRST?[]:list.filter(a=>!before.has(a.at+a.key+a.kind));
+  ACT=list;ACT_FIRST=false;
+  if(!ACT_SEEN&&list.length){ACT_SEEN=list[0].at;try{localStorage.setItem('abs_seen',ACT_SEEN)}catch(e){}}
+  renderBellCount();
+  if(fresh.length){chime();$('bellBtn').classList.remove('ring');void $('bellBtn').offsetWidth;$('bellBtn').classList.add('ring');
+    const a=fresh[0],e=EV[a.kind]||['•',a.kind];toast(`${e[0]} ${a.name} ${e[1]}${a.time?' '+(a.date===today()?'TODAY ':niceDate(a.date)+' ')+a.time:''}`,6000);
+    if(fresh.some(x=>x.date===$('dt').value))loadArrivals(true);}
+}
+function unseen(){return ACT.filter(a=>a.at>ACT_SEEN)}
+function renderBellCount(){
+  const u=unseen(),n=$('bellN');n.textContent=u.length>9?'9+':u.length;n.classList.toggle('hide',!u.length);
+  document.title=(u.length?`(${u.length}) `:'')+'Abstract Check-In';
+  const t=u.filter(a=>a.date===today()&&a.kind!=='party');
+  $('todayAlert').innerHTML=t.length?`<span>🔔 ${t.length} change${t.length>1?'s':''} for <b>today's</b> classes: ${t.slice(0,2).map(a=>esc(a.name.split(' ')[0])+' '+EV[a.kind][1].replace(' to','')+' '+esc(a.time)).join(', ')}${t.length>2?'…':''}</span><b>See ›</b>`:'';
+  $('todayAlert').classList.toggle('hide',!t.length);
+}
+function openBell(){
+  const u=new Set(unseen().map(a=>a.at));
+  const m=document.createElement('div');m.className='modal';m.id='bellModal';
+  m.innerHTML=`<div class="mbox bk" style="max-width:520px"><button class="bkx" onclick="$('bellModal').remove()" aria-label="Close">×</button>
+    <b style="font-size:21px">New activity</b><p class="muted" style="margin:4px 0 10px;font-size:14px">Bookings, changes and party requests from guests. Tap one to open it.</p>
+    ${ACT.length?ACT.map((a,i)=>{const e=EV[a.kind]||['•',a.kind];const td=a.date===today()&&a.kind!=='party';
+      const what=a.kind==='party'?`${a.date?'for '+niceDate(a.date):''}${a.size?' · '+esc(a.size)+' kids':''}`:`${td?'':niceDate(a.date)+' · '}${esc(a.time)}${a.size?' · party of '+esc(a.size):''}`;
+      return `<button class="ev${u.has(a.at)?' new':''}" onclick="goActivity(${i})"><i>${e[0]}</i><span><b>${esc(a.name)}</b> ${e[1]}${td?'<span class="tday">TODAY</span>':''}<small>${what}${a.kind==='moved'&&a.detail?' (was '+esc(a.detail)+')':''}${a.kind==='party'&&a.detail?' · '+esc(a.detail):''} · ${ago(a.at)}</small></span></button>`}).join('')
+      :'<p class="muted">Nothing yet. New bookings will show up here.</p>'}
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('bellModal').remove()">Close</button></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+  if(ACT.length){ACT_SEEN=ACT[0].at;try{localStorage.setItem('abs_seen',ACT_SEEN)}catch(e){};renderBellCount()}
+}
+async function goActivity(i){
+  const a=ACT[i];$('bellModal').remove();
+  if(a.kind==='party'){toast(`Party request from ${a.name}${a.detail?' · '+a.detail:''}. Details are in your email and the "Party Requests" tab.`,8000);return}
+  show('new');SLOT='';setArrDay(a.date);
+  for(let t=0;t<20;t++){await new Promise(r=>setTimeout(r,250));const b=arrivals.find(x=>x.key===a.key);if(b&&b.date===a.date){viewBooking(b.row);return}}
+}
+setInterval(pollActivity,60000);setTimeout(pollActivity,1500);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollActivity()});
 resetForm();
 if(hasGAS&&!PIN)askPin();
 show('new');
