@@ -432,7 +432,7 @@ function renderNeedCard(){
       el=stripe.elements({clientSecret:r.clientSecret,appearance:{theme:'stripe',variables:{colorPrimary:'#4e3aa2',fontFamily:'Poppins, system-ui, sans-serif',borderRadius:'12px'}},
         fonts:[{cssSrc:'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap'}]});
       $('mPay').innerHTML='';el.create('payment',{layout:'tabs'}).mount('#mPay')}
-    catch(e){$('mPay').innerHTML=`<p class="err">${esc(e.message)}</p>`;$('mSaveCard').classList.add('hide')}};
+    catch(e){$('mSaveCard').classList.add('hide');if(/HOLD_EXPIRED/.test(e.message))return holdExpired();$('mPay').innerHTML=`<p class="err">${esc(e.message)}</p>`}};
   mount();
   $('mSaveCard').onclick=async()=>{
     $('mErr2').textContent='';if(!$('mAgree').checked)return $('mErr2').textContent='Please check the box to agree to the cancellation policy.';
@@ -441,9 +441,18 @@ function renderNeedCard(){
       if(error)throw new Error(error.message);
       mine=await call('saveCard',q.get('b'),q.get('t'),setupIntent.id);cardDone()}
     catch(e){btn.disabled=false;btn.textContent='Confirm my reservation';
+      if(/HOLD_EXPIRED/.test(e.message))return holdExpired();
       if(/PREPAID/.test(e.message)){$('mErr2').textContent='This card can\'t be used to hold a reservation. Please try a different credit or debit card.';mount()}
       else $('mErr2').textContent=e.message}
   };
+}
+/* hold ran out and the class filled up: send them to pick another time themselves */
+function holdExpired(){
+  const q=new URLSearchParams(location.search),u=location.pathname+(q.get('embed')?'?embed=1':'');
+  $('heroTitle').textContent='Let\'s find you a new time';$('heroSub').textContent='Your hold ran out and that class filled up.';
+  $('mCard').innerHTML=`<p style="margin:0 0 14px">So sorry! We could only hold your spot for 15 minutes, and that class filled up in the meantime. Other times are still open, and it only takes a minute to book.</p>
+    <a class="go" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="${u}">Pick a new time</a>`;
+  window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
 }
 function cardDone(){
   const b=mine;$('manage').classList.add('hide');$('confirmed').classList.remove('hide');
