@@ -654,11 +654,11 @@ function openAddBooking(date,time){
       <button class="btn main" style="flex:1" id="abSave" onclick="saveAddBooking()">Add booking</button></div></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);abMode();setTimeout(()=>$('abName').focus(),50);
 }
-/* walk-in today = no card; booking ahead = guest gets a link to save a card (spot held 24 hours) */
+/* walk-in today = no card; booking ahead = guest gets a link to save a card (spot held 15 minutes) */
 function abMode(){
   const isToday=$('abDate').value===today();$('abWalkRow').classList.toggle('hide',!isToday);
   const walk=isToday&&$('abWalk').checked;$('abNotifyRow').classList.toggle('hide',!walk);
-  $('abSub').textContent=walk?'Walk-in for today. No card needed.':'We\'ll send them a secure link to save a card (nothing is charged). Their spot is held for 24 hours.';
+  $('abSub').textContent=walk?'Walk-in for today. No card needed.':'We\'ll send them a secure link to save a card (nothing is charged). Their spot is held for 15 minutes, so ask them to do it right away.';
   $('abSave').textContent=walk?'Add booking':'Hold spot & send card link';
 }
 async function saveAddBooking(force){
@@ -682,7 +682,7 @@ function cardSentModal(name,sent,link){
   const m=document.createElement('div');m.className='modal';m.id='cardModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px"><b style="font-size:20px">Spot held for ${esc(name)}</b>
     <p style="margin:8px 0">${how?`We sent them a link ${how} to save a card. Once they do, they're confirmed and you'll see it on the 🔔.`:'We couldn\'t send the link automatically. Copy it below and send it to them.'}</p>
-    <p class="muted" style="margin:0 0 14px;font-size:14px">If they don't save a card within 24 hours, the spot opens up again.</p>
+    <p class="muted" style="margin:0 0 14px;font-size:14px">Their spot is held for 15 minutes. If they don't save a card by then, it opens up again. On the phone? Stay on the line while they open the link.</p>
     <button class="btn main" onclick="window.open('${link}','_blank')">They're here: enter the card on this device</button>
     <button class="btn ghost" style="width:100%;margin-top:8px" onclick="copyLink('${link}')">Copy card link</button>
     <button class="btn ghost" style="width:100%;margin-top:8px" onclick="$('cardModal').remove()">Done</button></div>`;
@@ -850,7 +850,7 @@ function viewBooking(row){
   const k=encodeURIComponent(b.key),g=b.guest||{},needCard=b.status==='Needs card',active=(b.status==='Confirmed'||needCard)&&!b.partyId;
   const src=b.source==='Website'?'Website':b.source==='FareHarbor'?'FareHarbor'+(b.fhId?' #'+esc(b.fhId):''):b.source==='Staff'?'Added by staff':esc(b.source);
   const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?'🍾 Sparkling wine · paid online':/refunded/.test(b.addons)?'🍾 Sparkling wine · refunded':'🍾 Sparkling wine · collect $30 at the studio';
-  const st=b.partyId?'✓ Checked in':b.status==='Confirmed'?'Booked':needCard?(cardLate(b)?'No card added · spot released':'Waiting for their card · held until '+fmtWhen(new Date(new Date(b.created).getTime()+864e5).toISOString())):b.status;
+  const st=b.partyId?'✓ Checked in':b.status==='Confirmed'?'Booked':needCard?(cardLate(b)?'No card added · spot released':'Waiting for their card · held until '+new Date(new Date(b.created).getTime()+CARD_MIN*6e4).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})):b.status;
   const ph=b.phone?`<a href="sms:${esc(b.phone.replace(/[^\d+]/g,''))}">${esc(fmtPhone(b.phone))}</a>`:'—';
   const rows=[['When',`${niceDate(b.date)} · ${esc(b.time)}`],['Party',`${b.size} artist${b.size>1?'s':''}`],['Status',st],['Phone',ph],
     ['Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'],b.guests?['Artists',esc(b.guests)]:null,b.note?['Their note',`“${esc(b.note)}”`]:null,
@@ -889,7 +889,8 @@ async function loadBkMsgs(b,fresh){
     :'<p class="muted">No texts or emails sent yet.</p>';
   if(b.status==='Confirmed'&&b.card!==undefined&&!b.partyId)$('bkResend').innerHTML=`<div class="bka">${d.textsOn&&b.phone?`<button class="btn ghost" onclick="resend('${encodeURIComponent(b.key)}','text')">Resend confirmation by text</button>`:''}${b.email?`<button class="btn ghost" onclick="resend('${encodeURIComponent(b.key)}','email')">Resend by email</button>`:''}</div>`;
 }
-function cardLate(b){return b.created&&Date.now()>new Date(b.created).getTime()+864e5}
+const CARD_MIN=15;   // same as CARD_MINUTES in Booking.gs
+function cardLate(b){return b.created&&Date.now()>new Date(b.created).getTime()+CARD_MIN*6e4}
 async function resendCard(k){const b=bookingByKey(k);if(!b||!confirm(`Send ${b.reservation} the card link again?`))return;
   try{const d=await call('resendCardLink',b.key);toast('Card link sent ✓');loadBkMsgs(b,d)}catch(e){toast(e.message||String(e),6000)}}
 async function openCardPage(k){const b=bookingByKey(k);if(!b)return;
