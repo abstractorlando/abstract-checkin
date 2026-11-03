@@ -217,7 +217,7 @@
         <button type="button" class="btn ghost small" onclick="shiftDay(1)" aria-label="Next day">›</button>
         <button type="button" class="btn ghost small today" onclick="setArrDay(today())">Today</button>
       </div>
-      <input id="bkFilter" placeholder="Search reservations…" oninput="renderArrivals()" autocomplete="off">
+      <input id="bkFilter" placeholder="Search any booking: name, phone, email or confirmation #" oninput="onSearch()" autocomplete="off" type="search">
       <div class="slots" id="slotChips"></div>
       <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
     </div>
@@ -665,7 +665,16 @@ async function saveAddBooking(force){
     $('addModal').remove();toast(`Booked ${titleCase(d.name)} · ${niceDate(d.date)} ${d.time} ✓`,4000);setArrDay(d.date);if(SVIEW==='week'&&!$('vSched').classList.contains('hide'))loadSched();
   }catch(e){btn.disabled=false;btn.textContent='Add booking';toast('Could not add: '+(e.message||e),5000)}
 }
+let SR=[],SQ='',sTimer;
+function onSearch(){const q=$('bkFilter').value.trim();clearTimeout(sTimer);
+  if(q.length<2){SR=[];SQ='';renderArrivals();return}
+  if(!SR.length||SQ!==q)$('arrivals').innerHTML='<p class="muted">Searching all days…</p>';$('slotChips').innerHTML='';
+  sTimer=setTimeout(doSearch,350)}
+async function doSearch(){const q=$('bkFilter').value.trim();if(q.length<2)return;
+  try{const r=await call('searchBookings',q);if($('bkFilter').value.trim()!==q)return;SR=r;SQ=q;renderArrivals()}
+  catch(e){$('arrivals').innerHTML=`<p class="muted">Could not search: ${esc(e.message||e)}</p>`}}
 async function loadArrivals(quiet){
+  if($('bkFilter')&&$('bkFilter').value.trim().length>=2){doSearch();return}
   if(!quiet&&!arrivals.length)$('arrivals').innerHTML='<p class="muted">Loading bookings…</p>';
   try{arrivals=await call('getBookings',$('dt').value);renderArrivals()}
   catch(e){$('arrivals').innerHTML=`<p class="muted">Could not load bookings: ${esc(e.message||e)} <a href="#" onclick="loadArrivals();return false" style="color:var(--teal)">Try again</a></p>`}
@@ -673,7 +682,7 @@ async function loadArrivals(quiet){
 function tMin(t){const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||'');if(!m)return 9999;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2]}
 let showDone=false;
 function renderArrivals(){
-  const q=$('bkFilter').value.trim().toLowerCase();
+  const q=$('bkFilter').value.trim().toLowerCase(),searching=q.length>=2;
   const isToday=$('dt').value===today(),now=new Date(),nowM=now.getHours()*60+now.getMinutes();
   // a class drops off the list once checked in, or 2 hours after it started (no-show)
   const isPast=b=>b.date<today()||(isToday&&tMin(b.time)+120<nowM);
@@ -681,12 +690,13 @@ function renderArrivals(){
   const slotTimes=[...new Set(arrivals.filter(b=>b.status==='Confirmed'||b.partyId).map(b=>b.time))].sort((a,b)=>tMin(a)-tMin(b));
   if(SLOT&&!slotTimes.includes(SLOT))SLOT='';
   const cnt=t=>arrivals.filter(b=>b.time===t&&(b.status==='Confirmed'||b.partyId)).reduce((s,b)=>s+b.size,0);
-  $('slotChips').innerHTML=slotTimes.length>1?[`<button class="chip${!SLOT?' on':''}" onclick="SLOT='';renderArrivals()">All times</button>`]
+  $('slotChips').innerHTML=searching?'':slotTimes.length>1?[`<button class="chip${!SLOT?' on':''}" onclick="SLOT='';renderArrivals()">All times</button>`]
     .concat(slotTimes.map(t=>`<button class="chip${SLOT===t?' on':''}" onclick="SLOT='${t}';renderArrivals()">${t} · ${cnt(t)}</button>`)).join(''):'';
-  const all=arrivals.filter(b=>(!q||b.reservation.toLowerCase().includes(q))&&(!SLOT||b.time===SLOT)).sort((a,b)=>tMin(a.time)-tMin(b.time));
-  const hidden=q?[]:all.filter(done);
-  const list=(q||showDone)?all:all.filter(b=>!done(b));
-  if(!arrivals.length){$('arrivals').innerHTML='<p class="muted">No bookings for this date yet. Website bookings show up here on their own; for Toast, tap <b>Import file</b>. Or just type below.</p>';return}
+  const all=searching?SR:arrivals.filter(b=>!SLOT||b.time===SLOT).sort((a,b)=>tMin(a.time)-tMin(b.time));
+  const hidden=searching?[]:all.filter(done);
+  const list=(searching||showDone)?all:all.filter(b=>!done(b));
+  if(searching&&!SR.length){$('arrivals').innerHTML=SQ?`<p class="muted">No bookings found for “${esc($('bkFilter').value.trim())}” on any day.</p>`:'<p class="muted">Searching all days…</p>';return}
+  if(!searching&&!arrivals.length){$('arrivals').innerHTML='<p class="muted">No bookings for this day yet. New bookings show up here on their own. For walk-ins or phone bookings, tap <b>+ Add booking</b>.</p>';return}
   $('arrivals').innerHTML=list.map(b=>{
     const off=b.status!=='Confirmed';
     const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FH</span>':b.source==='Staff'?' <span class="tag WEB">STAFF</span>':'';
@@ -707,11 +717,13 @@ function renderArrivals(){
     const snote=b.staffNote?`<span class="snote">📝 ${esc(b.staffNote)}</span>`:'';
         const tools='';
     return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
-    <span class="t">${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
+    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
+  if(searching)$('arrivals').insertAdjacentHTML('afterbegin',`<p class="muted" style="margin:0 0 8px;font-size:14px">${SR.length} booking${SR.length>1?'s':''} on any day · upcoming first${SR.length>=30?' · showing the first 30':''}</p>`);
 }
-function bookingByKey(k){return arrivals.find(b=>b.key===decodeURIComponent(k))}
+function bookingByKey(k){k=decodeURIComponent(k);return arrivals.find(b=>b.key===k)||SR.find(b=>b.key===k)}
+function bookingByRow(row){return arrivals.find(x=>x.row===row)||SR.find(x=>x.row===row)}
 /* ---------- staff notes + guest profiles (never shown to guests) ---------- */
 async function editNote(k){
   const b=bookingByKey(k);if(!b)return;
@@ -810,7 +822,7 @@ function closeBk(){const m=$('bkModal');if(m)m.remove()}
 function stopPick(){resetForm();renderArrivals()}
 function fmtWhen(iso){const d=new Date(iso);return isNaN(d)?'':d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
 function viewBooking(row){
-  const b=arrivals.find(x=>x.row===row);if(!b)return;closeBk();
+  const b=bookingByRow(row);if(!b)return;closeBk();
   const k=encodeURIComponent(b.key),g=b.guest||{},active=b.status==='Confirmed'&&!b.partyId;
   const src=b.source==='Website'?'Website':b.source==='FareHarbor'?'FareHarbor'+(b.fhId?' #'+esc(b.fhId):''):b.source==='Staff'?'Added by staff':esc(b.source);
   const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?'🍾 Sparkling wine · paid online':/refunded/.test(b.addons)?'🍾 Sparkling wine · refunded':'🍾 Sparkling wine · collect $30 at the studio';
@@ -858,7 +870,8 @@ async function resend(k,how){
   try{const d=await call('resendConfirmation',b.key,how);toast(how==='text'?'Text sent ✓':'Email sent ✓');loadBkMsgs(b,d)}catch(e){toast(e.message||String(e),6000)}
 }
 function pick(row){
-  const b=arrivals.find(x=>x.row===row);if(!b)return;
+  const b=bookingByRow(row);if(!b)return;
+  if(b.date!==$('dt').value){$('dt').value=b.date;fillTimes($('tm'),b.date,b.time)}
   if(b.partyId){openParty(b.partyId,b.date);return}
   if(b.source==='FareHarbor')toast(b.deposit?`FareHarbor booking · $${money(b.deposit)} deposit already paid`:'FareHarbor booking',4000);
   picked=b;$('pickBar').innerHTML=`<span>Checking in ${esc(b.reservation)} · ${esc(b.time)}</span><button class="tl" onclick="stopPick()">Not now ✕</button>`;$('pickBar').classList.remove('hide');$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
