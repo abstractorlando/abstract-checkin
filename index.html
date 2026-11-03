@@ -199,6 +199,7 @@
 
 <main>
   <div id="todayAlert" class="newbar hide" onclick="openBell()"></div>
+  <div id="feeAlert" class="newbar hide" style="background:#4e3aa2" onclick="openFees()"></div>
   <!-- CHECK IN -->
   <section id="vNew">
     <div class="card">
@@ -730,10 +731,11 @@ function renderArrivals(){
     const fee=FEE_PER_GUEST*b.size;
     const feeKind=b.status==='Late cancel'?'late':b.status==='No-show'?'noshow':'';
     const fb=(label,amt,cls)=>`<button class="btn ghost small feebtn${cls||''}" onclick="chargeFee('${b.bookingId}','${feeKind||((b.fee||'').split('|')[4])||'noshow'}',${fee},${amt})">${label}</button>`;
+    const fd=`<button class="btn ghost small feebtn" onclick="feeDecision({bookingId:'${b.bookingId}',reservation:'${esc(b.reservation).replace(/'/g,'&#39;')}',date:'${b.date}',time:'${b.time}',size:${b.size},kind:'${feeKind}'})">Decide the fee</button>`;
     const due=/^DUE\|/.test(b.fee||'')?b.fee.split('|'):null;
     const act=!b.card?'':due?`<div class="feerow"><span class="tag LATE">$${due[1]} DECLINED</span><span class="muted" style="font-size:13px">${+due[2]<=3?'Retrying automatically':'Still unpaid after 4 tries'} · they can't book again until it's paid</span>${fb('Try again now',due[1])}${fb('Waive','0',' waive')}</div>`
       :b.fee?`<div class="feeln">${/^Waived/.test(b.fee)?'Fee waived':'✓ Fee charged: '+esc(b.fee.split(' · ')[0])}</div>`
-      :feeKind?`<div class="feerow"><span class="muted" style="font-size:13px">${feeKind==='late'?'Late-cancel':'No-show'} fee:</span>${fb('Charge full $'+fee,'null')}${fb('Partial…','-1')}${fb('Waive','0',' waive')}</div>`:'';
+      :feeKind?`<div class="feerow"><span class="tag LATE">FEE NOT DECIDED</span>${fd}</div>`:'';
     const k=encodeURIComponent(b.key);
     const g=b.guest||{},gt='';
     const hist=g.visits?` <span class="tag GV">${g.visits} visit${g.visits>1?'s':''}</span>`:'';
@@ -777,6 +779,7 @@ async function saveGuest(){
 function dateTime(d,t){const [y,m,dd]=d.split('-').map(Number);let [hh,mm]=t.split(/[: ]/);hh=+hh%12+(/PM/.test(t)?12:0);return new Date(y,m-1,dd,hh,+mm).getTime()}
 async function staffAct(k,action){
   const b=bookingByKey(k);if(!b)return;const web=b.source==='Website'&&b.email;let email=false;
+  if(action==='noshow'&&b.card&&b.bookingId){closeBk();return feeDecision({bookingId:b.bookingId,reservation:b.reservation,date:b.date,time:b.time,size:b.size,kind:'noshow'},true)}
   if(action==='noshow'&&!confirm(`Mark ${b.reservation} as a NO-SHOW?`+(b.card?`\n\nYou'll then see a button to charge the $${FEE_PER_GUEST*b.size} no-show fee.`:'')))return;
   if(action==='cancel'){if(!confirm(`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir seats open up again. No fee is charged.`))return;
     if(web)email=confirm(`Let ${b.reservation} know their booking is cancelled?`)}
@@ -827,6 +830,43 @@ async function saveMove(k,date,time,force){
       r=await call('staffUpdate',b.key,'move',{date,time,email,force:true})}
     MV=null;closeBk();toast(`Rescheduled to ${niceDate(date)} · ${time}`,3500);loadArrivals()}
   catch(e){toast('Could not reschedule: '+(e.message||e),5000)}
+}
+/* ---------- fees in one step ---------- */
+function feeDecision(f,marking){
+  const full=FEE_PER_GUEST*f.size,what=f.kind==='noshow'?'No-show':'Late cancel';
+  const m=document.createElement('div');m.className='modal';m.id='feeModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:420px"><b style="font-size:20px">${what}: ${esc(f.reservation)}</b>
+    <p class="muted" style="margin:4px 0 14px">${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size}${marking?'<br>Choose what to do with the fee. This also marks them as a no-show.':''}</p>
+    <button class="btn main" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},null)">Charge the full $${full}</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},-1)">Charge part of it…</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},0)">Waive the fee</button>
+    <button class="tl" style="width:100%;margin-top:10px;padding:10px" onclick="$('feeModal').remove()">Go back</button>
+    <p class="muted" style="font-size:13px;margin:8px 0 0">Charges the card they saved when booking. If it's declined, we retry in 1, 3 and 7 days.</p></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+async function feeGo(fj,amt){
+  const f=JSON.parse(fj),full=FEE_PER_GUEST*f.size;
+  if(amt===-1){const v=prompt(`How much should we charge ${f.reservation}? (up to $${full})`,'');if(v===null)return;
+    amt=parseFloat(String(v).replace(/[^\d.]/g,''));if(!(amt>0&&amt<=full)){toast(`Enter an amount between $1 and $${full}`,4000);return}}
+  const m=$('feeModal');if(m)m.querySelectorAll('button').forEach(x=>x.disabled=true);
+  try{const r=await call('chargeFee',f.bookingId,f.kind,amt);if(m)m.remove();
+    toast(r.waived?'Fee waived ✓':r.declined?`Card declined. We'll retry automatically in 1, 3 and 7 days.`:`Charged $${r.charged} ✓`,6000);
+    loadArrivals();loadFees();if($('feesModal'))openFees()}
+  catch(e){if(m)m.querySelectorAll('button').forEach(x=>x.disabled=false);toast('Not charged: '+(e.message||e),6000)}
+}
+let FEES=[];
+async function loadFees(){if(!PIN)return;try{FEES=await call('pendingFees')}catch(e){return}
+  $('feeAlert').innerHTML=FEES.length?`<span>💳 ${FEES.length} no-show / late-cancel fee${FEES.length>1?'s':''} still to decide</span><b>Decide ›</b>`:'';
+  $('feeAlert').classList.toggle('hide',!FEES.length)}
+function openFees(){
+  const old=$('feesModal');if(old)old.remove();
+  const m=document.createElement('div');m.className='modal';m.id='feesModal';
+  m.innerHTML=`<div class="mbox bk" style="max-width:520px"><button class="bkx" onclick="$('feesModal').remove()" aria-label="Close">×</button>
+    <b style="font-size:21px">Fees to decide</b><p class="muted" style="margin:4px 0 10px;font-size:14px">No-shows and late cancels with a saved card. Charge, charge part, or waive each one.</p>
+    ${FEES.length?FEES.map((f,i)=>`<button class="ev" onclick="feeDecision(FEES[${i}])"><i>${f.kind==='noshow'?'🚫':'⚠️'}</i><span><b>${esc(f.reservation)}</b> ${f.kind==='noshow'?'no-show':'cancelled late'}<small>${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size} · fee up to $${FEE_PER_GUEST*f.size}</small></span></button>`).join('')
+      :'<p class="muted">All done. Nothing left to decide.</p>'}
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('feesModal').remove()">Close</button></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
 }
 async function chargeFee(id,kind,full,amt){
   const bk=arrivals.find(x=>x.bookingId===id),name=bk?bk.reservation:'this guest';
@@ -1142,7 +1182,7 @@ async function goActivity(i){
   show('new');SLOT='';setArrDay(a.date);
   for(let t=0;t<20;t++){await new Promise(r=>setTimeout(r,250));const b=arrivals.find(x=>x.key===a.key);if(b&&b.date===a.date){viewBooking(b.row);return}}
 }
-setInterval(pollActivity,60000);setTimeout(pollActivity,1500);
+setInterval(()=>{pollActivity();if(!document.hidden)loadFees()},60000);setTimeout(()=>{pollActivity();loadFees()},1500);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollActivity()});
 resetForm();
 if(hasGAS&&!PIN)askPin();
