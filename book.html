@@ -392,6 +392,7 @@ async function loadMine(){
 }
 function renderMine(){
   const b=mine,q=new URLSearchParams(location.search);
+  if(b.status==='Needs card')return renderNeedCard();
   $('heroTitle').textContent='Your booking';$('heroSub').textContent='Confirmation '+b.id;$('heroPills').innerHTML='';
   const active=b.status==='Confirmed'&&!b.past;
   $('mCard').innerHTML=`<div class="sum"><span>Name</span><b>${esc(b.name)}</b></div>
@@ -408,6 +409,48 @@ function renderMine(){
     if(!confirm(b.late?`Cancel your booking? Because it's within ${AV.lateHours} hours, a $${b.fee} fee applies.`:'Cancel your booking? Nothing will be charged.'))return;
     try{mine=await call('cancelMyBooking',q.get('b'),q.get('t'));$('moveCard').classList.add('hide');renderMine()}catch(e){alert(e.message)}
   };
+}
+/* the team booked this for them: save a card to lock it in */
+function renderNeedCard(){
+  const b=mine,q=new URLSearchParams(location.search),fee=AV.feePerGuest,h=AV.lateHours;
+  $('heroTitle').textContent='Lock in your spot';$('heroSub').textContent='Save a card to confirm your reservation.';$('heroPills').innerHTML='';
+  const until=b.cardDue?new Date(b.cardDue).toLocaleString('en-US',{weekday:'long',hour:'numeric',minute:'2-digit'}):'';
+  $('mCard').innerHTML=`<div class="sum"><span>Name</span><b>${esc(b.name)}</b></div>
+    <div class="sum"><span>Day</span><b>${esc(niceDate(b.date))}</b></div><div class="sum"><span>Time</span><b>${esc(b.time)}</b></div>
+    <div class="sum"><span>Party</span><b>${b.size} guest${b.size>1?'s':''}</b></div>
+    <div class="policy"><b>A card holds your spot.</b> Nothing is charged today.${until?` We're holding your spot until ${esc(until)}.`:''}
+      <ul class="pol"><li><b>Free changes</b> up to ${h} hours before your experience.</li>
+      <li><b>Within ${h} hours or no-show: $${fee} per guest.</b> This includes cancelling, rescheduling and changing your party size.</li>
+      <li>You'll pick your project at the studio (from $50 per guest). <a href="https://www.abstractorlando.com/#Radio-2" target="_blank" rel="noopener">See project options</a></li></ul></div>
+    <div id="mPay"><p class="muted">Loading secure card form…</p></div>
+    <label class="chk" style="margin-top:14px"><input type="checkbox" id="mAgree"> <span>I understand and agree to the cancellation policy. I authorize Abstract Orlando to charge my card $${fee} per guest if I cancel or reschedule within ${h} hours of my experience, or if I don't show up.</span></label>
+    <p class="err" id="mErr2"></p>
+    <button class="go" id="mSaveCard">Confirm my reservation</button>
+    <p class="lock">🔒 Card secured by Stripe. We never see your card number.</p>`;
+  let el=null;
+  const mount=async()=>{try{const r=await call('cardSetup',q.get('b'),q.get('t'));if(!stripe)stripe=Stripe(AV.publishable);
+      el=stripe.elements({clientSecret:r.clientSecret,appearance:{theme:'stripe',variables:{colorPrimary:'#4e3aa2',fontFamily:'Poppins, system-ui, sans-serif',borderRadius:'12px'}},
+        fonts:[{cssSrc:'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap'}]});
+      $('mPay').innerHTML='';el.create('payment',{layout:'tabs'}).mount('#mPay')}
+    catch(e){$('mPay').innerHTML=`<p class="err">${esc(e.message)}</p>`;$('mSaveCard').classList.add('hide')}};
+  mount();
+  $('mSaveCard').onclick=async()=>{
+    $('mErr2').textContent='';if(!$('mAgree').checked)return $('mErr2').textContent='Please check the box to agree to the cancellation policy.';
+    const btn=$('mSaveCard');btn.disabled=true;btn.textContent='Saving…';
+    try{const {error,setupIntent}=await stripe.confirmSetup({elements:el,redirect:'if_required',confirmParams:{return_url:location.href.split('#')[0]}});
+      if(error)throw new Error(error.message);
+      mine=await call('saveCard',q.get('b'),q.get('t'),setupIntent.id);cardDone()}
+    catch(e){btn.disabled=false;btn.textContent='Confirm my reservation';
+      if(/PREPAID/.test(e.message)){$('mErr2').textContent='This card can\'t be used to hold a reservation. Please try a different credit or debit card.';mount()}
+      else $('mErr2').textContent=e.message}
+  };
+}
+function cardDone(){
+  const b=mine;$('manage').classList.add('hide');$('confirmed').classList.remove('hide');
+  $('heroTitle').textContent='We can\'t wait to see you!';$('heroSub').textContent='Your reservation is confirmed.';
+  $('cTitle').textContent=`You're booked, ${b.name.split(' ')[0]}!`;$('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;
+  $('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;$('cText').innerHTML=b.phone?`We'll text your booking details to <b>${esc(b.phone)}</b>.`:'';
+  $('cWine').classList.add('hide');window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
 }
 function renderMove(){
   const need=mine.size;
@@ -434,7 +477,11 @@ async function loadAvailability(){
   const q=new URLSearchParams(location.search);
   if(q.get('b')&&q.get('t')){$('flow').classList.add('hide');$('manage').classList.remove('hide')}
   await loadAvailability();
-  if(q.get('b')&&q.get('t'))return loadMine();
+  if(q.get('b')&&q.get('t')){
+    // back from a bank check while saving a card
+    if(q.get('setup_intent')){try{mine=await call('saveCard',q.get('b'),q.get('t'),q.get('setup_intent'));return cardDone()}catch(e){}}
+    return loadMine();
+  }
   // returning from a bank verification page
   const si=q.get('setup_intent'),id=q.get('done');
   if(si&&id){$('flow').classList.add('hide');try{await finish(id,si)}catch(e){$('flow').classList.remove('hide');$('err1').textContent=e.message}}
