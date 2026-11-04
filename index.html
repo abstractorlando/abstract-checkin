@@ -1142,20 +1142,20 @@ async function loadSched(){
 }
 function privHtml(d){
   const list=(d.privates||[]).map(p=>`<div class="card priv">
-      <div class="prow"><div class="stime"><b>🔒 ${esc(p.time)}</b><span class="muted">Private${p.name?' · '+esc(p.name):''} · ${p.booked} booked</span></div>
+      <div class="prow"><div class="stime"><b>🔒 ${esc(p.time)}</b><span class="muted">Private link${p.name?' · '+esc(p.name):''} · ${p.booked} booked · hidden from the booking page</span></div>
         <div class="scap"><input type="number" min="0" inputmode="numeric" value="${p.cap}" data-t="${esc(p.time)}" aria-label="Seats for private ${esc(p.time)}"
           onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div></div>
       <div class="prow"><button class="btn ghost small" onclick="copyLink('${esc(p.link)}')">Copy link</button>
         ${p.regular?`<button class="btn ghost small" onclick="if(confirm('Make ${esc(p.time)} public again?\\n\\nIt goes back on the public booking page with the normal ${d.defaultCap} seats. The ${p.booked} people already booked stay booked.'))privCall('removePrivate','${p.code}')">Make public</button>`
-          :`<button class="tl" onclick="if(confirm('Remove this extra private class? Bookings already made stay.'))privCall('removePrivate','${p.code}')">Remove</button>`}</div>
+          :`<button class="tl" onclick="if(confirm('Remove this extra class? Bookings already made stay.'))privCall('removePrivate','${p.code}')">Remove</button>`}</div>
     </div>`).join('');
   const times=timesFor(d.date);
-  return list+`<div class="card"><details id="privForm"><summary class="btn ghost small" style="display:inline-flex">+ Private class (link only)</summary>
-    <p class="muted" style="margin:10px 0">Only people with the link can see and book it. If you pick a regular time, it disappears from the public booking page.</p>
+  return list+`<div class="card"><details id="privForm"><summary class="btn ghost small" style="display:inline-flex">🔒 + Private booking link</summary>
+    <p class="muted" style="margin:10px 0">Hides a class from the public booking page so only the people you send the link to can book it. Use it for a private group, or to save the last few spots for one guest you're texting.</p>
     <div class="mv"><select id="pvTime">${times.map(t=>`<option>${t}</option>`).join('')}<option value="other">Other time…</option></select>
       <input id="pvOther" class="hide" placeholder="e.g. 7:00 PM"><input id="pvSeats" type="number" min="1" inputmode="numeric" value="${d.defaultCap}" style="max-width:110px" aria-label="Seats">
-      <input id="pvName" placeholder="Group name (optional)"></div>
-    <button class="btn main" style="margin-top:8px" onclick="makePrivate()">Create private class + copy link</button></details></div>`;
+      <input id="pvName" placeholder="Who it's for (optional)"></div>
+    <button class="btn main" style="margin-top:8px" onclick="makePrivate()">Create link + copy it</button></details></div>`;
 }
 function dayNote(d){const n=(d.notes||{})['*'];return `<div style="margin-top:6px">${n?`<span class="snote">📝 ${esc(n)}</span> `:''}<button class="tl" style="padding-left:0" onclick="classNote('*')">${n?'Edit day note':'Add day note'}</button></div>`}
 async function classNote(time){
