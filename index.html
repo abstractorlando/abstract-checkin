@@ -120,7 +120,7 @@
   .chip.on{background:var(--purp);border-color:var(--purp);color:#fff}
   .si{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
   .modal{position:fixed;inset:0;background:rgba(29,27,38,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
-  .mbox{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center}
+  .mbox{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center;max-height:92vh;overflow:auto;overscroll-behavior:contain}
   .arr{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font:500 16px Poppins;color:var(--ink);cursor:pointer;min-height:54px}
   .arr:hover{border-color:var(--teal)}
   .arr .t{font-weight:700;color:var(--purp);min-width:78px}
@@ -689,12 +689,13 @@ function abSearch(){clearTimeout(abT);const q=$('abFind').value.trim();if(q.leng
   $('abFound').innerHTML='<p class="muted" style="font-size:14px;margin:6px 0">Searching…</p>';
   abT=setTimeout(async()=>{let L;try{L=await call('findGuests',q)}catch(e){$('abFound').innerHTML=`<p class="muted">${esc(e.message||e)}</p>`;return}
     if($('abFind').value.trim()!==q)return;window.AB_L=L;
-    $('abFound').innerHTML=L.length?L.map((g,i)=>`<button type="button" class="ev" style="padding:8px 4px" onclick="abPick(${i})"><i>👤</i><span><b>${esc(g.name)}</b>${g.owes?' <span class="tag LATE">OWES $'+g.owes+'</span>':''}<small>${esc(fmtPhone(g.phone))} · ${esc(g.email)}${g.visits?' · '+g.visits+' visit'+(g.visits>1?'s':''):''}${g.cards.length?' · 💳 card on file':''}</small></span></button>`).join('')
+    $('abFound').innerHTML=L.length?L.map((g,i)=>`<button type="button" class="ev" style="padding:8px 4px" onclick="abPick(${i})"><i>👤</i><span><b>${esc(g.name)}</b>${g.owes?' <span class="tag LATE">OWES $'+g.owes+'</span>':''}<small>${esc(fmtPhone(g.phone))} · ${esc(g.email)}${g.visits?' · '+g.visits+' visit'+(g.visits>1?'s':''):''}${g.hasCard?' · 💳 card on file':''}</small></span></button>`).join('')
       :'<p class="muted" style="font-size:14px;margin:6px 0">No past guest found. Fill in their details below.</p>'},350)}
-function abPick(i){const g=window.AB_L[i];AB_G=g;$('abFind').value='';$('abFound').innerHTML='';
+async function abPick(i){const g=window.AB_L[i];AB_G=g;g.cards=[];$('abFind').value='';$('abFound').innerHTML='';
   $('abName').value=g.name;$('abEmail').value=g.email;
   const intl=/^\+/.test(g.phone)&&!/^\+1/.test(g.phone);$('abCC').value='0';$('abPhone').value=intl?g.phone:fmtPhone(g.phone);
-  if(g.owes)toast(`${g.name} still owes $${g.owes} from a past no-show or late cancel.`,6000);abMode()}
+  if(g.owes)toast(`${g.name} still owes $${g.owes} from a past no-show or late cancel.`,6000);abMode();
+  if(g.hasCard){try{g.cards=await call('guestCards',g.phone,g.email)}catch(e){g.cards=[]}if(AB_G===g){$('abCardRow').dataset.k='';abMode()}}}
 function abMode(){
   const isToday=$('abDate').value===today();$('abWalkRow').classList.toggle('hide',!isToday);
   const walk=isToday&&$('abWalk').checked,cards=(!walk&&AB_G&&AB_G.cards)||[];
@@ -1257,7 +1258,7 @@ async function goActivity(i){
   show('new');SLOT='';setArrDay(a.date);
   for(let t=0;t<20;t++){await new Promise(r=>setTimeout(r,250));const b=arrivals.find(x=>x.key===a.key);if(b&&b.date===a.date){viewBooking(b.row);return}}
 }
-setInterval(()=>{pollActivity();if(!document.hidden)loadFees()},60000);setTimeout(()=>{pollActivity();loadFees()},1500);
+setInterval(pollActivity,60000);setInterval(()=>{if(!document.hidden)loadFees()},300000);setTimeout(()=>{pollActivity();loadFees()},1500);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollActivity()});
 resetForm();
 if(hasGAS&&!PIN)askPin();
