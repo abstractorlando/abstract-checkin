@@ -153,6 +153,7 @@
   .ev.new{background:#fff0f8;border-radius:10px}.ev i{font-style:normal;font-size:20px;line-height:1.2}.ev small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
   .tday{display:inline-block;background:#c40056;color:#fff;font:700 11px Poppins;letter-spacing:.05em;padding:2px 7px;border-radius:999px;margin-left:4px;vertical-align:2px}
   .newbar{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#c40056;color:#fff;border-radius:12px;padding:10px 14px;margin:0 0 12px;font-weight:600;cursor:pointer}
+  .abs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
   .pickbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff0f8;border:2px solid var(--mag);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-weight:600}
   .ne{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
   .loc{display:inline-block;background:var(--purp);color:#fff;font-weight:800;font-size:18px;padding:4px 12px;border-radius:10px;letter-spacing:.5px}
@@ -207,10 +208,7 @@
         <b style="font-size:17px" id="arrTitle">Arriving today</b>
         <span style="display:flex;gap:6px">
         <button type="button" class="btn main small" style="width:auto" onclick="openAddBooking(null,SLOT)">+ Add booking</button>
-        <details class="imp" id="impMenu"><summary class="btn ghost small">Import ▾</summary>
-          <div class="menu" onclick="setTimeout(()=>$('impMenu').open=false,50)">
-            <label>Import FareHarbor file<input type="file" id="fhFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFH(this)"></label>
-          </div></details></span>
+        <button type="button" class="btn ghost small" style="width:auto" onclick="copyBookLink()">🔗 Booking link</button></span>
       </div>
       <div class="daynav">
         <button type="button" class="btn ghost small" onclick="shiftDay(-1)" aria-label="Previous day">‹</button>
@@ -304,6 +302,12 @@
   <p class="muted" style="margin:0 0 8px">Every new booking, reschedule, cancellation and party request is emailed to:</p>
   <div id="notifyList"><p class="muted">Loading…</p></div>
   <div style="display:flex;gap:8px;margin-top:10px"><input id="notifyNew" type="email" placeholder="Add an email" autocapitalize="off" style="flex:1"><button class="btn main" style="width:auto;padding:0 18px" onclick="addNotify()">Add</button></div>
+  <h2 style="margin:26px 0 6px">Guest booking link</h2>
+  <p class="muted" style="margin:0 0 8px">Send this when a guest asks how to book.</p>
+  <button class="btn ghost" style="width:100%" onclick="copyBookLink()">🔗 Copy booking link</button>
+  <details style="margin-top:22px"><summary class="muted" style="cursor:pointer">One-time: import FareHarbor bookings</summary>
+    <p class="muted" style="font-size:14px">Only needed on launch day, to bring over upcoming bookings made on FareHarbor.</p>
+    <label class="btn ghost" style="width:100%;display:flex;align-items:center;justify-content:center">Choose FareHarbor file<input type="file" id="fhFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFH(this)"></label></details>
   <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('setModal').classList.add('hide')">Close</button>
 </div></div>
 <div id="toast" class="toast"></div>
@@ -646,8 +650,8 @@ function openAddBooking(date,time){
   const ts=timesFor(date),m=document.createElement('div');m.className='modal';m.id='addModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:460px">
     <b style="font-size:20px">Add a booking</b><p class="muted" id="abSub" style="margin:4px 0 12px"></p>
-    <div class="row"><div><label class="l">Day</label><input type="date" id="abDate" value="${date}" onchange="fillTimes($('abTime'),this.value,$('abTime').value);abMode()"></div>
-      <div><label class="l">Time</label><select id="abTime">${ts.map(t=>`<option${t===time?' selected':''}>${t}</option>`).join('')}</select></div></div>
+    <label class="l">Day</label><input type="date" id="abDate" value="${date}" min="${today()}" onchange="AB_T='';abMode();abSlots()">
+    <label class="l" style="margin-top:10px">Time</label><input type="hidden" id="abTime" value="${time||''}"><div id="abSlots" class="abs"><p class="muted">Loading open spots…</p></div>
     <label class="chk" id="abWalkRow" style="margin-top:12px"><input type="checkbox" id="abWalk" checked onchange="abMode()"> They're here now (walk-in, no card needed)</label>
     <label class="l" style="margin-top:12px">Returning guest? <span class="muted">(optional)</span></label>
     <input id="abFind" type="search" placeholder="Find them by name, phone or email" autocomplete="off" oninput="abSearch()">
@@ -657,17 +661,30 @@ function openAddBooking(date,time){
     <div style="display:flex;gap:8px"><select id="abCC" aria-label="Country code" style="width:auto;flex:none;padding:0 8px" onchange="$('abPhone').placeholder=CC[this.value][2]==='+1'?'(407) 555-1234':'Mobile number'">${CC.map(([c,f,d],i)=>`<option value="${i}">${f} ${d}</option>`).join('')}</select>
       <input id="abPhone" type="tel" placeholder="(407) 555-1234" style="flex:1"></div>
     <p class="muted" style="font-size:13px;margin:4px 0 0">Double-check the number. Their texts go here.</p>
-    <label class="l" style="margin-top:10px">Artists</label><input id="abSize" type="number" min="1" value="2" inputmode="numeric" style="max-width:140px">
+    <label class="l" style="margin-top:10px">Artists</label><input id="abSize" type="number" min="1" value="2" inputmode="numeric" style="max-width:140px" oninput="abSlots(true)">
     <label class="l" style="margin-top:10px">Email</label><input id="abEmail" type="email" autocapitalize="off" placeholder="name@email.com">
     <label class="l" style="margin-top:10px">Note <span class="muted">(optional, only staff see this)</span></label><input id="abNote" placeholder="e.g. Booked their next visit at checkout">
     <div id="abCardRow" class="hide" style="margin-top:12px"></div>
     <label class="chk" id="abNotifyRow" style="margin-top:12px"><input type="checkbox" id="abNotify" checked> Text them a confirmation</label>
     <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('addModal').remove()">Cancel</button>
       <button class="btn main" style="flex:1" id="abSave" onclick="saveAddBooking()">Add booking</button></div></div>`;
-  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);abMode();setTimeout(()=>$('abName').focus(),50);
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);AB_T=time||'';abMode();abSlots();
 }
 /* walk-in today = no card; booking ahead = guest gets a link to save a card (spot held 15 minutes) */
-let AB_G=null,abT;
+let AB_G=null,abT,AB_T='',AB_W={};
+/* time buttons with open spots for the chosen day (same numbers as the Schedule) */
+async function abSlots(quick){
+  const date=$('abDate').value,box=$('abSlots');if(!date||!box)return;
+  const ws=weekStart(date);
+  if(!AB_W[ws]){if(!quick)box.innerHTML='<p class="muted">Loading open spots…</p>';try{AB_W[ws]=await call('getWeek',ws)}catch(e){box.innerHTML=`<p class="muted">${esc(e.message||e)}</p>`;return}}
+  if($('abDate').value!==date)return;
+  const day=AB_W[ws].find(d=>d.date===date),need=Math.max(1,+$('abSize').value||1),now=Date.now();
+  const cls=(day&&day.open?day.classes:[]).filter(c=>dateTime(date,c.time)>now-15*6e4);
+  if(!cls.length){box.innerHTML='<p class="muted">No classes left on this day. Pick another day.</p>';$('abTime').value='';return}
+  if(!cls.some(c=>c.time===AB_T))AB_T='';$('abTime').value=AB_T;
+  box.innerHTML=cls.map(c=>{const open=Math.max(0,c.cap-c.booked),fits=open>=need&&c.cap>0;
+    return `<button type="button" class="mvs ${c.time===AB_T?'cur':fits?'':'full'}" onclick="AB_T='${c.time}';abSlots(true)">${c.private?'🔒 ':''}<b>${esc(c.time)}</b><span>${c.cap===0?'Closed':open?open+' open':'Full'}</span></button>`}).join('');
+}
 function abSearch(){clearTimeout(abT);const q=$('abFind').value.trim();if(q.length<2){$('abFound').innerHTML='';return}
   $('abFound').innerHTML='<p class="muted" style="font-size:14px;margin:6px 0">Searching…</p>';
   abT=setTimeout(async()=>{let L;try{L=await call('findGuests',q)}catch(e){$('abFound').innerHTML=`<p class="muted">${esc(e.message||e)}</p>`;return}
@@ -702,6 +719,7 @@ function abPhone(){const raw=$('abPhone').value.trim(),d=raw.replace(/\D/g,''),c
   return d.length>=6?code+' '+d.replace(/^0/,''):''}
 async function saveAddBooking(force){
   const walk=$('abDate').value===today()&&$('abWalk').checked;
+  if(!$('abTime').value)return toast('Pick a time');
   const d={date:$('abDate').value,time:$('abTime').value,name:$('abName').value.trim(),phone:abPhone(),email:$('abEmail').value.trim(),
     size:$('abSize').value,staffNote:$('abNote').value,walkIn:walk,force:!!force};
   d.pm=!walk&&AB_G&&document.querySelector('input[name=abCard]:checked')?document.querySelector('input[name=abCard]:checked').value:'';
@@ -789,9 +807,10 @@ function renderArrivals(){
     const hist=g.visits?` <span class="tag GV">${g.visits} visit${g.visits>1?'s':''}</span>`:'';
     const ns=g.noShows?` <span class="tag LATE">${g.noShows} no-show${g.noShows>1?'s':''}</span>`:'';
     const snote=b.staffNote?`<span class="snote">📝 ${esc(b.staffNote)}</span>`:'';
+    const gnote=g.colors?`<span class="snote">🎨 ${esc(g.colors)}</span>`:'';
         const tools='';
     return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
-    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
+    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
   if(searching)$('arrivals').insertAdjacentHTML('afterbegin',`<p class="muted" style="margin:0 0 8px;font-size:14px">${SR.length} booking${SR.length>1?'s':''} on any day · upcoming first${SR.length>=30?' · showing the first 30':''}</p>`);
@@ -822,20 +841,23 @@ async function openGuest(k){
 }
 async function saveGuest(){
   try{await call('saveGuest',GUESTB.phone,GUESTB.email,GUESTB.reservation,{tags:[],colors:$('gColors').value,notes:$('gNotes').value});
-    $('guestModal').remove();toast('Profile saved ✓');loadArrivals()}catch(e){toast('Could not save: '+(e.message||e),5000)}
+    $('guestModal').remove();toast('Profile saved ✓ You\'ll see it on their bookings',4000);loadArrivals()}catch(e){toast('Could not save: '+(e.message||e),5000)}
 }
 function dateTime(d,t){const [y,m,dd]=d.split('-').map(Number);let [hh,mm]=t.split(/[: ]/);hh=+hh%12+(/PM/.test(t)?12:0);return new Date(y,m-1,dd,hh,+mm).getTime()}
 async function staffAct(k,action){
   const b=bookingByKey(k);if(!b)return;const web=b.source==='Website'&&b.email;let email=false;
   if(action==='noshow'&&b.card&&b.bookingId){closeBk();return feeDecision({bookingId:b.bookingId,reservation:b.reservation,date:b.date,time:b.time,size:b.size,kind:'noshow'},true)}
   if(action==='noshow'&&!confirm(`Mark ${b.reservation} as a NO-SHOW?`+(b.card?`\n\nYou'll then see a button to charge the $${FEE_PER_GUEST*b.size} no-show fee.`:'')))return;
-  if(action==='cancel'){if(!confirm(`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir seats open up again. No fee is charged.`))return;
+  const late=(dateTime(b.date,b.time)-Date.now())/36e5<24&&b.card&&b.bookingId&&b.source!=='FareHarbor';
+  if(action==='cancel'){if(!confirm(late?`Cancel ${b.reservation}'s booking (party of ${b.size})?\n\nThis is within 24 hours of class, so it's a LATE cancel. Next you'll choose to charge or waive the $${FEE_PER_GUEST*b.size} fee.`:`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir seats open up again. No fee is charged.`))return;
     if(web)email=confirm(`Let ${b.reservation} know their booking is cancelled?`)}
   let refund=true;
   if(action==='cancel'&&/\|paid\|/.test(b.addons||'')){
     const hrs=(dateTime(b.date,b.time)-Date.now())/36e5;
     refund=confirm(`Refund ${b.reservation}'s $30 sparkling wine?\n\n`+(hrs<24?'They are cancelling within 24 hours, so the policy says you can keep it. OK = refund, Cancel = keep it.':'They cancelled more than 24 hours ahead, so the policy says refund it. OK = refund, Cancel = keep it.'))}
-  try{await call('staffUpdate',b.key,action,{email,refund});closeBk();toast({noshow:'Marked no-show',cancel:'Booking cancelled',restore:'Back on the list'}[action]);showDone=action!=='restore'?showDone:false;loadArrivals()}
+  try{await call('staffUpdate',b.key,action,{email,refund,late:action==='cancel'&&late});closeBk();
+    if(action==='cancel'&&late){loadArrivals();return feeDecision({bookingId:b.bookingId,reservation:b.reservation,date:b.date,time:b.time,size:b.size,kind:'late'})}
+    toast({noshow:'Marked no-show',cancel:'Booking cancelled',restore:'Back on the list'}[action]);showDone=action!=='restore'?showDone:false;loadArrivals()}
   catch(e){toast('Could not update: '+(e.message||e),5000)}
 }
 /* Reschedule: pick a class from a week view that shows open spots (like FareHarbor's rebook) */
@@ -876,15 +898,16 @@ async function saveMove(k,date,time,force){
   try{let r=await call('staffUpdate',b.key,'move',{date,time,email,force:!!force});
     if(r.needsForce){if(!confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for a party of ${b.size}. Reschedule them anyway?`))return;
       r=await call('staffUpdate',b.key,'move',{date,time,email,force:true})}
-    MV=null;closeBk();toast(`Rescheduled to ${niceDate(date)} · ${time}`,3500);loadArrivals()}
+    MV=null;closeBk();toast(`Rescheduled to ${niceDate(date)} · ${time}`,3500);loadArrivals();
+    if((dateTime(b.date,b.time)-Date.now())/36e5<24&&b.card&&b.bookingId&&!b.fee)feeDecision({bookingId:b.bookingId,reservation:b.reservation,date:b.date,time:b.time,size:b.size,kind:'late',resched:true})}
   catch(e){toast('Could not reschedule: '+(e.message||e),5000)}
 }
 /* ---------- fees in one step ---------- */
 function feeDecision(f,marking){
-  const full=FEE_PER_GUEST*f.size,what=f.kind==='noshow'?'No-show':'Late cancel';
+  const full=FEE_PER_GUEST*f.size,what=f.kind==='noshow'?'No-show':f.resched?'Late reschedule':'Late cancel';
   const m=document.createElement('div');m.className='modal';m.id='feeModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:420px"><b style="font-size:20px">${what}: ${esc(f.reservation)}</b>
-    <p class="muted" style="margin:4px 0 14px">${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size}${marking?'<br>Choose what to do with the fee. This also marks them as a no-show.':''}</p>
+    <p class="muted" style="margin:4px 0 14px">${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size}${marking?'<br>Choose what to do with the fee. This also marks them as a no-show.':f.resched?'<br>They rescheduled within 24 hours of class, so the late-change fee applies. Charge it or waive it.':''}</p>
     <button class="btn main" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},null)">Charge the full $${full}</button>
     <button class="btn ghost" style="width:100%;margin-top:8px" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},-1)">Charge part of it…</button>
     <button class="btn ghost" style="width:100%;margin-top:8px" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},0)">Waive the fee</button>
@@ -945,7 +968,8 @@ function viewBooking(row){
     wine?['Add-on',wine]:null,['Booked from',src],b.bookingId?['Confirmation',esc(b.bookingId)]:null,
     b.source==='FareHarbor'?['Deposit',b.deposit?'$'+money(b.deposit)+' paid · take off the bill':'—']:null,
     b.card?['Card','Saved for no-show protection']:needCard?['Card','Not saved yet']:null,b.staffNote?['Staff note','📝 '+esc(b.staffNote)]:null,
-    g.visits?['History',`${g.visits} visit${g.visits>1?'s':''}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`]:null].filter(Boolean);
+    g.visits?['History',`${g.visits} visit${g.visits>1?'s':''}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`]:null,
+    g.colors?['Favorite colors','🎨 '+esc(g.colors)]:null,g.notes?['Guest notes','💜 '+esc(g.notes)]:null].filter(Boolean);
   const btn=(label,fn,cls)=>`<button class="btn ${cls||'ghost'}" onclick="${fn}">${label}</button>`;
   const main=b.partyId?btn('See their check-in',`closeBk();openParty('${b.partyId}','${b.date}')`,'main')
     :active?btn('Check in this party',`closeBk();pick(${b.row})`,'main'):'';
@@ -1121,7 +1145,8 @@ function privHtml(d){
         <div class="scap"><input type="number" min="0" inputmode="numeric" value="${p.cap}" data-t="${esc(p.time)}" aria-label="Seats for private ${esc(p.time)}"
           onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div></div>
       <div class="prow"><button class="btn ghost small" onclick="copyLink('${esc(p.link)}')">Copy link</button>
-        <button class="tl" onclick="if(confirm('Remove this private class? Bookings already made stay.'))privCall('removePrivate','${p.code}')">Remove</button></div>
+        ${p.regular?`<button class="btn ghost small" onclick="if(confirm('Make ${esc(p.time)} public again?\n\nIt goes back on the public booking page with the normal ${d.defaultCap} seats. The ${p.booked} people already booked stay booked.'))privCall('removePrivate','${p.code}')">Make public</button>`
+          :`<button class="tl" onclick="if(confirm('Remove this extra private class? Bookings already made stay.'))privCall('removePrivate','${p.code}')">Remove</button>`}</div>
     </div>`).join('');
   const times=timesFor(d.date);
   return list+`<div class="card"><details id="privForm"><summary class="btn ghost small" style="display:inline-flex">+ Private class (link only)</summary>
@@ -1144,6 +1169,8 @@ async function makePrivate(){
     const p=(SCH.privates||[]).find(x=>x.time.toUpperCase()===String(t).trim().toUpperCase().replace(/^(\d{1,2})\s*(AM|PM)$/,'$1:00 $2'))||(SCH.privates||[]).slice(-1)[0];
     if(p)copyLink(p.link)}catch(e){toast(e.message||String(e),5000)}
 }
+let BOOK_URL='';
+async function copyBookLink(){try{BOOK_URL=BOOK_URL||await call('bookingLink');copyLink(BOOK_URL)}catch(e){toast(e.message||String(e),5000)}}
 function copyLink(u){(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Link copied ✓ Paste it in a text or email',4000),()=>prompt('Copy this link:',u))}
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='pvTime')$('pvOther').classList.toggle('hide',e.target.value!=='other')});
 function renderSched(){
@@ -1152,7 +1179,7 @@ function renderSched(){
     <span class="muted">${d.regular?'Closed for booking':'Not a regular class day'}</span>${dayNote(d)}</div>
     <button class="btn main" style="width:auto;padding:0 22px" onclick="setCap('*',${d.regular?'null':d.defaultCap})">Open this day</button></div>`+privHtml(d);return}
   const nt=d.notes||{};
-  $('schedBox').innerHTML=`<div class="card sday"><div><b style="font-size:20px">${esc(title)}</b><br><span class="muted">Online booking is open</span>${dayNote(d)}</div>
+  $('schedBox').innerHTML=`<div class="card sday"><div><b style="font-size:20px">${esc(title)}</b><br><span class="muted">Online booking is open · <a href="#" style="color:var(--teal);font-weight:600" onclick="copyLink('${esc(d.bookUrl||'')}');return false">copy booking page link</a></span>${dayNote(d)}</div>
       <button class="btn ghost" style="border-color:#c40056;color:#c40056" onclick="if(confirm('Close ALL classes on ${esc(title)} for new bookings?'))setCap('*',0)">Close whole day</button></div>`+
     d.classes.map(c=>{const closed=c.cap===0,full=!closed&&c.booked>=c.cap,pct=c.cap?Math.min(100,c.booked/c.cap*100):100;
       return `<div class="card scls${closed?' off':''}">
@@ -1163,7 +1190,7 @@ function renderSched(){
           onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div>
         <button class="btn ghost small" onclick="setCap('${c.time}',${closed?d.defaultCap:0})">${closed?'Open':'Close'}</button>
         ${c.custom?`<button class="tl" onclick="setCap('${c.time}',null)">Reset to ${d.defaultCap}</button>`:''}
-        <div class="cnote">${nt[c.time]?`<span class="snote">📝 ${esc(nt[c.time])}</span>`:''}<button class="tl" onclick="classNote('${c.time}')">${nt[c.time]?'Edit note':'Add note'}</button></div>
+        <div class="cnote">${nt[c.time]?`<span class="snote">📝 ${esc(nt[c.time])}</span>`:''}<button class="tl" onclick="classNote('${c.time}')">${nt[c.time]?'Edit note':'Add note'}</button>${c.link&&!closed?`<button class="tl" onclick="copyLink('${esc(c.link)}')">🔗 Copy link to this class</button>`:''}</div>
       </div>`}).join('')+privHtml(d);
 }
 function capInput(el){
