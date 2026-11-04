@@ -809,8 +809,8 @@ async function openGuest(k){
   const b=bookingByKey(k);if(!b)return;GUESTB=b;
   try{GUEST=await call('getGuest',b.phone,b.email,b.reservation)}catch(e){toast(e.message||String(e),5000);return}
   const g=GUEST,s=g.stats,tags=[...new Set([...g.allTags,...g.tags])];
-  const line=[s.visits?`${s.visits} visit${s.visits>1?'s':''} (${s.visitsYear} in the last year)`:'First visit',
-    s.lastVisit?'last '+niceDate(s.lastVisit):'',s.guestsBrought?s.guestsBrought+' artists in their parties':'',
+  const line=[s.visits?`${s.visits} visit${s.visits>1?'s':''}${s.fhVisits?'':` (${s.visitsYear} in the last year)`}`:'First visit',s.firstVisit?'since '+new Date(s.firstVisit+'T12:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}):'',
+    s.lastVisit?'last '+niceDate(s.lastVisit):'',s.visits&&s.guestsBrought?(s.guestsBrought-s.visits>0?'has brought '+(s.guestsBrought-s.visits)+' guest'+(s.guestsBrought-s.visits>1?'s':'')+' with them':'usually comes solo'):'',
     s.noShows?s.noShows+' no-show'+(s.noShows>1?'s':''):'',s.lateCancels?s.lateCancels+' late cancel'+(s.lateCancels>1?'s':''):''].filter(Boolean).join(' · ');
   const m=document.createElement('div');m.className='modal';m.id='guestModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px">
