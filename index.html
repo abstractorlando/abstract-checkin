@@ -813,7 +813,7 @@ function renderArrivals(){
       :feeKind?`<div class="feerow"><span class="tag LATE">FEE NOT DECIDED</span>${fd}</div>`:'';
     const k=encodeURIComponent(b.key);
     const g=b.guest||{},gt='';
-    const hist=g.visits?` <span class="tag GV" title="This guest's history">${g.visits} visit${g.visits>1?'s':''}</span>`:'';
+    const hist=g.visits?` <span class="tag GV" title="Times they've come before this booking">${g.visits} past visit${g.visits>1?'s':''}</span>`:(/cancel/i.test(b.status)?'':` <span class="tag GV" style="background:var(--teal)" title="No visits before this booking">1st visit</span>`);
     const ns=g.noShows?` <span class="tag GN" title="This guest's history, not this booking">no-showed ${g.noShows===1?'once':g.noShows+'×'} before</span>`:'';
     const snote=b.staffNote?`<span class="snote">📝 ${esc(b.staffNote)}</span>`:'';
     const gnote=g.colors?`<span class="snote">🎨 ${esc(g.colors)}</span>`:'';
@@ -858,7 +858,7 @@ async function staffAct(k,action){
   if(action==='noshow'&&b.card&&b.bookingId){closeBk();return feeDecision({bookingId:b.bookingId,reservation:b.reservation,date:b.date,time:b.time,size:b.size,kind:'noshow'},true)}
   if(action==='noshow'&&!confirm(`Mark ${b.reservation} as a NO-SHOW?`+(b.card?`\n\nYou'll then see a button to charge the $${FEE_PER_GUEST*b.size} no-show fee.`:'')))return;
   const late=(dateTime(b.date,b.time)-Date.now())/36e5<24&&b.card&&b.bookingId&&b.source!=='FareHarbor';
-  if(action==='cancel'){if(!confirm(late?`Cancel ${b.reservation}'s booking (party of ${b.size})?\n\nThis is within 24 hours of class, so it's a LATE cancel. Next you'll choose to charge or waive the $${FEE_PER_GUEST*b.size} fee.`:`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir seats open up again. No fee is charged.`))return;
+  if(action==='cancel'){if(!confirm(late?`Cancel ${b.reservation}'s booking (party of ${b.size})?\n\nThis is within 24 hours of class, so it's a LATE cancel. Next you'll choose to charge or waive the $${FEE_PER_GUEST*b.size} fee.`:`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir spots open up again. No fee is charged.`))return;
     if(web)email=confirm(`Let ${b.reservation} know their booking is cancelled?`)}
   let refund=true;
   if(action==='cancel'&&/\|paid\|/.test(b.addons||'')){
@@ -991,11 +991,11 @@ function viewBooking(row){
   const ph=b.phone?`<a href="sms:${esc(b.phone.replace(/[^\d+]/g,''))}">${esc(fmtPhone(b.phone))}</a>`:'—';
   const rows=[['When',`${niceDate(b.date)} · ${esc(b.time)}`],['Party',`${b.size} artist${b.size>1?'s':''}`],['Status',st],['Phone',ph],
     ['Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'],b.guests?['Artists',esc(b.guests)]:null,b.note?['Their note',`“${esc(b.note)}”`]:null,
-    wine?['Add-on',wine]:null,['Booked from',src],b.bookingId?['Confirmation',esc(b.bookingId)]:null,
+    wine?['Add-on',wine]:null,['Booked from',src],b.created&&exactTime(b.created)?['Booked on',exactTime(b.created)]:null,b.bookingId?['Confirmation',esc(b.bookingId)]:null,
     b.source==='FareHarbor'?['Deposit',b.deposit?'$'+money(b.deposit)+' paid · take off the bill':'—']:null,
-    b.guestFee?['Removed guests',esc(b.guestFee.split(' · pi_')[0])]:null,
+    b.guestFee?['Late change fees',b.guestFee.split(' | ').map(f=>esc(f.replace(/ · pi_\w+/,''))).join('<br>')]:null,
     b.card?['Card','Saved for no-show protection']:needCard?['Card','Not saved yet']:null,b.staffNote?['Staff note','📝 '+esc(b.staffNote)]:null,
-    g.visits?['History',`${g.visits} visit${g.visits>1?'s':''}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`]:null,
+    ['History',`${g.visits?g.visits+' past visit'+(g.visits>1?'s':''):'First visit'}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`],
     g.colors?['Favorite colors','🎨 '+esc(g.colors)]:null,g.notes?['Guest notes','💜 '+esc(g.notes)]:null].filter(Boolean);
   const btn=(label,fn,cls)=>`<button class="btn ${cls||'ghost'}" onclick="${fn}">${label}</button>`;
   const main=b.partyId?btn('See their check-in',`closeBk();openParty('${b.partyId}','${b.date}')`,'main')
@@ -1208,17 +1208,17 @@ async function loadSched(){
 function privHtml(d){
   const list=(d.privates||[]).map(p=>`<div class="card priv">
       <div class="prow"><div class="stime"><b>🔒 ${esc(p.time)}</b><span class="muted">Private link${p.name?' · '+esc(p.name):''} · ${p.booked} booked · hidden from the booking page</span></div>
-        <div class="scap"><input type="number" min="0" inputmode="numeric" value="${p.cap}" data-t="${esc(p.time)}" aria-label="Seats for private ${esc(p.time)}"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div></div>
+        <div class="scap"><input type="number" min="0" inputmode="numeric" value="${p.cap}" data-t="${esc(p.time)}" aria-label="Spots for private ${esc(p.time)}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">spots</span></div></div>
       <div class="prow"><button class="btn ghost small" onclick="copyLink('${esc(p.link)}')">Copy link</button>
-        ${p.regular?`<button class="btn ghost small" onclick="if(confirm('Make ${esc(p.time)} public again?\\n\\nIt goes back on the public booking page with the normal ${d.defaultCap} seats. The ${p.booked} people already booked stay booked.'))privCall('removePrivate','${p.code}')">Make public</button>`
+        ${p.regular?`<button class="btn ghost small" onclick="if(confirm('Make ${esc(p.time)} public again?\\n\\nIt goes back on the public booking page with the normal ${d.defaultCap} spots. The ${p.booked} people already booked stay booked.'))privCall('removePrivate','${p.code}')">Make public</button>`
           :`<button class="tl" onclick="if(confirm('Remove this extra class? Bookings already made stay.'))privCall('removePrivate','${p.code}')">Remove</button>`}</div>
     </div>`).join('');
   const times=timesFor(d.date);
   return list+`<div class="card"><details id="privForm"><summary class="btn ghost small" style="display:inline-flex">🔒 + Private booking link</summary>
     <p class="muted" style="margin:10px 0">Hides a class from the public booking page so only the people you send the link to can book it. Use it for a private group, or to save the last few spots for one guest you're texting.</p>
     <div class="mv"><select id="pvTime">${times.map(t=>`<option>${t}</option>`).join('')}<option value="other">Other time…</option></select>
-      <input id="pvOther" class="hide" placeholder="e.g. 7:00 PM"><input id="pvSeats" type="number" min="1" inputmode="numeric" value="${d.defaultCap}" style="max-width:110px" aria-label="Seats">
+      <input id="pvOther" class="hide" placeholder="e.g. 7:00 PM"><input id="pvSeats" type="number" min="1" inputmode="numeric" value="${d.defaultCap}" style="max-width:110px" aria-label="Spots">
       <input id="pvName" placeholder="Who it's for (optional)"></div>
     <button class="btn main" style="margin-top:8px" onclick="makePrivate()">Create link + copy it</button></details></div>`;
 }
@@ -1252,8 +1252,8 @@ function renderSched(){
         <div class="stime"><b>${c.time}</b><span class="muted">${closed?'Closed':full?'Full':(c.cap-c.booked)+' open'}</span></div>
         <div class="sbar"><div style="width:${pct}%"></div></div>
         <div class="scount"><b>${c.booked}</b> booked of</div>
-        <div class="scap"><input type="number" min="0" max="99" inputmode="numeric" value="${c.cap}" data-t="${c.time}" aria-label="Seats for ${c.time}"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div>
+        <div class="scap"><input type="number" min="0" max="99" inputmode="numeric" value="${c.cap}" data-t="${c.time}" aria-label="Spots for ${c.time}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">spots</span></div>
         <button class="btn ghost small" onclick="setCap('${c.time}',${closed?d.defaultCap:0})">${closed?'Open':'Close'}</button>
         ${c.custom?`<button class="tl" onclick="setCap('${c.time}',null)">Reset to ${d.defaultCap}</button>`:''}
         <div class="cnote">${nt[c.time]?`<span class="snote">📝 ${esc(nt[c.time])}</span>`:''}<button class="tl" onclick="classNote('${c.time}')">${nt[c.time]?'Edit note':'Add note'}</button>${c.link&&!closed?`<button class="tl" onclick="copyLink('${esc(c.link)}')">🔗 Copy link to this class</button>`:''}</div>
@@ -1281,7 +1281,8 @@ $('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$(
 /* ---------- 🔔 new bookings bell ---------- */
 let ACT=[],ACT_SEEN='',ACT_FIRST=true,AUDIO=null;
 try{ACT_SEEN=localStorage.getItem('abs_seen')||''}catch(e){}
-const EV={confirmed:['🎨','booked'],moved:['🔁','rescheduled to'],cancelled:['✖️','cancelled'],late:['⚠️','cancelled late'],party:['🎈','sent a party request'],card:['💳','saved their card for']};
+const EV={confirmed:['🎨','booked'],moved:['🔁','rescheduled to'],cancelled:['✖️','cancelled'],late:['⚠️','cancelled late'],changed:['👥','changed party size'],party:['🎈','sent a party request'],card:['💳','saved their card for']};
+function exactTime(iso){const d=new Date(iso);return isNaN(d)?'':d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
 function ago(iso){const m=Math.round((Date.now()-new Date(iso))/6e4);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' hr ago':new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
 function chime(){try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioContext)();const t=AUDIO.currentTime;[880,1320].forEach((f,i)=>{const o=AUDIO.createOscillator(),g=AUDIO.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.0001,t+i*.18);g.gain.exponentialRampToValueAtTime(.25,t+i*.18+.02);g.gain.exponentialRampToValueAtTime(.0001,t+i*.18+.5);o.connect(g).connect(AUDIO.destination);o.start(t+i*.18);o.stop(t+i*.18+.55)})}catch(e){}}
 document.addEventListener('pointerdown',()=>{try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioContext)();AUDIO.resume()}catch(e){}},{once:true});
@@ -1311,7 +1312,7 @@ function openBell(){
     <b style="font-size:21px">New activity</b><p class="muted" style="margin:4px 0 10px;font-size:14px">Bookings, changes and party requests from guests. Tap one to open it.</p>
     ${ACT.length?ACT.map((a,i)=>{const e=EV[a.kind]||['•',a.kind];const td=a.date===today()&&a.kind!=='party';
       const what=a.kind==='party'?`${a.date?'for '+niceDate(a.date):''}${a.size?' · '+esc(a.size)+' kids':''}`:`${td?'':niceDate(a.date)+' · '}${esc(a.time)}${a.size?' · party of '+esc(a.size):''}`;
-      return `<button class="ev${u.has(a.at)?' new':''}" onclick="goActivity(${i})"><i>${e[0]}</i><span><b>${esc(a.name)}</b> ${e[1]}${td?'<span class="tday">TODAY</span>':''}<small>${what}${a.kind==='moved'&&a.detail?' (was '+esc(a.detail)+')':''}${a.kind==='party'&&a.detail?' · '+esc(a.detail):''} · ${ago(a.at)}</small></span></button>`}).join('')
+      return `<button class="ev${u.has(a.at)?' new':''}" onclick="goActivity(${i})"><i>${e[0]}</i><span><b>${esc(a.name)}</b> ${e[1]}${td?'<span class="tday">TODAY</span>':''}<small>${what}${(a.kind==='moved'||a.kind==='changed')&&a.detail?' (was '+esc(a.detail)+')':''}${a.kind==='party'&&a.detail?' · '+esc(a.detail):''} · ${exactTime(a.at)}</small></span></button>`}).join('')
       :'<p class="muted">Nothing yet. New bookings will show up here.</p>'}
     <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('bellModal').remove()">Close</button></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
