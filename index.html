@@ -99,6 +99,8 @@
   .scap input.saving{color:var(--muted)}
   .snote{display:block;font-size:13px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:3px 8px;margin-top:4px;font-style:normal}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
+  .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
+  .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
   .cnote{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .wide main{max-width:1320px}
   .slots{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.slots .chip{margin:0}
@@ -783,7 +785,7 @@ function renderArrivals(){
   // a class drops off the list once checked in, or 2 hours after it started (no-show)
   const isPast=b=>b.date<today()||(isToday&&tMin(b.time)+120<nowM);
   const live=b=>b.status==='Confirmed'||b.status==='Needs card';
-  const done=b=>b.partyId||!live(b)||isPast(b);
+  const done=b=>b.partyId||!live(b)||b.date<today();
   const slotTimes=[...new Set(arrivals.filter(b=>live(b)||b.partyId).map(b=>b.time))].sort((a,b)=>tMin(a)-tMin(b));
   if(SLOT&&!slotTimes.includes(SLOT))SLOT='';
   const cnt=t=>arrivals.filter(b=>b.time===t&&(live(b)||b.partyId)).reduce((s,b)=>s+b.size,0);
@@ -799,7 +801,8 @@ function renderArrivals(){
     const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FH</span>':b.source==='Staff'?' <span class="tag WEB">STAFF</span>':'';
     const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?' <span class="tag WINE">🍾 WINE PAID</span>':/refunded/.test(b.addons)?'':' <span class="tag WINE">🍾 WINE · collect $30</span>';
     const dep=b.source==='FareHarbor'?`<span class="dep">${b.deposit?'$'+money(b.deposit)+' deposit paid · take off bill':'FareHarbor booking · check deposit'}</span>`:'';
-    const st=b.status==='Needs card'?(cardLate(b)?' <span class="tag LATE">NO CARD · SPOT RELEASED</span>':' <span class="tag WINE">WAITING FOR CARD</span>'):b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
+    const started=dateTime(b.date,b.time)+60*6e4<Date.now();
+    const st=b.partyId?' <span class="tag OK">CHECKED IN</span>':b.status==='Confirmed'?(started?' <span class="tag NC">NOT CHECKED IN</span>':searching?' <span class="tag BK">BOOKED</span>':''):b.status==='Needs card'?(cardLate(b)?' <span class="tag LATE">NO CARD · SPOT RELEASED</span>':' <span class="tag WINE">WAITING FOR CARD</span>'):b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
     const fee=FEE_PER_GUEST*b.size;
     const feeKind=b.status==='Late cancel'?'late':b.status==='No-show'?'noshow':'';
     const fb=(label,amt,cls)=>`<button class="btn ghost small feebtn${cls||''}" onclick="chargeFee('${b.bookingId}','${feeKind||((b.fee||'').split('|')[4])||'noshow'}',${fee},${amt})">${label}</button>`;
@@ -810,8 +813,8 @@ function renderArrivals(){
       :feeKind?`<div class="feerow"><span class="tag LATE">FEE NOT DECIDED</span>${fd}</div>`:'';
     const k=encodeURIComponent(b.key);
     const g=b.guest||{},gt='';
-    const hist=g.visits?` <span class="tag GV">${g.visits} visit${g.visits>1?'s':''}</span>`:'';
-    const ns=g.noShows?` <span class="tag LATE">${g.noShows} no-show${g.noShows>1?'s':''}</span>`:'';
+    const hist=g.visits?` <span class="tag GV" title="This guest's history">${g.visits} visit${g.visits>1?'s':''}</span>`:'';
+    const ns=g.noShows?` <span class="tag GN" title="This guest's history, not this booking">no-showed ${g.noShows===1?'once':g.noShows+'×'} before</span>`:'';
     const snote=b.staffNote?`<span class="snote">📝 ${esc(b.staffNote)}</span>`:'';
     const gnote=g.colors?`<span class="snote">🎨 ${esc(g.colors)}</span>`:'';
         const tools='';
@@ -933,18 +936,35 @@ async function feeGo(fj,amt){
 }
 let FEES=[];
 async function loadFees(){if(!PIN)return;try{FEES=await call('pendingFees')}catch(e){return}
-  $('feeAlert').innerHTML=FEES.length?`<span>💳 ${FEES.length} no-show / late-cancel fee${FEES.length>1?'s':''} still to decide</span><b>Decide ›</b>`:'';
+  const nc=FEES.filter(f=>f.kind==='unchecked').length,fz=FEES.length-nc;
+  $('feeAlert').innerHTML=FEES.length?`<span>${nc?`❓ ${nc} not checked in`:''}${nc&&fz?' · ':''}${fz?`💳 ${fz} fee${fz>1?'s':''} to decide`:''}</span><b>Decide ›</b>`:'';
   $('feeAlert').classList.toggle('hide',!FEES.length)}
 function openFees(){
   const old=$('feesModal');if(old)old.remove();
   const m=document.createElement('div');m.className='modal';m.id='feesModal';
   m.innerHTML=`<div class="mbox bk" style="max-width:520px"><button class="bkx" onclick="$('feesModal').remove()" aria-label="Close">×</button>
-    <b style="font-size:21px">Fees to decide</b><p class="muted" style="margin:4px 0 10px;font-size:14px">No-shows and late cancels with a saved card. Charge, charge part, or waive each one.</p>
-    ${FEES.length?FEES.map((f,i)=>`<button class="ev" onclick="feeDecision(FEES[${i}])"><i>${f.kind==='noshow'?'🚫':'⚠️'}</i><span><b>${esc(f.reservation)}</b> ${f.kind==='noshow'?'no-show':'cancelled late'}<small>${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size} · fee up to $${FEE_PER_GUEST*f.size}</small></span></button>`).join('')
+    <b style="font-size:21px">To decide</b><p class="muted" style="margin:4px 0 10px;font-size:14px">Parties nobody checked in, plus no-show and late-cancel fees. Go through these at the end of the shift.</p>
+    ${FEES.length?FEES.map((f,i)=>f.kind==='unchecked'?`<button class="ev" onclick="uncheckedDecide(${i})"><i>❓</i><span><b>${esc(f.reservation)}</b> wasn't checked in<small>${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size} · no-show, or did they come?</small></span></button>`
+      :`<button class="ev" onclick="feeDecision(FEES[${i}])"><i>${f.kind==='noshow'?'🚫':'⚠️'}</i><span><b>${esc(f.reservation)}</b> ${f.kind==='noshow'?'no-show':'cancelled late'}<small>${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size} · fee up to $${FEE_PER_GUEST*f.size}</small></span></button>`).join('')
       :'<p class="muted">All done. Nothing left to decide.</p>'}
     <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('feesModal').remove()">Close</button></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
 }
+function uncheckedDecide(i){
+  const f=FEES[i],m=document.createElement('div');m.className='modal';m.id='ucModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:420px"><b style="font-size:20px">${esc(f.reservation)}</b>
+    <p class="muted" style="margin:4px 0 14px">${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size}<br>Nobody checked this party in.</p>
+    <button class="btn main" onclick="ucNoShow(${i})">They didn't come: no-show</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="ucCame(${i})">They came: check them in</button>
+    <button class="tl" style="width:100%;margin-top:10px;padding:10px" onclick="$('ucModal').remove()">Go back</button></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+async function ucNoShow(i){const f=FEES[i];$('ucModal').remove();
+  if(f.card&&f.bookingId){if($('feesModal'))$('feesModal').remove();return feeDecision(Object.assign({},f,{kind:'noshow'}),true)}
+  try{await call('staffUpdate',f.key,'noshow',{});toast('Marked no-show (no card on file, so no fee)',4500);loadFees();loadArrivals();if($('feesModal'))$('feesModal').remove()}catch(e){toast(e.message||String(e),5000)}}
+async function ucCame(i){const f=FEES[i];$('ucModal').remove();if($('feesModal'))$('feesModal').remove();
+  show('new');SLOT='';setArrDay(f.date);
+  for(let t=0;t<20;t++){await new Promise(z=>setTimeout(z,250));const b=arrivals.find(x=>x.key===f.key);if(b){pick(b.row);toast('Add their names, then Check in & print.',4500);return}}}
 async function chargeFee(id,kind,full,amt){
   const bk=arrivals.find(x=>x.bookingId===id),name=bk?bk.reservation:'this guest';
   const why=kind==='noshow'?'not showing up':'cancelling late';
