@@ -195,7 +195,7 @@ function track(name,d){
     if(EMBEDDED){parent.postMessage({ao:'track',name,d},'*');return}
     const v={currency:'USD',value:d.value,party_size:d.size};
     if(name==='checkout'){gtag('event','begin_checkout',v);fbq('track','InitiateCheckout',{currency:'USD',value:d.value})}
-    if(name==='booked'){gtag('event','book_class',Object.assign({transaction_id:d.id},v));
+    if(name==='booked'){gtag('event','purchase',Object.assign({transaction_id:d.id},v));
       fbq('track','Schedule',{currency:'USD',value:d.value},{eventID:d.id});fbq('track','Purchase',{currency:'USD',value:d.value,num_items:d.size},{eventID:d.id+'-p'})}
   }catch(e){}
 }
