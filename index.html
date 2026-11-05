@@ -154,6 +154,8 @@
   .tday{display:inline-block;background:#c40056;color:#fff;font:700 11px Poppins;letter-spacing:.05em;padding:2px 7px;border-radius:999px;margin-left:4px;vertical-align:2px}
   .newbar{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#c40056;color:#fff;border-radius:12px;padding:10px 14px;margin:0 0 12px;font-weight:600;cursor:pointer}
   .abs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+  .hist{border:1px solid var(--line);border-radius:12px;padding:4px 12px}.hi{display:grid;grid-template-columns:112px 1fr auto;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.hi:last-child{border-bottom:0}
+  .hd{color:var(--muted);font-size:13px}.hb{font:700 11px Poppins;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:#efeafd;color:var(--purp)}.hb.g{background:#e6f6fa;color:var(--teal)}
   .pickbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff0f8;border:2px solid var(--mag);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-weight:600}
   .ne{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
   .loc{display:inline-block;background:var(--purp);color:#fff;font-weight:800;font-size:18px;padding:4px 12px;border-radius:10px;letter-spacing:.5px}
@@ -989,6 +991,7 @@ function viewBooking(row){
     <div class="bkl">${rows.map(r=>`<span>${r[0]}</span><div>${r[1]}</div>`).join('')}</div>
     ${main?`<div style="margin-top:14px">${main}</div>`:''}
     <div class="bka">${acts.join('')}</div><div id="mv_${k}"></div>
+    <div class="bkh">Booking history</div><div id="bkHist"><p class="muted">${b.bookingId?'Loading…':'No changes yet.'}</p></div>
     <div class="bkh">Messages to the guest</div><div id="bkMsgs"><p class="muted">${b.bookingId?'Loading…':'Bookings imported from Toast or FareHarbor have no messages from this system.'}</p></div>
     <div id="bkResend"></div>
     <button class="btn ghost" style="width:100%;margin-top:14px" onclick="closeBk()">Close</button></div>`;
@@ -998,6 +1001,7 @@ function viewBooking(row){
 async function loadBkMsgs(b,fresh){
   let d;try{d=fresh||await call('getBookingDetail',b.key)}catch(e){if($('bkMsgs'))$('bkMsgs').innerHTML=`<p class="muted">Could not load messages: ${esc(e.message||e)}</p>`;return}
   if(!$('bkMsgs'))return;
+  if($('bkHist'))$('bkHist').innerHTML=(d.history||[]).length?`<div class="hist">${d.history.map(h=>`<div class="hi"><span class="hd">${esc(fmtWhen(h.at))}</span><span>${esc(h.what)}</span><span class="hb ${h.by==='Guest'?'g':''}">${esc(h.by)}</span></div>`).join('')}</div>`:'<p class="muted">No changes yet.</p>';
   const chip=x=>{const s=x.status;
     if(x.channel==='Email'&&x.opened)return `<span class="ms ok">Opened ${esc(fmtWhen(x.opened))}</span>`;
     const c=s==='Delivered'?'ok':/Failed|Not delivered/.test(s)?'bad':s==='Waiting'?'wait':s==='Cancelled'?'off':'';
