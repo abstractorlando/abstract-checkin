@@ -371,16 +371,15 @@ function fillTimes(sel,date,keep){const ts=timesFor(date);sel.innerHTML=ts.map(t
 const STUDIO = 'Abstract Orlando · (689) 348-8239';
 const FEE_PER_GUEST = 50; // keep in sync with BOOK.feePerGuest in Booking.gs
 /* ====== PIECE TYPES (suggestions when storing) ====== */
-const PIECE_TYPES = {
-  /* Project names as listed in FareHarbor */
-  'Bears':['Kodiak','Silvertip','Grizzly','Yearling','Cub'],
-  'Piggy Banks':['626','Floppy','Winnie','Kitty','Fluffy','Cooper','The Bat','Labubu'],
-  'Sculptures':['Air Abstract','Heart Sculpture','Topolino/Topolina','Trooper','Snoopy','Skully','Tars','Gargantua','Turbo'],
-  'Vases & Lamp':['Daisy- 8" Glass Vase','Magnolia- 10" Glass Vase','Halo'],
-  'Coasters & Trays':['Ear Coasters','Tapas','Goya Bamboo Tray','Dali Bamboo Tray','Warhol Acacia Tray'],
-  'Art Pieces':['Banksy','Pollock','Frida','Hilma'],
-  'Wall Cutouts':['Melody Guitar','The Boss','High Four','Castle','Ears','Crush','Sunshine','Surfboard','Shark','T-REX','Smiley'],
-  'Canvases':['Degas Canvas','Monet Canvas','Van Gogh Canvas']
+const PIECE_TYPES = {   /* fallback only: the real list is edited in Settings > Projects */
+  "Canvas": ["Degas 16\"x12\"", "Monet 20\"x16\"", "Van Gogh 36\"x12\""],
+  "Vases/Table Sculptures": ["Daisy - Small Vase", "Magnolia - Large Vase", "Moonflower", "Halo"],
+  "Bears": ["Cub", "Yearling", "Grizzly", "Silvertip", "Kodiak"],
+  "Sculptures": ["Gargantua", "Tars", "Trooper", "Topolino/Topolina", "Snoopy", "Air Abstract", "Heart", "Turbo", "Skully"],
+  "Piggy Bank": ["Cooper", "626", "Fluffy", "The Bat", "Labubu", "Winnie", "Kitty", "Floppy"],
+  "Table Decor": ["Banksy Wooden Tray", "Pollock Wooden Tray", "Frida Lazy Susan", "Hilma Lazy Susan", "Goya Bamboo Tray", "Dali Bamboo Tray", "Warhol Acacia Tray", "Tapas Coasters", "Ear Coasters", "Hexagon Coasters"],
+  "Wall Cutouts": ["Sunshine", "Crush", "Surfboard", "Shark", "Melody", "T-Rex", "Ears", "The Boss", "Donnie", "Helmet"],
+  "Seasonals": ["Christmas Thief (Grinch)", "Ornaments", "Christmas Tree"]
 };
 
 /* ====== YOUR APPS SCRIPT WEB APP LINK (ends in /exec) ====== */
