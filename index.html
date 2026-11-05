@@ -623,12 +623,12 @@ function openProjects(id){
       return `<div class="pjg" data-row="${g.row}"><div class="pjn"><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b></div><div class="pjitems">${items.map(pjItem).join('')}</div>
         <button type="button" class="tl" onclick="this.previousElementSibling.insertAdjacentHTML('beforeend',pjItem({project:'',where:''}))">+ another project</button></div>`}).join('')}
     <datalist id="ptList">${PT_ALL().map(t=>`<option value="${esc(t)}">`).join('')}</datalist>
-    <button class="btn main" style="font-size:16px" onclick="saveProjects('${id}')">Save projects</button></div>`;
+    <div style="display:flex;gap:8px"><button class="btn ghost" style="flex:1" onclick="$('pjf_${id}').innerHTML=''">Cancel</button><button class="btn main" style="flex:2;font-size:16px" onclick="saveProjects('${id}')">Save projects</button></div></div>`;
 }
 function pjAuto(inp){if(!isHome(inp.value))return;const seg=inp.parentNode.querySelector('.seg3');[...seg.children].forEach(b=>b.classList.toggle('on',b.dataset.w==='home'))}
 function pjItem(d){return `<div class="pji"><input list="ptList" placeholder="Project (e.g. Cub)" value="${esc(d.project||'')}" onchange="pjAuto(this)">
   <div class="seg3">${Object.entries(WHERE).map(([k,v])=>`<button type="button" class="${d.where===k?'on':''}" data-w="${k}" onclick="[...this.parentNode.children].forEach(b=>b.classList.toggle('on',b===this))">${v}</button>`).join('')}</div>
-  <button type="button" class="x" onclick="this.parentNode.remove()" aria-label="Remove">×</button></div>`}
+  <button type="button" class="x" onclick="rmRow(this)" aria-label="Remove">×</button></div>`}
 async function saveProjects(id){
   const box=$('pjf_'+id),list=[];let bad='';
   box.querySelectorAll('.pjg').forEach(gEl=>{const items=[];gEl.querySelectorAll('.pji').forEach(it=>{const project=it.querySelector('input').value.trim(),w=(it.querySelector('.seg3 .on')||{}).dataset;
@@ -731,13 +731,15 @@ function openStore(id){
     <button type="button" class="tl" onclick="$('pcl_${id}').insertAdjacentHTML('beforeend',pieceRow({project:'',shelf:'',who:''}))">+ add a piece</button>
     <datalist id="ptList">${PT_ALL().map(t=>`<option value="${esc(t)}">`).join('')}</datalist>
     <label class="chk"><input type="checkbox" id="nt_${id}" ${first?'checked':''}> ${closedToday()?'Tell the guest it\'s ready <b>Tuesday at 7 PM</b> (we\'re closed today)':'Send the "ready for pickup" text (or email) now'}</label>
-    <button class="btn main" style="font-size:16px" onclick="saveStore('${id}')">Save</button></div>`;
+    <div style="display:flex;gap:8px"><button class="btn ghost" style="flex:1" onclick="$('sf_${id}').innerHTML=''">Cancel</button><button class="btn main" style="flex:2;font-size:16px" onclick="saveStore('${id}')">Save</button></div></div>`;
   const f=box.querySelector('.pcr input[data-k=shelf]');if(f)f.focus();
 }
 function pieceRow(i){return `<div class="pcr"><input data-k="project" list="ptList" placeholder="Piece (e.g. Cub)" value="${esc(i.project||'')}">
   <input data-k="who" placeholder="Whose (optional)" value="${esc(i.who||'')}" style="max-width:150px">
   <input data-k="shelf" placeholder="Shelf (B1)" value="${esc(i.shelf||'')}" autocapitalize="characters" style="max-width:120px" oninput="this.value=this.value.toUpperCase().replace(/[\\s-]+/g,'')">
-  <button type="button" class="x" onclick="this.parentNode.remove()" aria-label="Remove">×</button></div>`}
+  <button type="button" class="x" onclick="rmRow(this)" aria-label="Remove this piece">×</button></div>`}
+function rmRow(b){const r=b.parentNode,v=[...r.querySelectorAll('input')].map(i=>i.value.trim()).filter(Boolean);
+  if(v.length&&!confirm(`Remove ${v[0]} from this list?\n\nNothing changes until you tap Save.`))return;r.remove()}
 async function saveStore(id){
   const items=[...$('pcl_'+id).querySelectorAll('.pcr')].map(r=>{const v=k=>r.querySelector(`[data-k=${k}]`).value.trim();return{project:v('project'),who:v('who'),shelf:v('shelf')}}).filter(i=>i.project||i.shelf);
   if(!items.length)return toast('Add at least one piece');
