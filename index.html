@@ -109,8 +109,8 @@
   .evb{display:block}.evl{display:block;font-size:14px;margin-top:3px;color:var(--ink);font-weight:500}.evl em{font-style:normal;display:inline-block;min-width:44px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--purp);margin-right:6px}.evt{display:block;font-size:12px;color:var(--muted);margin-top:4px}
   .dsum{margin-top:14px;border:2px solid var(--line);border-radius:14px;padding:12px 14px;background:#faf9fd}
   .dsh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}.dsh b{font-size:16px}.dsh span{font-size:13px}
-  .dsg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:600px){.dsg{grid-template-columns:1fr 1fr}}
-  .dsg div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.dsg span{display:block;font-size:12px;color:var(--muted);font-weight:600}.dsg b{font-size:24px;color:var(--purp)}.dsg small{color:var(--muted);margin-left:4px;font-size:12px}
+  .dsg{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}@media(max-width:760px){.dsg{grid-template-columns:repeat(3,1fr)}}@media(max-width:420px){.dsg{grid-template-columns:1fr 1fr}}
+  .dsg div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.dsg span{display:block;font-size:12px;color:var(--muted);font-weight:600}.dsg b{font-size:24px;color:var(--purp)}.dsg small{display:block;color:var(--muted);font-size:11px}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -140,7 +140,7 @@
   .arr:hover{border-color:var(--teal)}
   .arr .t{font-weight:700;color:var(--purp);min-width:78px}
   .arr .nm{flex:1;font-weight:600}
-  .arr .sz{background:var(--soft);border-radius:999px;padding:2px 10px;font-weight:700;font-size:14px}
+  .arr .sz{background:#ece8fb;color:var(--purp);border-radius:12px;padding:5px 12px;font-weight:600;font-size:12px;text-align:center;line-height:1.1;min-width:64px;flex:none}.arr .sz b{display:block;font-size:20px;font-weight:800}
   .arr.in{opacity:.45}
   .arr.sel{border-color:var(--mag);background:#fff0f8}
   .bk{max-width:820px;max-height:92vh;overflow:auto;text-align:left;padding:20px 22px;position:relative}
@@ -226,7 +226,7 @@
         <b style="font-size:17px" id="arrTitle">Arriving today</b>
         <span style="display:flex;gap:6px">
         <button type="button" class="btn main small" style="width:auto" onclick="openAddBooking(null,SLOT)">+ Add booking</button>
-        <button type="button" class="btn ghost small" style="width:auto" onclick="copyBookLink()">🔗 Booking link</button></span>
+</span>
       </div>
       <div class="daynav">
         <button type="button" class="btn ghost small" onclick="shiftDay(-1)" aria-label="Previous day">‹</button>
@@ -796,14 +796,11 @@ async function loadDaySum(){
   const d=$('dt').value;let s;try{s=await call('daySummary',d)}catch(e){return}
   if(d!==$('dt').value||!$('daySum'))return;DSUM=s;
   const pct=n=>s.guests?' ('+Math.round(n*100/s.guests)+'%)':'';
-  $('daySum').innerHTML=`<div class="dsum"><div class="dsh"><b>${d===today()?'Today\'s':niceDate(d).split(',')[0]+'\'s'} numbers</b><span class="muted">checked-in guests only</span></div>
-    <div class="dsg"><div><span>Total guests</span><b>${s.guests}</b></div><div><span>First timers (FT)</span><b>${s.ft}</b><small>${pct(s.ft)}</small></div>
-    <div><span>Returning (RG)</span><b>${s.rg}</b><small>${pct(s.rg)}</small></div><div><span>Walk-ins</span><b>${s.walkIns}</b><small>${pct(s.walkIns)}</small></div></div>
-    <p class="muted" style="margin:8px 0 0;font-size:13px">${s.parties} part${s.parties===1?'y':'ies'} checked in${s.expected?` · ${s.expected} booked guest${s.expected>1?'s':''} not checked in yet`:''}${s.noShows?` · ${s.noShows} no-show guest${s.noShows>1?'s':''}`:''}</p>
-    <button class="btn ghost small" style="margin-top:8px" onclick="copyDaySum()">Copy for Team Scorecard</button></div>`;
+  const box=(l,v,hint)=>`<div><span>${l}</span><b>${v}</b>${hint?`<small>${hint}</small>`:''}</div>`;
+  $('daySum').innerHTML=`<div class="dsum"><div class="dsh"><b>${d===today()?'Today\'s':niceDate(d).split(',')[0]+'\'s'} numbers</b><span class="muted">for the Team Scorecard</span></div>
+    <div class="dsg">${box('Guests booked',s.booked)}${box('Checked in',s.guests,'incl. walk-ins')}${box('First timers (FT)',s.ft,pct(s.ft))}${box('Returning (RG)',s.rg,pct(s.rg))}${box('Walk-ins',s.walkIns)}${box('No-shows',s.noShows)}</div>
+    ${s.expected?`<p class="muted" style="margin:8px 0 0;font-size:13px">${s.expected} booked guest${s.expected>1?'s':''} not checked in yet</p>`:''}</div>`;
 }
-function copyDaySum(){const s=DSUM;if(!s)return;const t=`Total guests: ${s.guests}\nFT: ${s.ft}\nRG: ${s.rg}\nWalk-ins: ${s.walkIns}`;
-  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Copied ✓ Paste it into the Team Scorecard',3000),()=>prompt('Copy these numbers:',t.replace(/\n/g,' · ')))}
 function tMin(t){const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||'');if(!m)return 9999;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2]}
 let showDone=false;
 function renderArrivals(){
@@ -846,7 +843,7 @@ function renderArrivals(){
     const gnote='';   // colors and notes live in the guest profile, not on the list
         const tools='';
     return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
-    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
+    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz"><b>${b.size}</b>${b.size===1?'guest':'guests'}</span></button>${tools}${act}</div>`}).join('')+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
   if(searching)$('arrivals').insertAdjacentHTML('afterbegin',`<p class="muted" style="margin:0 0 8px;font-size:14px">${SR.length} booking${SR.length>1?'s':''} on any day · upcoming first${SR.length>=30?' · showing the first 30':''}</p>`);
