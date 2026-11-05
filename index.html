@@ -116,6 +116,7 @@
   .stp{display:flex;align-items:center;gap:16px}.stp button{width:48px;height:48px;border-radius:50%;border:2px solid var(--line);background:#fff;font:700 22px Poppins;color:var(--purp);cursor:pointer}.stp b{font-size:28px;min-width:36px;text-align:center}
   .abn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .wait{margin-top:10px;border:2px dashed #f5c26b;background:#fffaf0;border-radius:12px;padding:10px 12px}.wait>b{font-size:14px;color:#b26a00}
+  .nsl{margin-top:10px;font-size:14px;line-height:2}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -599,11 +600,25 @@ async function addProject(row){
 }
 /* guests on the booking who haven't arrived yet: tap FT or RG when they walk in (checks them in + prints) */
 function waitingHtml(p){
-  const f=p[0],exp=f.expected||0,missing=exp-p.length;if(missing<=0)return'';
-  const used=p.map(g=>g.name.toLowerCase()),names=(f.bookedNames||'').split(/,\s*/).filter(n=>n&&!used.includes(n.toLowerCase()));
-  return `<div class="wait"><b>${missing} of ${exp} not here yet</b>${Array.from({length:missing},(_,i)=>{const n=names[i]||'';
+  const f=p[0],exp=f.expected||0,ns=(f.noShowNames||'').split(/,\s*/).filter(Boolean),missing=exp-p.length-ns.length;
+  const nsHtml=ns.length?`<div class="nsl">${ns.map(n=>`<span class="tag GN">NO-SHOW</span> <b>${esc(n)}</b> <a href="#" onclick="guestNoShow('${f.partyId}','${esc(n).replace(/'/g,"\\'")}',1);return false" style="color:var(--teal);font-size:13px;font-weight:600">undo</a>`).join('<br>')}</div>`:'';
+  if(missing<=0)return nsHtml;
+  const used=p.map(g=>g.name.toLowerCase()).concat(ns.map(n=>n.toLowerCase())),names=(f.bookedNames||'').split(/,\s*/).filter(n=>n&&!used.includes(n.toLowerCase()));
+  return nsHtml+`<div class="wait"><b>${missing} of ${exp} not here yet</b>${Array.from({length:missing},(_,i)=>{const n=names[i]||'';
     return `<div class="gi"><input id="wn_${f.partyId}_${i}" value="${esc(n)}" placeholder="First name" style="max-width:220px"><div style="display:flex;gap:6px"><span class="muted" style="align-self:center;font-size:13px">Arrived?</span>
-      <button class="btn ghost small" style="color:var(--teal)" onclick="arrive('${f.partyId}','wn_${f.partyId}_${i}','FT')">FT</button><button class="btn ghost small" style="color:var(--mag)" onclick="arrive('${f.partyId}','wn_${f.partyId}_${i}','RG')">RG</button></div></div>`}).join('')}</div>`;
+      <button class="btn ghost small" style="color:var(--teal)" onclick="arrive('${f.partyId}','wn_${f.partyId}_${i}','FT')">FT</button><button class="btn ghost small" style="color:var(--mag)" onclick="arrive('${f.partyId}','wn_${f.partyId}_${i}','RG')">RG</button>
+      <button class="btn ghost small" style="color:#c40056" onclick="guestNoShow('${f.partyId}',$('wn_${f.partyId}_${i}').value)">No-show</button></div></div>`}).join('')}</div>`;
+}
+/* one guest never came: mark them a no-show, then decide their fee (charge / part / waive) */
+async function guestNoShow(id,name,undo){
+  name=cap((name||'').trim())||'Guest';
+  if(!undo&&!confirm(`Mark ${name} as a no-show?\n\nThe rest of the party stays checked in. Next you'll choose what to do with the $${FEE_PER_GUEST} fee for ${name}.`))return;
+  try{const r=await call('partyNoShow',id,name,!!undo);
+    if(undo){toast(`${name} is back on the booking`);return refreshView()}
+    refreshView();loadArrivals(true);
+    if(r.card&&r.bookingId)feeDecision({bookingId:r.bookingId,reservation:r.reservation,date:r.date,time:r.time,size:1,kind:'noshow',removed:true,guestName:name});
+    else toast(`${name} marked as a no-show. No card on file, so there's no fee to charge.`,5000)}
+  catch(e){toast('Could not update: '+(e.message||e),5000)}
 }
 async function arrive(id,inp,type,extra){
   const n=cap(($(inp).value||'').trim());if(!n){$(inp).focus();return toast('Add their first name')}
@@ -868,7 +883,7 @@ function renderArrivals(){
   // a class drops off the list once checked in, or 2 hours after it started (no-show)
   const isPast=b=>b.date<today()||(isToday&&tMin(b.time)+120<nowM);
   const live=b=>b.status==='Confirmed'||b.status==='Needs card';
-  const part=b=>b.partyId&&(b.checked||b.size)<b.size;
+  const part=b=>b.partyId&&(b.checked||b.size)+(b.nsGuests||0)<b.size;
   const done=b=>(b.partyId&&!part(b))||!live(b)||b.date<today();
   const slotTimes=[...new Set(arrivals.filter(b=>live(b)||b.partyId||b.status==='No-show').map(b=>b.time))].sort((a,b)=>tMin(a)-tMin(b));
   if(SLOT&&!slotTimes.includes(SLOT))SLOT='';
@@ -888,7 +903,7 @@ function renderArrivals(){
     const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?' <span class="tag WINE">🍾 WINE PAID</span>':/refunded/.test(b.addons)?'':' <span class="tag WINE">🍾 WINE · collect $30</span>';
     const dep=b.source==='FareHarbor'?`<span class="dep">${b.deposit?'$'+money(b.deposit)+' deposit paid · take off bill':'FareHarbor booking · check deposit'}</span>`:'';
     const started=dateTime(b.date,b.time)+60*6e4<Date.now();
-    const st=b.partyId?(part(b)?` <span class="tag NC">${b.checked} OF ${b.size} HERE</span>`:' <span class="tag OK">CHECKED IN</span>'):b.status==='Confirmed'?(started?' <span class="tag NC">NOT CHECKED IN</span>':searching?' <span class="tag BK">BOOKED</span>':''):b.status==='Needs card'?(cardLate(b)?' <span class="tag LATE">NO CARD · SPOT RELEASED</span>':' <span class="tag WINE">WAITING FOR CARD</span>'):b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
+    const st=b.partyId?(part(b)?` <span class="tag NC">${b.checked} OF ${b.size} HERE</span>`:' <span class="tag OK">CHECKED IN</span>')+(b.nsGuests?` <span class="tag GN">${b.nsGuests} NO-SHOW</span>`:''):b.status==='Confirmed'?(started?' <span class="tag NC">NOT CHECKED IN</span>':searching?' <span class="tag BK">BOOKED</span>':''):b.status==='Needs card'?(cardLate(b)?' <span class="tag LATE">NO CARD · SPOT RELEASED</span>':' <span class="tag WINE">WAITING FOR CARD</span>'):b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
     const fee=FEE_PER_GUEST*b.size;
     const feeKind=b.status==='Late cancel'?'late':b.status==='No-show'?'noshow':'';
     const fb=(label,amt,cls)=>`<button class="btn ghost small feebtn${cls||''}" onclick="chargeFee('${b.bookingId}','${feeKind||((b.fee||'').split('|')[4])||'noshow'}',${fee},${amt})">${label}</button>`;
@@ -1014,10 +1029,10 @@ async function saveMove(k,date,time,force){
 }
 /* ---------- fees in one step ---------- */
 function feeDecision(f,marking){
-  const full=FEE_PER_GUEST*f.size,what=f.kind==='noshow'?'No-show':f.removed?'Guests removed late':f.resched?'Late reschedule':'Late cancel';
+  const full=FEE_PER_GUEST*f.size,what=f.guestName?'No-show ('+f.guestName+')':f.kind==='noshow'?'No-show':f.removed?'Guests removed late':f.resched?'Late reschedule':'Late cancel';
   const m=document.createElement('div');m.className='modal';m.id='feeModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:420px"><b style="font-size:20px">${what}: ${esc(f.reservation)}</b>
-    <p class="muted" style="margin:4px 0 14px">${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size}${marking?'<br>Choose what to do with the fee. This also marks them as a no-show.':f.removed?`<br>They removed ${f.size} guest${f.size>1?'s':''} within 24 hours of class, so the late-change fee applies to ${f.size>1?'them':'that guest'}. Charge it or waive it.`:f.resched?'<br>They rescheduled within 24 hours of class, so the late-change fee applies. Charge it or waive it.':''}</p>
+    <p class="muted" style="margin:4px 0 14px">${niceDate(f.date)} · ${esc(f.time)}${f.guestName?'':' · party of '+f.size}${f.guestName?`<br>${esc(f.guestName)} didn't come. The rest of the party was checked in. Charge the no-show fee for ${esc(f.guestName)}, part of it, or waive it.`:marking?'<br>Choose what to do with the fee. This also marks them as a no-show.':f.removed?`<br>They removed ${f.size} guest${f.size>1?'s':''} within 24 hours of class, so the late-change fee applies to ${f.size>1?'them':'that guest'}. Charge it or waive it.`:f.resched?'<br>They rescheduled within 24 hours of class, so the late-change fee applies. Charge it or waive it.':''}</p>
     <button class="btn main" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},null)">Charge the full $${full}</button>
     <button class="btn ghost" style="width:100%;margin-top:8px" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},-1)">Charge part of it…</button>
     <button class="btn ghost" style="width:100%;margin-top:8px" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},0)">Waive the fee</button>
