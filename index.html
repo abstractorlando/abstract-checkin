@@ -98,6 +98,7 @@
   .scap input:focus{outline:none}.scap:focus-within{border-color:var(--teal)}.seatl{font-size:13px;color:var(--muted);font-weight:600}
   .scap input.saving{color:var(--muted)}
   .snote{display:block;font-size:13px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:3px 8px;margin-top:4px;font-style:normal}
+  .gbar{border:2px solid;border-radius:12px;padding:10px 14px;margin:0 0 10px;font-size:15px;line-height:1.4}.gbar b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--purp);margin-bottom:2px}.gbar span{white-space:pre-wrap}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -816,7 +817,7 @@ function renderArrivals(){
     const hist=g.visits?` <span class="tag GV" title="Times they've come before this booking">${g.visits} past visit${g.visits>1?'s':''}</span>`:(/cancel/i.test(b.status)?'':` <span class="tag GV" style="background:var(--teal)" title="No visits before this booking">1st visit</span>`);
     const ns=g.noShows?` <span class="tag GN" title="This guest's history, not this booking">no-showed ${g.noShows===1?'once':g.noShows+'×'} before</span>`:'';
     const snote=b.staffNote?`<span class="snote">📝 ${esc(b.staffNote)}</span>`:'';
-    const gnote=g.colors?`<span class="snote">🎨 ${esc(g.colors)}</span>`:'';
+    const gnote='';   // colors and notes live in the guest profile, not on the list
         const tools='';
     return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
     <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
@@ -842,10 +843,14 @@ async function openGuest(k){
     s.noShows?s.noShows+' no-show'+(s.noShows>1?'s':''):'',s.lateCancels?s.lateCancels+' late cancel'+(s.lateCancels>1?'s':''):''].filter(Boolean).join(' · ');
   const m=document.createElement('div');m.className='modal';m.id='guestModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px">
-    <b style="font-size:20px">${esc(b.reservation)}</b><p class="muted" style="margin:4px 0 12px">${esc(line)}</p>${guestActivityHtml(g)}
-    <label class="l" for="gColors">Favorite colors</label><input id="gColors" value="${esc(g.colors||'')}" placeholder="e.g. teal, gold, white" style="margin-bottom:12px">
-    <label class="l" for="gNotes">Notes to help us take care of them (only staff see this)</label><textarea id="gNotes" style="width:100%;min-height:110px;font:500 16px Poppins;padding:12px;border:2px solid var(--line);border-radius:12px" placeholder="e.g. Loves glitter. Celebrated her daughter's birthday here. Prefers a stool to sit on.">${esc(g.notes||'')}</textarea>
-    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" style="flex:1" onclick="$('guestModal').remove()">Close</button><button class="btn main" style="flex:1" onclick="saveGuest()">Save</button></div></div>`;
+    <b style="font-size:20px">${esc(b.reservation)}</b><p class="muted" style="margin:4px 0 12px">${esc(line)}</p>
+    ${g.colors?`<div class="gbar" style="background:#fdf3e2;border-color:#f2d9a8"><b>🎨 Colors / palette</b><span>${esc(g.colors)}</span></div>`:''}
+    ${g.notes?`<div class="gbar" style="background:#f3effc;border-color:#d9cff5"><b>💜 Notes</b><span>${esc(g.notes)}</span></div>`:''}
+    ${guestActivityHtml(g)}
+    ${g.colors||g.notes?`<button class="btn ghost" id="gEditBtn" style="width:100%;margin-bottom:12px" onclick="$('gEdit').classList.remove('hide');$('gSave').classList.remove('hide');this.remove()">✏️ Edit colors and notes</button>`:''}
+    <div id="gEdit" class="${g.colors||g.notes?'hide':''}"><label class="l" for="gColors">Favorite colors or their palette from last time</label><input id="gColors" value="${esc(g.colors||'')}" placeholder="e.g. Gold, White, Stone, Snow, Sand" style="margin-bottom:12px">
+    <label class="l" for="gNotes">Notes to help us take care of them (only staff see this)</label><textarea id="gNotes" style="width:100%;min-height:110px;font:500 16px Poppins;padding:12px;border:2px solid var(--line);border-radius:12px" placeholder="e.g. Loves glitter. Celebrated her daughter's birthday here. Prefers a stool to sit on.">${esc(g.notes||'')}</textarea></div>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" style="flex:1" onclick="$('guestModal').remove()">Close</button><button class="btn main${g.colors||g.notes?' hide':''}" id="gSave" style="flex:1" onclick="saveGuest()">Save</button></div></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
 }
 const ACT_TAG={'Checked in':'#1a8f5a','Upcoming':'#4e3aa2','Today':'#ff009d','No-show':'#c40056','Late cancel':'#c40056','Cancelled':'#6b6878','Not checked in':'#b26a00','Needs card':'#b26a00'};
