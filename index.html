@@ -112,6 +112,8 @@
   .dsg{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}@media(max-width:760px){.dsg{grid-template-columns:repeat(3,1fr)}}@media(max-width:420px){.dsg{grid-template-columns:1fr 1fr}}
   .dsg div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.dsg span{display:block;font-size:12px;color:var(--muted);font-weight:600}.dsg b{font-size:24px;color:var(--purp)}.dsg small{display:block;color:var(--muted);font-size:11px}
   .slh{display:flex;align-items:baseline;gap:10px;margin:12px 2px 6px;padding-bottom:4px;border-bottom:2px solid var(--line)}.slh:first-child{margin-top:2px}.slh b{font-size:15px;color:var(--purp)}.slh span{font-size:13px;color:var(--muted);font-weight:600}
+  .stp{display:flex;align-items:center;gap:16px}.stp button{width:48px;height:48px;border-radius:50%;border:2px solid var(--line);background:#fff;font:700 22px Poppins;color:var(--purp);cursor:pointer}.stp b{font-size:28px;min-width:36px;text-align:center}
+  .abn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -676,20 +678,30 @@ function openAddBooking(date,time){
     <label class="l" style="margin-top:12px">Returning guest? <span class="muted">(optional)</span></label>
     <input id="abFind" type="search" placeholder="Find them by name, phone or email" autocomplete="off" oninput="abSearch()">
     <div id="abFound"></div>
-    <label class="l" style="margin-top:10px">Name</label><input id="abName" placeholder="First and last name" autocapitalize="words">
+    <label class="l" style="margin-top:10px">Name</label><input id="abName" placeholder="First and last name" autocapitalize="words" oninput="abFirst()">
     <label class="l" style="margin-top:10px">Mobile</label>
     <div style="display:flex;gap:8px"><select id="abCC" aria-label="Country code" style="width:auto;flex:none;padding:0 8px" onchange="$('abPhone').placeholder=CC[this.value][2]==='+1'?'(407) 555-1234':'Mobile number'">${CC.map(([c,f,d],i)=>`<option value="${i}">${f} ${d}</option>`).join('')}</select>
       <input id="abPhone" type="tel" placeholder="(407) 555-1234" style="flex:1"></div>
     <p class="muted" style="font-size:13px;margin:4px 0 0">Double-check the number. Their texts go here.</p>
-    <label class="l" style="margin-top:10px">Artists</label><input id="abSize" type="number" min="1" value="2" inputmode="numeric" style="max-width:140px" oninput="abSlots(true)">
+    <label class="l" style="margin-top:12px">Number of guests</label>
+    <div class="stp"><button type="button" onclick="abStep(-1)" aria-label="Fewer guests">−</button><b id="abSizeV">2</b><button type="button" onclick="abStep(1)" aria-label="More guests">+</button><input type="hidden" id="abSize" value="2"></div>
+    <label class="l" style="margin-top:10px">Artist names <span class="muted">(optional)</span></label><div id="abNames" class="abn"></div>
     <label class="l" style="margin-top:10px">Email</label><input id="abEmail" type="email" autocapitalize="off" placeholder="name@email.com">
     <label class="l" style="margin-top:10px">Note <span class="muted">(optional, only staff see this)</span></label><input id="abNote" placeholder="e.g. Booked their next visit at checkout">
     <div id="abCardRow" class="hide" style="margin-top:12px"></div>
     <label class="chk" id="abNotifyRow" style="margin-top:12px"><input type="checkbox" id="abNotify" checked> Text them a confirmation</label>
     <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('addModal').remove()">Cancel</button>
       <button class="btn main" style="flex:1" id="abSave" onclick="saveAddBooking()">Add booking</button></div></div>`;
-  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);AB_T=time||'';abMode();abSlots();
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);AB_T=time||'';abNames();abMode();abSlots();
 }
+/* guest count stepper + one optional name box per artist (names carry over to check-in) */
+function abStep(n){const v=Math.min(40,Math.max(1,(+$('abSize').value||1)+n));$('abSize').value=v;$('abSizeV').textContent=v;abNames();abSlots(true)}
+function abNames(){
+  const box=$('abNames'),n=+$('abSize').value||1,old=[...box.querySelectorAll('input')].map(i=>i.value);
+  box.innerHTML=Array.from({length:n},(_,i)=>`<input placeholder="Artist ${i+1}" autocapitalize="words" value="${esc(old[i]||'')}"${i===0?' oninput="this.dataset.typed=1"':''}>`).join('');
+  abFirst();
+}
+function abFirst(){const f=$('abNames')&&$('abNames').querySelector('input');if(f&&!f.dataset.typed)f.value=($('abName').value.trim().split(/\s+/)[0]||'')}
 /* walk-in today = no card; booking ahead = guest gets a link to save a card (spot held 15 minutes) */
 let AB_G=null,abT,AB_T='',AB_W={};
 /* time buttons with open spots for the chosen day (same numbers as the Schedule) */
@@ -726,7 +738,7 @@ function abMode(){
       <p class="muted" style="font-size:13px;margin:4px 0 0">Let them know the same cancellation policy applies ($${FEE_PER_GUEST} per guest within 24 hours or no-show).</p>`}
   const pm=cards.length?(document.querySelector('input[name=abCard]:checked')||{}).value||'':'';
   $('abNotifyRow').classList.toggle('hide',!(walk||pm));
-  $('abSub').textContent=walk?'Walk-in for today. No card needed. Next you\'ll add their names and print stickers.':'We\'ll send them a secure link to save a card (nothing is charged). Their spot is held for 15 minutes, so ask them to do it right away.';
+  $('abSub').textContent=walk?'Walk-in for today. No card needed. Next you\'ll pick FT or RG for each guest and print stickers.':'We\'ll send them a secure link to save a card (nothing is charged). Their spot is held for 15 minutes, so ask them to do it right away.';
   if(pm)$('abSub').textContent='Returning guest. Their card on file holds the spot, so they\'re confirmed right away.';
   $('abSave').textContent=walk?'Add & check in':pm?'Book with card on file':'Hold spot & send card link';
 }
@@ -742,7 +754,8 @@ async function saveAddBooking(force){
   const walk=$('abDate').value===today()&&$('abWalk').checked;
   if(!$('abTime').value)return toast('Pick a time');
   const d={date:$('abDate').value,time:$('abTime').value,name:$('abName').value.trim(),phone:abPhone(),email:$('abEmail').value.trim(),
-    size:$('abSize').value,staffNote:$('abNote').value,walkIn:walk,force:!!force};
+    size:$('abSize').value,staffNote:$('abNote').value,walkIn:walk,force:!!force,
+    guests:[...$('abNames').querySelectorAll('input')].map(i=>titleCase(i.value)).filter(Boolean).join(', ')};
   d.pm=!walk&&AB_G&&document.querySelector('input[name=abCard]:checked')?document.querySelector('input[name=abCard]:checked').value:'';
   d.notify=(walk||!!d.pm)&&$('abNotify').checked;
   if(d.name.split(/\s+/).length<2)return toast('Add their first and last name');
@@ -760,7 +773,7 @@ async function saveAddBooking(force){
       // walk-in: go straight to check-in with their party filled in
       show('new');$('bkFilter').value='';SR=[];SLOT='';
       for(let t=0;t<24;t++){await new Promise(z=>setTimeout(z,250));const b=arrivals.find(x=>x.bookingId===r.id);
-        if(b){pick(b.row);toast(`${titleCase(d.name)} added. Add their names, then Check in & print.`,5000);return}}
+        if(b){pick(b.row);toast(`${titleCase(d.name)} added. Pick FT or RG for each guest, then Check in & print.`,5000);return}}
       toast(`Booked ${titleCase(d.name)} · ${d.time} ✓`,4000);return}
     cardSentModal(titleCase(d.name),r.sent,r.link);
   }catch(e){btn.disabled=false;btn.textContent=label;toast('Could not add: '+(e.message||e),5000)}
