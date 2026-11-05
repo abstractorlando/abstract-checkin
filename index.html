@@ -111,7 +111,7 @@
   .dsh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}.dsh b{font-size:16px}.dsh span{font-size:13px}
   .dsg{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}@media(max-width:760px){.dsg{grid-template-columns:repeat(3,1fr)}}@media(max-width:420px){.dsg{grid-template-columns:1fr 1fr}}
   .dsg div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.dsg span{display:block;font-size:12px;color:var(--muted);font-weight:600}.dsg b{font-size:24px;color:var(--purp)}.dsg small{display:block;color:var(--muted);font-size:11px}
-  .slh{display:flex;align-items:baseline;gap:10px;margin:12px 2px 6px;padding-bottom:4px;border-bottom:2px solid var(--line)}.slh:first-child{margin-top:2px}.slh b{font-size:15px;color:var(--purp)}.slh span{font-size:13px;color:var(--muted);font-weight:600}
+  .slh{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:12px 2px 6px;padding-bottom:4px;border-bottom:2px solid var(--line)}.slh:first-child{margin-top:2px}.slh b{font-size:15px;color:var(--purp);margin-right:2px}.cp{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;border:1.5px solid}.cp.cpb{color:#1a8f5a;border-color:#9fd8bd;background:#eefaf4}.cp.op{color:var(--muted);border-color:var(--line);background:#fff}.cp.ov{color:#c40056;border-color:#f3a9c6;background:#fff0f5}.cp.ck{color:var(--purp);border-color:#d9cff5;background:#f6f3fe}
   .stp{display:flex;align-items:center;gap:16px}.stp button{width:48px;height:48px;border-radius:50%;border:2px solid var(--line);background:#fff;font:700 22px Poppins;color:var(--purp);cursor:pointer}.stp b{font-size:28px;min-width:36px;text-align:center}
   .abn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
@@ -808,12 +808,21 @@ async function loadArrivals(quiet){
 let DSUM=null;
 async function loadDaySum(){
   const d=$('dt').value;let s;try{s=await call('daySummary',d)}catch(e){return}
-  if(d!==$('dt').value||!$('daySum'))return;DSUM=s;
+  if(d!==$('dt').value||!$('daySum'))return;const had=DSUM&&DSUM.date===d;DSUM=s;if(!had)renderArrivals();
   const pct=n=>s.guests?' ('+Math.round(n*100/s.guests)+'%)':'';
   const box=(l,v,hint)=>`<div><span>${l}</span><b>${v}</b>${hint?`<small>${hint}</small>`:''}</div>`;
   $('daySum').innerHTML=`<div class="dsum"><div class="dsh"><b>${d===today()?'Today\'s':niceDate(d).split(',')[0]+'\'s'} numbers</b><span class="muted">for the Team Scorecard</span></div>
     <div class="dsg">${box('Guests booked',s.booked)}${box('Checked in',s.guests,'incl. walk-ins')}${box('First timers (FT)',s.ft,pct(s.ft))}${box('Returning (RG)',s.rg,pct(s.rg))}${box('Walk-ins',s.walkIns)}${box('No-shows',s.noShows)}</div>
     ${s.expected?`<p class="muted" style="margin:8px 0 0;font-size:13px">${s.expected} booked guest${s.expected>1?'s':''} not checked in yet</p>`:''}</div>`;
+}
+/* FareHarbor-style class headers: booked · open spots · checked in (every class of the day, even empty ones) */
+function classBlocks(list,rows,cnt,ckd){
+  const caps={};((DSUM&&DSUM.date===$('dt').value&&DSUM.classes)||[]).forEach(c=>caps[c.time]=c);
+  const grp={};list.forEach((b,i)=>(grp[b.time]=grp[b.time]||[]).push(rows[i]));
+  const times=[...new Set(Object.keys(grp).concat(SLOT?[]:Object.keys(caps)))].filter(t=>!SLOT||t===SLOT).sort((a,b)=>tMin(a)-tMin(b));
+  return times.map(t=>{const c=caps[t],bk=cnt(t),ck=ckd(t),open=c?c.cap-bk:null;
+    const pills=`<span class="cp cpb">${bk} booked</span>`+(c?(open<0?`<span class="cp ov">Overbooked by ${-open}</span>`:`<span class="cp op">${open} open</span>`):'')+(ck?`<span class="cp ck">${ck} checked in</span>`:'');
+    return `<div class="slh"><b>${c&&c.private?'🔒 ':''}${esc(t)}</b>${pills}${c&&c.private?`<span class="cp op">${esc(c.private)}</span>`:''}</div>`+((grp[t]||[]).join('')||'<p class="muted" style="margin:2px 4px 10px;font-size:14px">No bookings yet</p>')}).join('');
 }
 function tMin(t){const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||'');if(!m)return 9999;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2]}
 let showDone=false;
@@ -827,18 +836,17 @@ function renderArrivals(){
   const slotTimes=[...new Set(arrivals.filter(b=>live(b)||b.partyId||b.status==='No-show').map(b=>b.time))].sort((a,b)=>tMin(a)-tMin(b));
   if(SLOT&&!slotTimes.includes(SLOT))SLOT='';
   const cnt=t=>arrivals.filter(b=>b.time===t&&(live(b)||b.partyId||b.status==='No-show')).reduce((s,b)=>s+b.size,0);   // booked = everyone not cancelled
-  $('slotChips').innerHTML=searching?'':slotTimes.length>1?[`<button class="chip${!SLOT?' on':''}" onclick="SLOT='';renderArrivals()">All times · ${slotTimes.reduce((s,t)=>s+cnt(t),0)}</button>`]
-    .concat(slotTimes.map(t=>`<button class="chip${SLOT===t?' on':''}" onclick="SLOT='${t}';renderArrivals()">${t} · ${cnt(t)}</button>`)).join(''):'';
+  $('slotChips').innerHTML=searching?'':slotTimes.length>1?[`<button class="chip${!SLOT?' on':''}" onclick="SLOT='';renderArrivals()">All times · ${slotTimes.reduce((s,t)=>s+cnt(t),0)} booked</button>`]
+    .concat(slotTimes.map(t=>`<button class="chip${SLOT===t?' on':''}" onclick="SLOT='${t}';renderArrivals()">${t}</button>`)).join(''):'';
   const all=searching?SR:arrivals.filter(b=>!SLOT||b.time===SLOT).sort((a,b)=>tMin(a.time)-tMin(b.time));
   const hidden=searching?[]:all.filter(done);
   const list=(searching||showDone)?all:all.filter(b=>!done(b));
   if(searching&&!SR.length){$('arrivals').innerHTML=SQ?`<p class="muted">No bookings found for “${esc($('bkFilter').value.trim())}” on any day.</p>`:'<p class="muted">Searching all days…</p>';return}
   if(!searching&&!arrivals.length){$('arrivals').innerHTML='<p class="muted">No bookings for this day yet. New bookings show up here on their own. For walk-ins or phone bookings, tap <b>+ Add booking</b>.</p>';return}
   const ckd=t=>arrivals.filter(b=>b.time===t&&b.partyId).reduce((s,b)=>s+b.size,0);
-  let lastT='';
-  $('arrivals').innerHTML=list.map(b=>{
+  const _rows=list.map(b=>{
     const off=!live(b);
-    const head=!searching&&b.time!==lastT?(lastT=b.time,`<div class="slh"><b>${esc(b.time)}</b><span>${cnt(b.time)} guest${cnt(b.time)===1?'':'s'} booked${ckd(b.time)?` · ${ckd(b.time)} checked in`:''}</span></div>`):'';
+    const head='';
     const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FH</span>':b.source==='Staff'?' <span class="tag WEB">STAFF</span>':'';
     const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?' <span class="tag WINE">🍾 WINE PAID</span>':/refunded/.test(b.addons)?'':' <span class="tag WINE">🍾 WINE · collect $30</span>';
     const dep=b.source==='FareHarbor'?`<span class="dep">${b.deposit?'$'+money(b.deposit)+' deposit paid · take off bill':'FareHarbor booking · check deposit'}</span>`:'';
@@ -860,7 +868,8 @@ function renderArrivals(){
     const gnote='';   // colors and notes live in the guest profile, not on the list
         const tools='';
     return `${head}<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
-    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz"><b>${b.size}</b>${b.size===1?'guest':'guests'}</span></button>${tools}${act}</div>`}).join('')+
+    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz"><b>${b.size}</b>${b.size===1?'guest':'guests'}</span></button>${tools}${act}</div>`});
+  $('arrivals').innerHTML=(searching?_rows.join(''):classBlocks(list,_rows,cnt,ckd))+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
   if(searching)$('arrivals').insertAdjacentHTML('afterbegin',`<p class="muted" style="margin:0 0 8px;font-size:14px">${SR.length} booking${SR.length>1?'s':''} on any day · upcoming first${SR.length>=30?' · showing the first 30':''}</p>`);
