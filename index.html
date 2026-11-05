@@ -117,6 +117,7 @@
   .abn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .wait{margin-top:10px;border:2px dashed #f5c26b;background:#fffaf0;border-radius:12px;padding:10px 12px}.wait>b{font-size:14px;color:#b26a00}
   .nsl{margin-top:10px;font-size:14px;line-height:2}
+  .gear.who{width:auto;padding:0 12px;border-radius:999px;font:700 14px Poppins;color:#fff}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -213,6 +214,7 @@
   <h1>Abstract Check-In</h1>
   <button class="gear" onclick="goSearch()" aria-label="Search bookings" title="Search bookings">🔍</button>
   <button class="gear bell" id="bellBtn" onclick="openBell()" aria-label="New bookings" title="New bookings">🔔<span id="bellN" class="bn hide"></span></button>
+  <button class="gear who hide" id="whoBtn" onclick="switchUser()" title="Signed in on this device. Tap to switch."></button>
   <button class="gear" onclick="openSettings()" aria-label="Settings" title="Settings">⚙︎</button>
   <nav>
     <button id="tabNew" class="on" onclick="show('new')"><i>📋</i><span>Manifest</span></button>
@@ -225,6 +227,7 @@
 <main>
   <div id="todayAlert" class="newbar hide" onclick="openBell()"></div>
   <div id="feeAlert" class="newbar hide" style="background:#0093ad" onclick="openFees()"></div>
+  <div id="mailAlert" class="newbar hide" style="background:#b26a00;cursor:default"></div>
   <!-- CHECK IN -->
   <section id="vNew">
     <div class="card">
@@ -323,6 +326,7 @@
   <p class="muted" style="margin:0 0 16px">Saved on this device only.</p>
   <label class="chk" style="font-size:16px"><input type="checkbox" id="rotChk"> Turn sticker 90° (use if it prints sideways)</label>
   <div style="display:flex;gap:8px;margin-top:18px"><button class="btn ghost" style="flex:1" onclick="testPrint()">Test print</button><button class="btn main" style="flex:1" onclick="saveSettings()">Save</button></div>
+  <div id="teamBox"></div>
   <h2 style="margin:26px 0 6px">Booking notices</h2>
   <p class="muted" style="margin:0 0 8px">Every new booking, reschedule, cancellation and party request is emailed to:</p>
   <div id="notifyList"><p class="muted">Loading…</p></div>
@@ -400,7 +404,15 @@ function call(fn,...args){
 /* ---------- staff PIN ---------- */
 let PIN='';try{PIN=localStorage.getItem('abs_pin')||''}catch(e){}
 let asking=false;
-function askPin(wrong){if(asking)return;asking=true;const v=prompt((wrong?'Wrong PIN. ':'')+'Staff PIN');asking=false;if(v===null)return;PIN=v.trim();try{localStorage.setItem('abs_pin',PIN)}catch(e){};loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()}
+function askPin(wrong){if(asking)return;asking=true;const v=prompt((wrong?'That PIN didn\'t match. ':'')+'Your staff PIN (same as your Toast code)');asking=false;if(v===null)return;PIN=v.trim();try{localStorage.setItem('abs_pin',PIN)}catch(e){};loadMe();loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()}
+/* who's signed in on this device: every change is saved under their name */
+let ME=null;
+async function loadMe(){if(!PIN)return;try{ME=await call('whoAmI')}catch(e){return}
+  $('whoBtn').textContent='👤 '+String(ME.name).split(' ')[0];$('whoBtn').classList.remove('hide');showMailLeft(ME.emailsLeft)}
+function switchUser(){if(ME&&!confirm(`Signed in as ${ME.name}.\n\nSwitch to someone else? Their PIN will be asked next.`))return;
+  PIN='';ME=null;try{localStorage.removeItem('abs_pin')}catch(e){};$('whoBtn').classList.add('hide');askPin()}
+function showMailLeft(n){const b=$('mailAlert');if(!b)return;const low=typeof n==='number'&&n<=20;b.classList.toggle('hide',!low);
+  if(low)b.innerHTML=`<span>✉️ ${n?`Only ${n} email${n>1?'s':''} left today`:'No emails left today'} (Google's daily limit). Texts still go out.</span>`}
 demo.importFareHarbor=function(l){l.forEach(b=>this.bk.push(Object.assign({row:this.bk.length+2,partyId:'',source:'FareHarbor',status:'Confirmed',key:'fh'+this.bk.length},b)));return{added:l.length,updated:0}};demo.bk=[];demo.importBookings=function(l){const d={};l.forEach(b=>d[b.date]=1);this.bk=this.bk.filter(b=>!d[b.date]).concat(l.map((b,i)=>Object.assign({row:this.bk.length+i+2,partyId:''},b)));return {imported:l.length,dates:Object.keys(d)}};
 demo.checkEmail=()=>0;demo.getBookings=function(d){return this.bk.filter(b=>b.date===d)};
 const _dsp=demo.saveParty.bind(demo);demo.saveParty=function(p){const o=_dsp(p);const b=this.bk.find(x=>x.row==p.bookingRow);if(b)b.partyId=o[0].partyId;return o};
@@ -536,7 +548,19 @@ async function sendToPrinter(){
   f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},300)};
   f.src=url;
 }
-function openSettings(){$('rotChk').checked=ROTATE;$('setModal').classList.remove('hide');loadNotify()}
+function openSettings(){$('rotChk').checked=ROTATE;$('setModal').classList.remove('hide');loadNotify();loadTeam()}
+async function loadTeam(){const box=$('teamBox');box.innerHTML='';
+  try{ME=await call('whoAmI')}catch(e){return}
+  const mail=typeof ME.emailsLeft==='number'?`<p class="muted" style="margin:6px 0 0;font-size:14px">Emails Google lets us send today: <b>${ME.emailsLeft}</b> left</p>`:'';
+  if(!ME.owner){box.innerHTML=`<h2 style="margin:26px 0 6px">Signed in</h2><p style="margin:0">${esc(ME.name)} <button class="tl" onclick="$('setModal').classList.add('hide');switchUser()">Switch</button></p>${mail}`;return}
+  let T=[];try{T=await call('getTeam')}catch(e){}
+  box.innerHTML=`<h2 style="margin:26px 0 6px">Team</h2><p class="muted" style="margin:0 0 8px">Everyone signs in with their own PIN, so the booking history shows who did what. Signed in here as <b>${esc(ME.name)}</b>.</p>
+    ${ME.teamSet?'':'<p style="color:#c40056;margin:0 0 8px">Run setupTeam() once in Apps Script to load your team.</p>'}
+    <div>${T.map(m=>`<div class="ne"><span><b>${esc(m.name)}</b>${m.owner?' <span class="muted" style="font-size:13px">owner</span>':''} <span class="muted" style="font-size:13px">PIN ${esc(m.pin)}</span></span>${m.name===ME.name?'':`<button class="tl" onclick="removeStaff('${esc(m.name).replace(/'/g,"\\'")}')">Remove</button>`}</div>`).join('')}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="tmName" placeholder="Name" style="flex:2;min-width:140px"><input id="tmPin" placeholder="PIN" inputmode="numeric" maxlength="6" style="flex:1;min-width:90px">
+      <button class="btn main" style="width:auto;padding:0 18px" onclick="addStaff()">Add</button></div>${mail}`}
+async function addStaff(){try{await call('addStaff',$('tmName').value,$('tmPin').value,false);toast('Added ✓');loadTeam()}catch(e){toast(e.message||String(e),5000)}}
+async function removeStaff(n){if(!confirm(`Remove ${n}? Their PIN stops working right away.`))return;try{await call('removeStaff',n);toast('Removed ✓');loadTeam()}catch(e){toast(e.message||String(e),5000)}}
 let NOTIFY=null;
 async function loadNotify(){try{NOTIFY=await call('getNotify');renderNotify()}catch(e){$('notifyList').innerHTML=`<p class="muted">Could not load: ${esc(e.message||e)}</p>`}}
 function renderNotify(){$('notifyList').innerHTML=`<div class="ne"><span><b>${esc(NOTIFY.always)}</b></span><span class="muted" style="font-size:13px">always</span></div>`+
@@ -1054,7 +1078,7 @@ async function feeGo(fj,amt){
   catch(e){if(m)m.querySelectorAll('button').forEach(x=>x.disabled=false);toast('Not charged: '+(e.message||e),6000)}
 }
 let FEES=[];
-async function loadFees(){if(!PIN)return;try{FEES=await call('pendingFees')}catch(e){return}
+async function loadFees(){if(!PIN)return;try{call('emailsLeft').then(showMailLeft,()=>{})}catch(e){};try{FEES=await call('pendingFees')}catch(e){return}
   const nc=FEES.filter(f=>f.kind==='unchecked').length,fz=FEES.length-nc;
   $('feeAlert').innerHTML=FEES.length?`<span>${nc?`❓ ${nc} not checked in`:''}${nc&&fz?' · ':''}${fz?`💳 ${fz} fee${fz>1?'s':''} to decide`:''}</span><b>Decide ›</b>`:'';
   $('feeAlert').classList.toggle('hide',!FEES.length)}
@@ -1453,7 +1477,7 @@ async function goActivity(i){
   show('new');SLOT='';setArrDay(a.date);
   for(let t=0;t<20;t++){await new Promise(r=>setTimeout(r,250));const b=arrivals.find(x=>x.key===a.key);if(b&&b.date===a.date){viewBooking(b.row);return}}
 }
-setInterval(pollActivity,60000);setInterval(()=>{if(!document.hidden)loadFees()},300000);setTimeout(()=>{pollActivity();loadFees()},1500);
+setInterval(pollActivity,60000);setInterval(()=>{if(!document.hidden)loadFees()},300000);setTimeout(()=>{pollActivity();loadFees();loadMe()},1500);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollActivity()});
 resetForm();
 if(hasGAS&&!PIN)askPin();
