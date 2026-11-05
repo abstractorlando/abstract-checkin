@@ -221,7 +221,7 @@
 
 <main>
   <div id="todayAlert" class="newbar hide" onclick="openBell()"></div>
-  <div id="feeAlert" class="newbar hide" style="background:#4e3aa2" onclick="openFees()"></div>
+  <div id="feeAlert" class="newbar hide" style="background:#0093ad" onclick="openFees()"></div>
   <!-- CHECK IN -->
   <section id="vNew">
     <div class="card">
@@ -552,10 +552,23 @@ function storageLine(p){
     <div style="display:flex;gap:6px">${s.pickedUp?'':`<button class="btn ghost small" onclick="pickedUp('${id}')">Picked up</button>`}
       <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
 }
-function renderParties(list,el){
+let DAYSLOT='';
+function renderParties(list,el,byClass){
   if(!list.length){el.innerHTML='<p class="muted">No check-ins found.</p>';return}
   cache={};list.forEach(g=>cache[g.row]=g);
-  el.innerHTML=groupParties(list).map(p=>{parties[p[0].partyId]=p;const f=p[0];return `
+  let ps=groupParties(list),chips='';
+  if(byClass){   // Checked in tab: grouped by class, names A to Z, with a class filter
+    const times=[...new Set(ps.map(p=>p[0].time))].sort((a,b)=>tMin(a)-tMin(b));
+    if(DAYSLOT&&!times.includes(DAYSLOT))DAYSLOT='';
+    chips=times.length>1?`<div class="slots" style="margin:0 0 10px">${[`<button class="chip${!DAYSLOT?' on':''}" onclick="DAYSLOT='';renderParties(dayData,$('dayList'),true)">All classes</button>`]
+      .concat(times.map(t=>`<button class="chip${DAYSLOT===t?' on':''}" onclick="DAYSLOT='${t}';renderParties(dayData,$('dayList'),true)">${t}</button>`)).join('')}</div>`:'';
+    ps=ps.filter(p=>!DAYSLOT||p[0].time===DAYSLOT).sort((a,b)=>tMin(a[0].time)-tMin(b[0].time)||String(a[0].reservation).localeCompare(String(b[0].reservation)));
+  }
+  let lastT='';
+  el.innerHTML=chips+ps.map(p=>{parties[p[0].partyId]=p;const f=p[0];
+    const head=byClass&&f.time!==lastT?(lastT=f.time,(()=>{const inT=ps.filter(x=>x[0].time===f.time);
+      return `<div class="slh"><b>${esc(f.time)}</b><span class="cp ck">${inT.reduce((s,x)=>s+x.length,0)} checked in</span><span class="cp op">${inT.length} part${inT.length===1?'y':'ies'}</span></div>`})()):'';
+    return head+`
     <div class="party${p.every(g=>!g.printed)?' isnew':''}" id="p_${f.partyId}">
       <div class="ph"><div>${p.every(g=>!g.printed)?'<span class="tag NEW">NEW</span> ':''}${f.source==='Guest'?'<span class="muted">(self check-in)</span><br>':''}<b>${esc(f.reservation)}</b><br><span>${esc(niceDate(f.date))} · ${esc(f.time)} · ${f.size} guest${f.size>1?'s':''}</span><br>
         <span>${esc(f.phone||'no phone')} · ${esc(f.email||'no email')}</span> <a href="#" onclick="editContact('${f.partyId}');return false" style="color:var(--teal);font-size:13px;font-weight:600">edit</a></div>
@@ -646,7 +659,7 @@ async function loadDay(quiet){
     const list=await call('getDay',$('dayPick').value);
     if(quiet&&JSON.stringify(list)===JSON.stringify(dayData))return;
     if(quiet&&document.querySelector('#dayList .sf'))return; // don't wipe a form being filled
-    dayData=list;renderParties(list,$('dayList'));
+    dayData=list;renderParties(list,$('dayList'),true);
     const fresh=list.filter(g=>!g.printed);
     $('newBar').classList.toggle('hide',!fresh.length);
     $('newCount').textContent=fresh.length+' new label'+(fresh.length>1?'s':'')+' to print';
