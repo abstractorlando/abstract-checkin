@@ -188,6 +188,7 @@
 <body>
 <header>
   <h1>Abstract Check-In</h1>
+  <button class="gear" onclick="goSearch()" aria-label="Search bookings" title="Search bookings">🔍</button>
   <button class="gear bell" id="bellBtn" onclick="openBell()" aria-label="New bookings" title="New bookings">🔔<span id="bellN" class="bn hide"></span></button>
   <button class="gear" onclick="openSettings()" aria-label="Settings" title="Settings">⚙︎</button>
   <nav>
@@ -216,7 +217,7 @@
         <button type="button" class="btn ghost small" onclick="shiftDay(1)" aria-label="Next day">›</button>
         <button type="button" class="btn ghost small today" onclick="setArrDay(today())">Today</button>
       </div>
-      <input id="bkFilter" placeholder="Search any booking: name, phone, email or confirmation #" oninput="onSearch()" autocomplete="off" type="search">
+      <input id="bkFilter" placeholder="Search bookings: name, phone, email, confirmation # or a word from their notes" oninput="onSearch()" autocomplete="off" type="search">
       <div class="slots" id="slotChips"></div>
       <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
     </div>
@@ -757,6 +758,8 @@ function cardSentModal(name,sent,link){
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
 }
 let SR=[],SQ='',sTimer;
+function goSearch(){show('new');window.scrollTo(0,0);setTimeout(()=>$('bkFilter').focus(),50)}
+document.addEventListener('keydown',e=>{if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'')){e.preventDefault();goSearch()}});
 function onSearch(){const q=$('bkFilter').value.trim();clearTimeout(sTimer);
   if(q.length<2){SR=[];SQ='';renderArrivals();return}
   if(!SR.length||SQ!==q)$('arrivals').innerHTML='<p class="muted">Searching all days…</p>';$('slotChips').innerHTML='';
