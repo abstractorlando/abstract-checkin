@@ -130,7 +130,7 @@
   .gcard{border:2px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}.gcard.empty{opacity:.75}
   .gtop{display:flex;justify-content:space-between;gap:10px}.gbal{font-size:24px;color:#1a8f5a}.gcard.empty .gbal{color:#c40056}
   .gtoast{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#f6f3fe;border-radius:12px;padding:10px 14px;margin:10px 0}.gtoast span{font-weight:600;color:var(--purp)}.gtoast b{font-size:30px;letter-spacing:3px;color:var(--purp)}
-  .guse{margin-top:6px}
+  .guse{margin-top:6px}.gbf{background:#111;color:#fff;border-radius:12px;padding:10px 14px;margin:10px 0 0;font:900 20px Poppins;letter-spacing:1px;text-align:center}.gbf span{display:block;font:700 14px Poppins;letter-spacing:0;color:#ffd84d;margin-top:2px}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -809,6 +809,7 @@ function renderGift(){
   $('giftRes').innerHTML=(cards.length?cards.map((c,i)=>`<div class="gcard${c.left<=0?' empty':''}">
       <div class="gtop"><div><span class="muted" style="font-size:12px;font-weight:700">OLD FAREHARBOR CODE</span><br><b style="font-size:16px;letter-spacing:.5px">${esc(c.old)}</b></div>
         <div style="text-align:right"><span class="muted" style="font-size:12px;font-weight:700">BALANCE LEFT</span><br><b class="gbal">${usd(c.left)}</b></div></div>
+      ${c.blackFriday?`<div class="gbf">BLACK FRIDAY GIFT CARD<span>Not combinable with any other discounts or promotions</span></div>`:''}
       <div class="gtoast"><span>Redeem in Toast with code</span><b>${esc(c.toast)}</b></div>
       ${c.left>0?`<div class="guse"><label class="l" style="margin:0">Amount used in Toast</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="gAmt${i}" inputmode="decimal" placeholder="0.00" style="flex:1;min-width:110px;font-size:18px">
