@@ -560,7 +560,7 @@ function storageLine(p){
     <div style="display:flex;gap:6px">${s.pickedUp?'':`<button class="btn ghost small" onclick="pickedUp('${id}')">Picked up</button>`}
       <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
 }
-let DAYSLOT='';
+let DAYSLOT='',DAYBK=[];
 function renderParties(list,el,byClass){
   if(!list.length){el.innerHTML='<p class="muted">No check-ins found.</p>';return}
   cache={};list.forEach(g=>cache[g.row]=g);
@@ -575,7 +575,8 @@ function renderParties(list,el,byClass){
   let lastT='';
   el.innerHTML=chips+ps.map(p=>{parties[p[0].partyId]=p;const f=p[0];
     const head=byClass&&f.time!==lastT?(lastT=f.time,(()=>{const inT=ps.filter(x=>x[0].time===f.time);
-      return `<div class="slh"><b>${esc(f.time)}</b><span class="cp ck">${inT.reduce((s,x)=>s+x.length,0)} checked in</span><span class="cp op">${inT.length} part${inT.length===1?'y':'ies'}</span></div>`})()):'';
+      const ck=inT.reduce((s,x)=>s+x.length,0),bk=DAYBK.filter(b=>b.date===f.date&&b.time===f.time&&(b.status==='Confirmed'||b.status==='Needs card'||b.partyId||b.status==='No-show')).reduce((s,b)=>s+b.size,0),left=Math.max(0,bk-ck-DAYBK.filter(b=>b.date===f.date&&b.time===f.time).reduce((s,b)=>s+(b.status==='No-show'?b.size:(b.nsGuests||0)),0));
+      return `<div class="slh"><b>${esc(f.time)}</b><span class="cp ck">${ck}${bk>ck?' of '+bk:''} guests checked in</span>${left?`<span class="cp op">${left} still to come</span>`:''}</div>`})()):'';
     return head+`
     <div class="party${p.every(g=>!g.printed)?' isnew':''}" id="p_${f.partyId}">
       <div class="ph"><div>${p.every(g=>!g.printed)?'<span class="tag NEW">NEW</span> ':''}${f.source==='Guest'?'<span class="muted">(self check-in)</span><br>':''}<b>${esc(f.reservation)}</b><br><span>${esc(niceDate(f.date))} · ${esc(f.time)} · ${f.size} guest${f.size>1?'s':''}</span><br>
@@ -697,7 +698,7 @@ async function loadDay(quiet){
     const list=await call('getDay',$('dayPick').value);
     if(quiet&&JSON.stringify(list)===JSON.stringify(dayData))return;
     if(quiet&&document.querySelector('#dayList .sf'))return; // don't wipe a form being filled
-    dayData=list;renderParties(list,$('dayList'),true);
+    dayData=list;try{DAYBK=await call('getBookings',$('dayPick').value)}catch(e){}renderParties(list,$('dayList'),true);
     const fresh=list.filter(g=>!g.printed);
     $('newBar').classList.toggle('hide',!fresh.length);
     $('newCount').textContent=fresh.length+' new label'+(fresh.length>1?'s':'')+' to print';
