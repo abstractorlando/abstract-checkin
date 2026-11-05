@@ -120,6 +120,13 @@
   .gear.who{width:auto;padding:0 12px;border-radius:999px;font:700 14px Poppins;color:#fff}
   .cxl{margin-top:12px;border:2px solid var(--line);border-radius:12px;padding:8px 12px}.cxl summary{cursor:pointer;font-weight:700;color:var(--muted)}
   .cxr{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:9px 2px;font:500 15px Poppins;color:var(--ink);cursor:pointer}.cxr small{color:var(--muted);font-size:13px}
+  .pjt{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;margin:4px 4px 0 0;border:1.5px solid}.pjt.shelf{color:var(--purp);border-color:#d9cff5;background:#f6f3fe}.pjt.ship{color:#00788d;border-color:#a8dbe4;background:#eefafc}.pjt.home{color:var(--muted);border-color:var(--line);background:#fff}
+  .pjl{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#f6f3fe;border-radius:12px;padding:10px 12px;margin:10px 0 0;font-size:14px}.pjl.need{background:#fffaf0;border:2px dashed #f5c26b}
+  .pjform .pjg{border-top:1px solid var(--line);padding:10px 0}.pji{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}.pji input{flex:1;min-width:160px}
+  .seg3{display:flex;border:2px solid var(--line);border-radius:12px;overflow:hidden}.seg3 button{border:0;background:#fff;font:700 13px Poppins;padding:10px 10px;cursor:pointer;color:var(--muted)}.seg3 button.on{background:var(--purp);color:#fff}
+  .sto{align-items:flex-start}.stt{margin-bottom:6px}.pcs{display:flex;gap:10px;align-items:center;margin:4px 0;font-size:15px}.pcs .loc{min-width:56px;text-align:center}.pcs.gone{opacity:.45;text-decoration:line-through}
+  .pcr{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}.pcr input[data-k=project]{flex:1;min-width:150px}
+  .chk.pu{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.pkp .ph b{color:var(--ink)}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -279,9 +286,11 @@
   <!-- TODAY -->
   <section id="vToday" class="hide">
     <div class="card" style="display:flex;gap:10px;align-items:end">
-      <div style="flex:1"><label class="l" for="dayPick">Date</label><input id="dayPick" type="date" onchange="loadDay()"></div>
+      <div style="flex:1"><label class="l" for="dayPick">Date</label><input id="dayPick" type="date" onchange="$('ciQ').value='';loadDay()"></div>
       <button class="btn ghost small" onclick="loadDay()">Refresh</button>
     </div>
+    <div class="card"><label class="l" for="ciQ">Find a checked-in party (any day)</label>
+      <input id="ciQ" type="search" placeholder="Reservation or guest name, phone or email" oninput="debCi()" autocomplete="off"></div>
     <div id="newBar" class="card hide" style="border:2px solid var(--mag);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
       <b id="newCount" style="font-size:17px"></b>
       <button class="btn main" style="width:auto;font-size:16px" onclick="printNew()">Print new labels</button>
@@ -306,7 +315,7 @@
   <!-- FIND -->
   <section id="vFind" class="hide">
     <div class="card">
-      <label class="l" for="q">Pickup: search reservation or guest name</label>
+      <label class="l" for="q">Pickup: ask for the reservation name</label>
       <input id="q" placeholder="Type a name…" oninput="debFind()">
       <datalist id="pieceTypes"></datalist>
     </div>
@@ -329,6 +338,7 @@
   <label class="chk" style="font-size:16px"><input type="checkbox" id="rotChk"> Turn sticker 90° (use if it prints sideways)</label>
   <div style="display:flex;gap:8px;margin-top:18px"><button class="btn ghost" style="flex:1" onclick="testPrint()">Test print</button><button class="btn main" style="flex:1" onclick="saveSettings()">Save</button></div>
   <div id="teamBox"></div>
+  <div id="projBox"></div>
   <h2 style="margin:26px 0 6px">Booking notices</h2>
   <p class="muted" style="margin:0 0 8px">Every new booking, reschedule, cancellation and party request is emailed to:</p>
   <div id="notifyList"><p class="muted">Loading…</p></div>
@@ -551,7 +561,7 @@ async function sendToPrinter(){
   f.src=url;
 }
 function openSettings(){$('rotChk').checked=ROTATE;$('setModal').classList.remove('hide');loadNotify();loadTeam()}
-async function loadTeam(){const box=$('teamBox');box.innerHTML='';
+async function loadTeam(){const box=$('teamBox');box.innerHTML='';if(!PROJECTS)await loadProjects();setTimeout(renderProjBox,0);
   try{ME=await call('whoAmI')}catch(e){return}
   const mail=typeof ME.emailsLeft==='number'?`<p class="muted" style="margin:6px 0 0;font-size:14px">Emails Google lets us send today: <b>${ME.emailsLeft}</b> left</p>`:'';
   if(!ME.owner){box.innerHTML=`<h2 style="margin:26px 0 6px">Signed in</h2><p style="margin:0">${esc(ME.name)} <button class="tl" onclick="$('setModal').classList.add('hide');switchUser()">Switch</button></p>${mail}`;return}
@@ -561,6 +571,13 @@ async function loadTeam(){const box=$('teamBox');box.innerHTML='';
     <div>${T.map(m=>`<div class="ne"><span><b>${esc(m.name)}</b>${m.owner?' <span class="muted" style="font-size:13px">owner</span>':''} <span class="muted" style="font-size:13px">PIN ${esc(m.pin)}</span></span>${m.name===ME.name?'':`<button class="tl" onclick="removeStaff('${esc(m.name).replace(/'/g,"\\'")}')">Remove</button>`}</div>`).join('')}</div>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="tmName" placeholder="Name" style="flex:2;min-width:140px"><input id="tmPin" placeholder="PIN" inputmode="numeric" maxlength="6" style="flex:1;min-width:90px">
       <button class="btn main" style="width:auto;padding:0 18px" onclick="addStaff()">Add</button></div>${mail}`}
+function renderProjBox(){const box=$('projBox');if(!ME||!ME.owner||!PROJECTS){box.innerHTML='';return}
+  const cats=[...new Set(PROJECTS.map(p=>p.cat))];
+  box.innerHTML=`<h2 style="margin:26px 0 6px">Projects</h2><p class="muted" style="margin:0 0 8px">The list staff pick from. Tick <b>same day</b> for projects guests take home right away (they'll be set to "Took home" automatically).</p>
+    <div style="max-height:260px;overflow:auto;border:2px solid var(--line);border-radius:12px;padding:4px 10px">${cats.map(c=>`<div class="pc">${esc(c)}</div>`+PROJECTS.map((p,i)=>p.cat!==c?'':`<div class="ne"><span>${esc(p.name)}</span><span style="display:flex;gap:10px;align-items:center"><label class="muted" style="font-size:13px"><input type="checkbox" ${p.home?'checked':''} onchange="PROJECTS[${i}].home=this.checked;saveProjList()"> same day</label><button class="tl" onclick="if(confirm('Remove ${esc(p.name).replace(/'/g,"\\'")} from the list?')){PROJECTS.splice(${i},1);saveProjList()}">Remove</button></span></div>`).join('')).join('')}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="pjNew" placeholder="New project name" style="flex:2;min-width:140px"><input id="pjCat" list="pjCats" placeholder="Category" style="flex:1;min-width:110px"><datalist id="pjCats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+      <button class="btn main" style="width:auto;padding:0 18px" onclick="if($('pjNew').value.trim()){PROJECTS.push({name:$('pjNew').value.trim(),cat:$('pjCat').value.trim()||'Other',home:false});saveProjList()}">Add</button></div>`}
+async function saveProjList(){try{PROJECTS=await call('saveProjects',PROJECTS);renderProjBox();toast('Project list saved ✓')}catch(e){toast(e.message||String(e),5000)}}
 async function addStaff(){try{await call('addStaff',$('tmName').value,$('tmPin').value,false);toast('Added ✓');loadTeam()}catch(e){toast(e.message||String(e),5000)}}
 async function removeStaff(n){if(!confirm(`Remove ${n}? Their PIN stops working right away.`))return;try{await call('removeStaff',n);toast('Removed ✓');loadTeam()}catch(e){toast(e.message||String(e),5000)}}
 let NOTIFY=null;
@@ -579,24 +596,60 @@ let cache={},parties={};
 function storageLine(p){
   const s=p[0].storage,id=p[0].partyId;
   if(!s)return `<div class="st"><span class="muted">Not in storage yet</span><button class="btn ghost small" onclick="openStore('${id}')">Store &amp; notify</button></div>`;
-  const sent=[s.emailSent?'email':'',s.textSent?'text':''].filter(Boolean).join(' + ');
-  return `<div class="st"><div><span class="loc">${esc(s.location)}</span>
-      <span style="margin-left:8px;font-weight:600">${s.pieces} piece${s.pieces>1?'s':''}</span><br><span style="font-size:14px">${esc(s.pieceType||'')}</span><br>
-      <span class="muted">${s.pickedUp?'<span class="done">✓ Picked up</span>':sent?'Guest notified by '+sent:'Not notified'}</span></div>
-    <div style="display:flex;gap:6px">${s.pickedUp?'':`<button class="btn ghost small" onclick="pickedUp('${id}')">Picked up</button>`}
+  const sent=[s.emailSent?'email':'',s.textSent?'text':''].filter(Boolean).join(' + '),items=s.items||[],left=items.filter(i=>!i.picked);
+  return `<div class="st sto"><div style="flex:1"><div class="stt">${s.pickedUp?'<span class="done">✓ All picked up</span>':`<b>${left.length} piece${left.length===1?'':'s'} on the shelf</b>${left.length<items.length?` <span class="muted">(${items.length-left.length} already picked up)</span>`:''}`}</div>
+      ${items.map((i,k)=>`<div class="pcs${i.picked?' gone':''}"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}${i.picked?` <span class="muted">· picked up ${exactTime(i.picked)}</span>`:''}</span></div>`).join('')}
+      <span class="muted" style="font-size:13px">${sent?'Guest notified by '+sent:'Guest not notified yet'}</span></div>
+    <div style="display:flex;gap:6px;flex-direction:column">${s.pickedUp?'':`<button class="btn main small" style="width:auto" onclick="pickedUp('${id}')">Picked up</button>`}
       <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
 }
 let DAYSLOT='',DAYBK=[];
+const WHERE={shelf:'Storage',ship:'Shipping',home:'Took home'};
+const needsProjects=p=>p.some(g=>!(g.details||[]).length);
+function projectsLine(p){const id=p[0].partyId,all=p.flatMap(g=>(g.details||[]).map(d=>Object.assign({who:g.name},d)));
+  if(needsProjects(p))return `<div class="pjl need"><span>📝 <b>Projects not added yet</b>${all.length?` (${p.filter(g=>!(g.details||[]).length).length} guest${p.filter(g=>!(g.details||[]).length).length>1?'s':''} missing)`:''}</span><button class="btn ghost small" onclick="openProjects('${id}')">Add projects</button></div>`;
+  const c=w=>all.filter(d=>d.where===w);const by=(p.find(g=>g.detailsBy)||{}).detailsBy||'',[who,at]=by.split('|');
+  return `<div class="pjl"><span><b>${c('shelf').length} to store</b>${c('shelf').length?': '+c('shelf').map(d=>esc(d.who)+' ('+esc(d.project)+')').join(', '):''}${c('ship').length?` · <b>${c('ship').length} shipping</b>`:''}${c('home').length?` · <b>${c('home').length} took home</b>`:''}
+    ${who?`<br><small class="muted">Projects added by ${esc(who)}${at?' · '+exactTime(at):''}</small>`:''}</span><button class="btn ghost small" onclick="openProjects('${id}')">Edit projects</button></div>`}
+let PROJECTS=null;
+const PT_ALL=()=>PROJECTS?PROJECTS.map(p=>p.name):Object.values(PIECE_TYPES).flat();
+const isHome=n=>!!(PROJECTS&&PROJECTS.find(p=>p.name.toLowerCase()===String(n).trim().toLowerCase()&&p.home));
+async function loadProjects(){try{PROJECTS=await call('getProjects')}catch(e){}}
+function openProjects(id){
+  const box=$('pjf_'+id);if(box.innerHTML){box.innerHTML='';return}
+  const p=parties[id];
+  box.innerHTML=`<div class="sf pjform"><b>What did each guest make, and where is it going?</b>
+    ${p.map(g=>{const items=(g.details||[]).length?g.details:Array.from({length:g.projects||1},()=>({project:'',where:''}));
+      return `<div class="pjg" data-row="${g.row}"><div class="pjn"><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b></div><div class="pjitems">${items.map(pjItem).join('')}</div>
+        <button type="button" class="tl" onclick="this.previousElementSibling.insertAdjacentHTML('beforeend',pjItem({project:'',where:''}))">+ another project</button></div>`}).join('')}
+    <datalist id="ptList">${PT_ALL().map(t=>`<option value="${esc(t)}">`).join('')}</datalist>
+    <button class="btn main" style="font-size:16px" onclick="saveProjects('${id}')">Save projects</button></div>`;
+}
+function pjAuto(inp){if(!isHome(inp.value))return;const seg=inp.parentNode.querySelector('.seg3');[...seg.children].forEach(b=>b.classList.toggle('on',b.dataset.w==='home'))}
+function pjItem(d){return `<div class="pji"><input list="ptList" placeholder="Project (e.g. Cub)" value="${esc(d.project||'')}" onchange="pjAuto(this)">
+  <div class="seg3">${Object.entries(WHERE).map(([k,v])=>`<button type="button" class="${d.where===k?'on':''}" data-w="${k}" onclick="[...this.parentNode.children].forEach(b=>b.classList.toggle('on',b===this))">${v}</button>`).join('')}</div>
+  <button type="button" class="x" onclick="this.parentNode.remove()" aria-label="Remove">×</button></div>`}
+async function saveProjects(id){
+  const box=$('pjf_'+id),list=[];let bad='';
+  box.querySelectorAll('.pjg').forEach(gEl=>{const items=[];gEl.querySelectorAll('.pji').forEach(it=>{const project=it.querySelector('input').value.trim(),w=(it.querySelector('.seg3 .on')||{}).dataset;
+      if(!project&&!w)return;if(!project)bad='Add the project name';else if(!w)bad=`Pick Storage, Shipping or Took home for ${project}`;items.push({project,where:w&&w.w})});
+    list.push({row:+gEl.dataset.row,items})});
+  if(bad)return toast(bad,4000);
+  try{const upd=await call('setPartyProjects',id,list);upd.forEach(g=>cache[g.row]=g);toast('Projects saved ✓');refreshView()}
+  catch(e){toast('Could not save: '+(e.message||e),5000)}
+}
 function renderParties(list,el,byClass){
   if(!list.length){el.innerHTML='<p class="muted">No check-ins found.</p>';return}
   cache={};list.forEach(g=>cache[g.row]=g);
   let ps=groupParties(list),chips='';
   if(byClass){   // Checked in tab: grouped by class, names A to Z, with a class filter
     const times=[...new Set(ps.map(p=>p[0].time))].sort((a,b)=>tMin(a)-tMin(b));
-    if(DAYSLOT&&!times.includes(DAYSLOT))DAYSLOT='';
-    chips=times.length>1?`<div class="slots" style="margin:0 0 10px">${[`<button class="chip${!DAYSLOT?' on':''}" onclick="DAYSLOT='';renderParties(dayData,$('dayList'),true)">All classes</button>`]
-      .concat(times.map(t=>`<button class="chip${DAYSLOT===t?' on':''}" onclick="DAYSLOT='${t}';renderParties(dayData,$('dayList'),true)">${t}</button>`)).join('')}</div>`:'';
-    ps=ps.filter(p=>!DAYSLOT||p[0].time===DAYSLOT).sort((a,b)=>tMin(a[0].time)-tMin(b[0].time)||String(a[0].reservation).localeCompare(String(b[0].reservation)));
+    if(DAYSLOT&&DAYSLOT!=='__need'&&!times.includes(DAYSLOT))DAYSLOT='';
+    const nNeed=ps.filter(needsProjects).length;
+    chips=(times.length>1||nNeed)?`<div class="slots" style="margin:0 0 10px">${[`<button class="chip${!DAYSLOT?' on':''}" onclick="DAYSLOT='';renderParties(dayData,$('dayList'),true)">All classes</button>`]
+      .concat(times.map(t=>`<button class="chip${DAYSLOT===t?' on':''}" onclick="DAYSLOT='${t}';renderParties(dayData,$('dayList'),true)">${t}</button>`))
+      .concat(nNeed?[`<button class="chip${DAYSLOT==='__need'?' on':''}" style="border-color:#f5c26b" onclick="DAYSLOT='__need';renderParties(dayData,$('dayList'),true)">📝 Needs projects</button>`]:[]).join('')}</div>`:'';
+    ps=ps.filter(p=>!DAYSLOT||(DAYSLOT==='__need'?needsProjects(p):p[0].time===DAYSLOT)).sort((a,b)=>tMin(a[0].time)-tMin(b[0].time)||String(a[0].reservation).localeCompare(String(b[0].reservation)));
   }
   let lastT='';
   el.innerHTML=chips+ps.map(p=>{parties[p[0].partyId]=p;const f=p[0];
@@ -608,9 +661,11 @@ function renderParties(list,el,byClass){
       <div class="ph"><div>${p.every(g=>!g.printed)?'<span class="tag NEW">NEW</span> ':''}${f.source==='Guest'?'<span class="muted">(self check-in)</span><br>':''}<b>${esc(f.reservation)}</b><br><span>${esc(niceDate(f.date))} · ${esc(f.time)} · ${f.size} guest${f.size>1?'s':''}</span><br>
         <span>${esc(f.phone||'no phone')} · ${esc(f.email||'no email')}</span> <a href="#" onclick="editContact('${f.partyId}');return false" style="color:var(--teal);font-size:13px;font-weight:600">edit</a></div>
         <button class="btn ghost small" onclick='reprint(${JSON.stringify(p.map(g=>g.row))})'>Print all</button></div>
+      ${projectsLine(p)}
       ${storageLine(p)}
+      <div id="pjf_${f.partyId}"></div>
       <div id="sf_${f.partyId}"></div>
-      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b> <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span></div>
+      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b> <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span>${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
         <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button></div></div>`).join('')}
       ${waitingHtml(p)}
       <div id="ap_${f.partyId}"></div>
@@ -661,51 +716,54 @@ function addToParty(id){
 }
 
 /* ---- storage form: pick one or more piece types, with a count for each ---- */
-let pickMap={};
-function parsePieces(str,total){const m={};if(!str)return m;
-  str.split(/,\s*/).forEach(x=>{const r=/^(\d+)\s*[×x]\s*(.+)$/.exec(x.trim());if(r)m[r[2]]=+r[1];else if(x.trim())m[x.trim()]=0});
-  const known=Object.values(m).reduce((a,b)=>a+b,0);Object.keys(m).forEach(k=>{if(!m[k])m[k]=Math.max(1,(total||1)-known)});return m}
-function piecesText(m){return Object.entries(m).map(([k,v])=>`${v}× ${k}`).join(', ')}
+/* ---- storage form: one line per piece, each with its own shelf ---- */
 function openStore(id){
   const box=$('sf_'+id);if(box.innerHTML){box.innerHTML='';return}
-  const p=parties[id],s=p[0].storage||{},first=!p[0].storage;
-  pickMap[id]=parsePieces(s.pieceType,s.pieces);
-  box.innerHTML=`<div class="sf">
-    <div><label class="l">Shelf</label><input id="loc_${id}" placeholder="e.g. B-23 (or B-23, C-4)" value="${esc(s.location||'')}" autocapitalize="characters"></div>
-    <div><label class="l">Pieces (tap every type that's going on the shelf)</label>
-      <div id="sel_${id}" class="sel"></div>
-      <input id="pf_${id}" placeholder="Search projects…" oninput="renderPicker('${id}')" autocomplete="off" style="margin-top:8px">
-      <div id="pk_${id}" class="pk"></div></div>
-    <label class="chk"><input type="checkbox" id="nt_${id}" ${first?'checked':''}> Send "ready for pickup" email + text now</label>
+  const p=parties[id],s=p[0].storage,first=!s;
+  let rows=s?s.items.map(i=>({project:i.project,shelf:i.shelf,who:i.who})):p.flatMap(g=>(g.details||[]).filter(d=>d.where==='shelf').map(d=>({project:d.project,shelf:'',who:g.name})));
+  const noInfo=!s&&!p.some(g=>(g.details||[]).length);
+  if(!rows.length)rows=[{project:'',shelf:'',who:''}];
+  box.innerHTML=`<div class="sf"><b>${s?'Edit storage':'Store the pieces'}</b>
+    ${noInfo?'<p class="muted" style="margin:4px 0 0;font-size:14px">Projects haven\'t been added for this party yet, so add the pieces here.</p>':'<p class="muted" style="margin:4px 0 0;font-size:14px">These are the pieces marked Storage at check-in. Add the shelf for each one.</p>'}
+    <div class="pcl" id="pcl_${id}">${rows.map(pieceRow).join('')}</div>
+    <button type="button" class="tl" onclick="$('pcl_${id}').insertAdjacentHTML('beforeend',pieceRow({project:'',shelf:'',who:''}))">+ add a piece</button>
+    <datalist id="ptList">${PT_ALL().map(t=>`<option value="${esc(t)}">`).join('')}</datalist>
+    <label class="chk"><input type="checkbox" id="nt_${id}" ${first?'checked':''}> Send "ready for pickup" text (or email) now</label>
     <button class="btn main" style="font-size:16px" onclick="saveStore('${id}')">Save</button></div>`;
-  renderPicker(id);$('loc_'+id).focus();
+  const f=box.querySelector('.pcr input[data-k=shelf]');if(f)f.focus();
 }
-function renderPicker(id){
-  const m=pickMap[id],q=($('pf_'+id).value||'').toLowerCase();
-  const total=Object.values(m).reduce((a,b)=>a+b,0);
-  $('sel_'+id).innerHTML=Object.keys(m).length?Object.entries(m).map(([k,v])=>`<div class="si"><b>${esc(k)}</b>
-      <span class="pj multi"><button type="button" onclick="bump('${id}',${JSON.stringify(k).replace(/"/g,'&quot;')},-1)">−</button><span>${v}</span><button type="button" onclick="bump('${id}',${JSON.stringify(k).replace(/"/g,'&quot;')},1)">+</button></span></div>`).join('')+
-      `<div class="muted" style="margin-top:4px">Total: <b>${total}</b> piece${total>1?'s':''}</div>`:'<p class="muted" style="margin:0">Nothing selected yet.</p>';
-  $('pk_'+id).innerHTML=Object.entries(PIECE_TYPES).map(([cat,items])=>{
-    const f=items.filter(t=>!q||t.toLowerCase().includes(q));if(!f.length)return '';
-    return `<div class="pc">${esc(cat)}</div>`+f.map(t=>`<button type="button" class="chip${m[t]?' on':''}" onclick="bump('${id}',${JSON.stringify(t).replace(/"/g,'&quot;')},${m[t]?0:1})">${esc(t)}${m[t]?' ✓':''}</button>`).join('');
-  }).join('')||'<p class="muted">No match.</p>';
-}
-function bump(id,k,d){const m=pickMap[id];
-  if(d===0){delete m[k]}else{m[k]=(m[k]||0)+d;if(m[k]<=0)delete m[k]}
-  renderPicker(id)}
+function pieceRow(i){return `<div class="pcr"><input data-k="project" list="ptList" placeholder="Piece (e.g. Cub)" value="${esc(i.project||'')}">
+  <input data-k="who" placeholder="Whose (optional)" value="${esc(i.who||'')}" style="max-width:150px">
+  <input data-k="shelf" placeholder="Shelf (B1)" value="${esc(i.shelf||'')}" autocapitalize="characters" style="max-width:120px" oninput="this.value=this.value.toUpperCase().replace(/[\\s-]+/g,'')">
+  <button type="button" class="x" onclick="this.parentNode.remove()" aria-label="Remove">×</button></div>`}
 async function saveStore(id){
-  const loc=$('loc_'+id).value.trim();if(!loc){toast('Add the shelf');return}
-  const m=pickMap[id];const total=Object.values(m).reduce((a,b)=>a+b,0);
-  if(!total){toast('Tap at least one piece type');return}
+  const items=[...$('pcl_'+id).querySelectorAll('.pcr')].map(r=>{const v=k=>r.querySelector(`[data-k=${k}]`).value.trim();return{project:v('project'),who:v('who'),shelf:v('shelf')}}).filter(i=>i.project||i.shelf);
+  if(!items.length)return toast('Add at least one piece');
+  const miss=items.find(i=>!i.project);if(miss)return toast('Add the piece name for shelf '+miss.shelf);
+  const noShelf=items.find(i=>!i.shelf);if(noShelf)return toast(`Add the shelf for ${noShelf.project} (like B1 or E1.3)`,4000);
   const notify=$('nt_'+id).checked,p=parties[id][0];
-  if(notify&&!p.email&&!p.phone){toast('No phone or email on this party — tap edit next to the contact');return}
-  try{
-    const r=await call('storeParty',{partyId:id,location:loc,pieceType:piecesText(m),pieces:total,notify});
-    toast(notify?`Saved · email: ${r.email} · text: ${r.text}`:'Saved',4000);refreshView();
-  }catch(e){toast('Could not save: '+(e.message||e))}
+  if(notify&&!p.email&&!p.phone){toast('No phone or email on this party. Tap edit next to the contact.');return}
+  try{const r=await call('storeParty',{partyId:id,items,notify});
+    toast(notify?`Saved ✓ · text: ${r.text} · email: ${r.email}`:'Saved ✓',4500);refreshView()}
+  catch(e){toast('Could not save: '+(e.message||e),5000)}
 }
-async function pickedUp(id){if(!confirm('Mark '+parties[id][0].reservation+' as picked up?'))return;try{await call('markPickedUp',id);toast('Picked up ✓');refreshView()}catch(e){toast('Could not update')}}
+/* ---- pickup: all pieces, or only the ones they're taking today ---- */
+function pickedUp(id){
+  const p=parties[id][0],items=(p.storage.items||[]).map((i,k)=>Object.assign({k},i)).filter(i=>!i.picked);
+  const m=document.createElement('div');m.className='modal';m.id='puModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px"><b style="font-size:20px">Pickup: ${esc(p.reservation)}</b>
+    <p class="muted" style="margin:4px 0 12px">Grab these from the shelves. Untick anything they're leaving for another day.</p>
+    ${items.map(i=>`<label class="chk pu"><input type="checkbox" value="${i.k}" checked> <span class="loc">${esc(i.shelf)}</span> <b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}</label>`).join('')}
+    <button class="btn main" style="margin-top:12px" onclick="confirmPickup('${id}')">Mark as picked up</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="$('puModal').remove()">Cancel</button></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+async function confirmPickup(id){
+  const idx=[...$('puModal').querySelectorAll('input:checked')].map(x=>+x.value);if(!idx.length)return toast('Tick at least one piece');
+  try{const r=await call('markPickedUp',id,idx);$('puModal').remove();
+    toast(r.all?'All picked up ✓':`Picked up ✓ · ${r.left} piece${r.left>1?'s':''} still on the shelf`,4500);refreshView()}
+  catch(e){toast('Could not update: '+(e.message||e),5000)}
+}
 async function editContact(id){
   const f=parties[id][0];const ph=prompt('Phone',f.phone);if(ph===null)return;const em=prompt('Email',f.email);if(em===null)return;
   try{await call('updateContact',id,ph.trim(),em.trim());toast('Updated');refreshView()}catch(e){toast('Could not update')}
@@ -718,7 +776,14 @@ async function editGuest(row){
 }
 function refreshView(){if(!$('vToday').classList.contains('hide'))loadDay();else if(!$('vFind').classList.contains('hide'))find()}
 let dayData=[];
+let ciT;function debCi(){clearTimeout(ciT);ciT=setTimeout(ciSearch,300)}
+async function ciSearch(){const q=$('ciQ').value.trim();if(q.length<2){loadDay();return}
+  $('dayList').innerHTML='<p class="muted">Searching…</p>';
+  try{const list=await call('search',q);if($('ciQ').value.trim()!==q)return;
+    renderParties(list,$('dayList'),false);$('dayList').insertAdjacentHTML('afterbegin',`<p class="muted" style="margin:0 0 8px">${new Set(list.map(g=>g.partyId)).size} part${new Set(list.map(g=>g.partyId)).size===1?'y':'ies'} found · newest first</p>`)}
+  catch(e){$('dayList').innerHTML='<p class="muted">Could not search.</p>'}}
 async function loadDay(quiet){
+  if($('ciQ')&&$('ciQ').value.trim().length>=2){if(!quiet)ciSearch();return}
   if(!quiet)$('dayList').innerHTML='<p class="muted">Loading…</p>';
   try{
     const list=await call('getDay',$('dayPick').value);
@@ -735,7 +800,19 @@ setInterval(()=>{if(!$('vNew').classList.contains('hide')&&!document.hidden)load
 setInterval(()=>{if(!$('vToday').classList.contains('hide')&&!document.hidden)loadDay(true)},15000);
 
 let fh;function debFind(){clearTimeout(fh);fh=setTimeout(find,300)}
-async function find(){const q=$('q').value.trim();if(q.length<2){$('findList').innerHTML='';return}try{renderParties(await call('search',q),$('findList'))}catch(e){$('findList').innerHTML='<p class="muted">Could not search.</p>'}}
+async function find(){const q=$('q').value.trim();if(q.length<2){$('findList').innerHTML='';return}
+  try{const list=await call('search',q);if($('q').value.trim()!==q)return;renderPickup(list)}catch(e){$('findList').innerHTML='<p class="muted">Could not search.</p>'}}
+/* Pickup tab: only what matters at the counter. Pieces waiting first, then not stored yet, then already picked up. */
+function renderPickup(list){
+  cache={};list.forEach(g=>cache[g.row]=g);
+  const ps=groupParties(list);ps.forEach(p=>parties[p[0].partyId]=p);
+  const rank=p=>{const s=p[0].storage;return s&&!s.pickedUp?0:!s?1:2};
+  ps.sort((a,b)=>rank(a)-rank(b)||String(b[0].date).localeCompare(String(a[0].date)));
+  $('findList').innerHTML=ps.length?ps.map(p=>{const f=p[0],s=f.storage;
+    return `<div class="party pkp"><div class="ph"><div><b style="font-size:20px">${esc(f.reservation)}</b><br><span>Class ${esc(niceDate(f.date))} · ${esc(f.time)} · ${p.length} guest${p.length>1?'s':''}</span></div></div>
+      ${s?storageLine(p):`<div class="st"><span class="muted">Not stored yet. Pieces from this class are still drying or haven't been shelved.</span></div>`}
+      <div id="sf_${f.partyId}"></div></div>`}).join(''):'<p class="muted">No checked-in party found with that name.</p>';
+}
 
 /* ---------- Toast bookings: arriving today ---------- */
 let arrivals=[],picked=null;
@@ -1484,7 +1561,7 @@ async function goActivity(i){
   show('new');SLOT='';setArrDay(a.date);
   for(let t=0;t<20;t++){await new Promise(r=>setTimeout(r,250));const b=arrivals.find(x=>x.key===a.key);if(b&&b.date===a.date){viewBooking(b.row);return}}
 }
-setInterval(pollActivity,60000);setInterval(()=>{if(!document.hidden)loadFees()},300000);setTimeout(()=>{pollActivity();loadFees();loadMe()},1500);
+setInterval(pollActivity,60000);setInterval(()=>{if(!document.hidden)loadFees()},300000);setTimeout(()=>{pollActivity();loadFees();loadMe();loadProjects()},1500);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollActivity()});
 resetForm();
 if(hasGAS&&!PIN)askPin();
