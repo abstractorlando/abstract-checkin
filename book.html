@@ -413,7 +413,7 @@ function renderMine(){
     <div class="sum"><span>Party</span><b>${b.size} guest${b.size>1?'s':''}</b></div>
     <div class="sum"><span>Status</span><b>${b.status==='Confirmed'?(b.past?'Done':'Confirmed ✓'):esc(b.status==='Late cancel'?'Cancelled':b.status)}</b></div>
     ${active?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> You can still reschedule, change your party size or cancel here. A late-change fee of $${fee} per guest applies and goes on the card you saved. We'll show you the exact amount before anything is final.</div>`
-      :`<div class="policy"><b>Free changes until ${esc(deadlineText(b))}.</b> After that, rescheduling, removing guests, cancelling or not showing up is $${fee} per guest.</div>`)
+      :`<div class="policy"><b>Free changes anytime before ${esc(deadlineText(b))}.</b> After that, rescheduling, removing guests, cancelling or not showing up is $${fee} per guest.</div>`)
       +`<button class="go" id="mMove">Reschedule</button>
        <button class="ghost" id="mSize">Change party size</button>
        <button class="ghost" id="mCancel">Cancel my booking</button>`:''}`;
