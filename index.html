@@ -127,6 +127,10 @@
   .sto{align-items:flex-start}.stt{margin-bottom:6px}.pcs{display:flex;gap:10px;align-items:center;margin:4px 0;font-size:15px}.pcs .loc{min-width:56px;text-align:center}.pcs.gone{opacity:.45;text-decoration:line-through}
   .pcr{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}.pcr input[data-k=project]{flex:1;min-width:150px}
   .chk.pu{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.pkp .ph b{color:var(--ink)}
+  .gcard{border:2px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}.gcard.empty{opacity:.75}
+  .gtop{display:flex;justify-content:space-between;gap:10px}.gbal{font-size:24px;color:#1a8f5a}.gcard.empty .gbal{color:#c40056}
+  .gtoast{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#f6f3fe;border-radius:12px;padding:10px 14px;margin:10px 0}.gtoast span{font-weight:600;color:var(--purp)}.gtoast b{font-size:30px;letter-spacing:3px;color:var(--purp)}
+  .guse{margin-top:6px}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -223,6 +227,7 @@
   <h1>Abstract Check-In</h1>
   <button class="gear" onclick="goSearch()" aria-label="Search bookings" title="Search bookings">🔍</button>
   <button class="gear bell" id="bellBtn" onclick="openBell()" aria-label="New bookings" title="New bookings">🔔<span id="bellN" class="bn hide"></span></button>
+  <button class="gear" onclick="openGift()" aria-label="Gift cards" title="FareHarbor gift cards">🎁</button>
   <button class="gear who hide" id="whoBtn" onclick="switchUser()" title="Signed in on this device. Tap to switch."></button>
   <button class="gear" onclick="openSettings()" aria-label="Settings" title="Settings">⚙︎</button>
   <nav>
@@ -784,6 +789,46 @@ function printTicket(id){
     <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1500)}<\/script></body></html>`);
   w.document.close();
 }
+/* ---------- FareHarbor gift cards → Toast ---------- */
+let GIFT={cards:[],zero:[]},giftT;
+function openGift(){
+  const m=document.createElement('div');m.className='modal';m.id='giftModal';
+  m.innerHTML=`<div class="mbox bk" style="max-width:560px"><button class="bkx" onclick="$('giftModal').remove()" aria-label="Close">×</button>
+    <b style="font-size:21px">FareHarbor gift card</b>
+    <p class="muted" style="margin:4px 0 12px;font-size:14px">Type the code from the guest's old FareHarbor gift card (any part works, dashes optional). You'll get the Toast code to redeem with.</p>
+    <input id="giftQ" type="search" placeholder="e.g. 2237A or 2237A-BTT4X" autocomplete="off" autocapitalize="characters" oninput="clearTimeout(giftT);giftT=setTimeout(giftFind,350)" style="font-size:20px;letter-spacing:1px">
+    <div id="giftRes" style="margin-top:12px"></div></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);$('giftQ').focus();
+}
+async function giftFind(){const q=$('giftQ').value.trim();if(q.replace(/[^a-z0-9]/gi,'').length<3){$('giftRes').innerHTML='';return}
+  $('giftRes').innerHTML='<p class="muted">Searching…</p>';
+  try{const r=await call('giftSearch',q);if($('giftQ').value.trim()!==q)return;GIFT=r;renderGift()}catch(e){$('giftRes').innerHTML=`<p class="muted">Could not search: ${esc(e.message||e)}</p>`}}
+const usd=n=>'$'+Number(n||0).toFixed(2);
+function renderGift(){
+  const {cards,zero}=GIFT;
+  $('giftRes').innerHTML=(cards.length?cards.map((c,i)=>`<div class="gcard${c.left<=0?' empty':''}">
+      <div class="gtop"><div><span class="muted" style="font-size:12px;font-weight:700">OLD FAREHARBOR CODE</span><br><b style="font-size:16px;letter-spacing:.5px">${esc(c.old)}</b></div>
+        <div style="text-align:right"><span class="muted" style="font-size:12px;font-weight:700">BALANCE LEFT</span><br><b class="gbal">${usd(c.left)}</b></div></div>
+      <div class="gtoast"><span>Redeem in Toast with code</span><b>${esc(c.toast)}</b></div>
+      ${c.left>0?`<div class="guse"><label class="l" style="margin:0">Amount used in Toast</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="gAmt${i}" inputmode="decimal" placeholder="0.00" style="flex:1;min-width:110px;font-size:18px">
+        <button class="btn ghost small" onclick="$('gAmt${i}').value='${c.left.toFixed(2)}'">Full ${usd(c.left)}</button>
+        <button class="btn main small" style="width:auto" onclick="giftUse(${i})">Save</button></div>
+        <p class="muted" style="font-size:13px;margin:6px 0 0">Redeem in Toast first, then save the same amount here.</p></div>`
+        :`<p style="margin:8px 0 0;color:#c40056;font-weight:700">This card has no balance left.</p>`}
+      <p class="muted" style="font-size:13px;margin:8px 0 0">Started with ${usd(c.moved)}${c.created?' · bought '+esc(c.created):''}${c.type&&c.type!=='E-Gift Card'?' · '+esc(c.type):''}</p>
+      ${c.history.length?`<details style="margin-top:6px"><summary class="muted" style="cursor:pointer;font-size:13px">History (${c.history.length})</summary>${c.history.map(h=>`<div style="font-size:13px;padding:3px 0;border-top:1px solid var(--line)">${esc(h)}</div>`).join('')}
+        ${ME&&ME.owner?`<button class="tl" style="margin-top:6px" onclick="giftUndo(${i})">Undo the last use</button>`:''}</details>`:''}
+    </div>`).join(''):'')+
+    (zero.length?zero.map(z=>`<div class="gcard empty"><b>${esc(z.old)}</b><p style="margin:6px 0 0;color:#c40056;font-weight:700">This card was already at $0 before we moved to Toast.</p></div>`).join(''):'')+
+    (!cards.length&&!zero.length?'<p class="muted">No card found. Check the code with the guest, or ask a manager.</p>':'');
+}
+async function giftUse(i){const c=GIFT.cards[i],amt=parseFloat(String($('gAmt'+i).value).replace(/[^\d.]/g,''));
+  if(!(amt>0))return toast('Enter the amount used in Toast');if(amt>c.left+0.001)return toast(`Only ${usd(c.left)} is left on this card`,4000);
+  if(!confirm(`Save ${usd(amt)} used on card ${c.old}?\n\nToast code ${c.toast}\nBalance left after: ${usd(c.left-amt)}`))return;
+  try{GIFT.cards[i]=await call('giftUse',c.row,amt,'');renderGift();toast(`Saved ✓ ${usd(GIFT.cards[i].left)} left on this card`,4000)}catch(e){toast(e.message||String(e),5000)}}
+async function giftUndo(i){if(!confirm('Undo the last use on this card? The amount goes back on the balance.'))return;
+  try{GIFT.cards[i]=await call('giftUndo',GIFT.cards[i].row);renderGift();toast('Undone ✓')}catch(e){toast(e.message||String(e),5000)}}
 async function confirmPickup(id){
   const idx=[...$('puModal').querySelectorAll('input:checked')].map(x=>+x.value);if(!idx.length)return toast('Tick at least one piece');
   try{const r=await call('markPickedUp',id,idx);$('puModal').remove();
