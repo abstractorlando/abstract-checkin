@@ -837,16 +837,26 @@ async function openGuest(k){
   const b=bookingByKey(k);if(!b)return;GUESTB=b;
   try{GUEST=await call('getGuest',b.phone,b.email,b.reservation)}catch(e){toast(e.message||String(e),5000);return}
   const g=GUEST,s=g.stats,tags=[...new Set([...g.allTags,...g.tags])];
-  const line=[s.visits?`${s.visits} visit${s.visits>1?'s':''}${s.fhVisits?'':` (${s.visitsYear} in the last year)`}`:'First visit',s.firstVisit?'since '+new Date(s.firstVisit+'T12:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}):'',
+  const line=[s.visits?`${s.visits} checked-in visit${s.visits>1?'s':''}${s.fhVisits?'':` (${s.visitsYear} in the last year)`}`:'First visit',s.firstVisit?'since '+new Date(s.firstVisit+'T12:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}):'',
     s.lastVisit?'last '+niceDate(s.lastVisit):'',s.visits&&s.guestsBrought?(s.guestsBrought-s.visits>0?'has brought '+(s.guestsBrought-s.visits)+' guest'+(s.guestsBrought-s.visits>1?'s':'')+' with them':'usually comes solo'):'',
     s.noShows?s.noShows+' no-show'+(s.noShows>1?'s':''):'',s.lateCancels?s.lateCancels+' late cancel'+(s.lateCancels>1?'s':''):''].filter(Boolean).join(' · ');
   const m=document.createElement('div');m.className='modal';m.id='guestModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px">
-    <b style="font-size:20px">${esc(b.reservation)}</b><p class="muted" style="margin:4px 0 12px">${esc(line)}</p>
+    <b style="font-size:20px">${esc(b.reservation)}</b><p class="muted" style="margin:4px 0 12px">${esc(line)}</p>${guestActivityHtml(g)}
     <label class="l" for="gColors">Favorite colors</label><input id="gColors" value="${esc(g.colors||'')}" placeholder="e.g. teal, gold, white" style="margin-bottom:12px">
     <label class="l" for="gNotes">Notes to help us take care of them (only staff see this)</label><textarea id="gNotes" style="width:100%;min-height:110px;font:500 16px Poppins;padding:12px;border:2px solid var(--line);border-radius:12px" placeholder="e.g. Loves glitter. Celebrated her daughter's birthday here. Prefers a stool to sit on.">${esc(g.notes||'')}</textarea>
     <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" style="flex:1" onclick="$('guestModal').remove()">Close</button><button class="btn main" style="flex:1" onclick="saveGuest()">Save</button></div></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+const ACT_TAG={'Checked in':'#1a8f5a','Upcoming':'#4e3aa2','Today':'#ff009d','No-show':'#c40056','Late cancel':'#c40056','Cancelled':'#6b6878','Not checked in':'#b26a00','Needs card':'#b26a00'};
+function guestActivityHtml(g){
+  const A=g.activity||[],s=g.stats||{};
+  const rows=A.map(a=>`<div style="display:flex;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px">
+      <span class="tag" style="background:${ACT_TAG[a.status]||'#6b6878'};font-size:10px;min-width:92px;text-align:center">${esc(a.status.toUpperCase())}</span>
+      <span style="flex:1"><b>${esc(new Date(a.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}))}</b> · ${esc(a.time)}<br><span class="muted">Party of ${a.size} · ${esc(a.source)}${a.id?' · '+esc(a.id):''}</span></span></div>`).join('');
+  const fh=s.fhVisits?`<div style="padding:9px 2px;font-size:14px" class="muted">Before Nov 9, 2026 on FareHarbor: <b>${s.fhVisits} visit${s.fhVisits>1?'s':''}</b> (booked and not cancelled)</div>`:'';
+  if(!rows&&!fh)return'';
+  return `<label class="l">All bookings (${A.length})</label><div style="max-height:260px;overflow:auto;border:2px solid var(--line);border-radius:12px;padding:0 10px;margin-bottom:14px">${rows}${fh}</div>`;
 }
 async function saveGuest(){
   try{await call('saveGuest',GUESTB.phone,GUESTB.email,GUESTB.reservation,{tags:[],colors:$('gColors').value,notes:$('gNotes').value});
