@@ -227,7 +227,7 @@
   <button class="gear" onclick="openSettings()" aria-label="Settings" title="Settings">⚙︎</button>
   <nav>
     <button id="tabNew" class="on" onclick="show('new')"><i>📋</i><span>Manifest</span></button>
-    <button id="tabToday" onclick="show('today')"><i>✓</i><span>Checked in</span></button>
+    <button id="tabToday" onclick="show('today')"><i>🎨</i><span>Visits</span></button>
     <button id="tabFind" onclick="show('find')"><i>⌂</i><span>Pickup</span></button>
     <button id="tabSched" onclick="show('sched')"><i>▦</i><span>Schedule</span></button>
   </nav>
@@ -478,7 +478,7 @@ async function saveAndPrint(){
   if(!here.length){all.forEach(g=>g.el.classList.add('need'));toast('Tap FT or RG for each guest who\'s here',4000);return}
   const noName=here.find(g=>!g.name);if(noName){noName.el.querySelector('input').focus();toast('Add a first name for each guest who\'s here');return}
   if(later.length){later.forEach(g=>g.el.classList.add('need'));
-    if(!confirm(`Check in ${here.length} of ${all.length} now?\n\n${later.length} guest${later.length>1?'s have':' has'} no FT/RG yet${later.some(g=>g.name)?' ('+later.map(g=>g.name).filter(Boolean).join(', ')+')':''}. ${picked?'They stay on the booking. When they arrive, check them in from the Checked in tab.':'They won\'t be checked in.'}`))return}
+    if(!confirm(`Check in ${here.length} of ${all.length} now?\n\n${later.length} guest${later.length>1?'s have':' has'} no FT/RG yet${later.some(g=>g.name)?' ('+later.map(g=>g.name).filter(Boolean).join(', ')+')':''}. ${picked?'They stay on the booking. When they arrive, check them in from the Visits tab.':'They won\'t be checked in.'}`))return}
   const guests=here.map(g=>({name:g.name,type:g.type,projects:g.projects}));
   const em=$('em').value.trim();
   if(em&&!/^\S+@\S+\.\S+$/.test(em)){toast('Check the email');$('em').focus();return}
