@@ -107,6 +107,10 @@
   .bkc h4{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--purp)}
   .bf{margin:0 0 9px}.bf:last-child{margin-bottom:0}.bf span{display:block;font-size:12px;color:var(--muted);font-weight:600}.bf div{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
   .evb{display:block}.evl{display:block;font-size:14px;margin-top:3px;color:var(--ink);font-weight:500}.evl em{font-style:normal;display:inline-block;min-width:44px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--purp);margin-right:6px}.evt{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+  .dsum{margin-top:14px;border:2px solid var(--line);border-radius:14px;padding:12px 14px;background:#faf9fd}
+  .dsh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}.dsh b{font-size:16px}.dsh span{font-size:13px}
+  .dsg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:600px){.dsg{grid-template-columns:1fr 1fr}}
+  .dsg div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.dsg span{display:block;font-size:12px;color:var(--muted);font-weight:600}.dsg b{font-size:24px;color:var(--purp)}.dsg small{color:var(--muted);margin-left:4px;font-size:12px}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -233,6 +237,7 @@
       <input id="bkFilter" placeholder="Search bookings: name, phone, email, confirmation # or a word from their notes" oninput="onSearch()" autocomplete="off" type="search">
       <div class="slots" id="slotChips"></div>
       <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
+      <div id="daySum"></div>
     </div>
     <div id="ciForm" class="hide">
     <div class="card" id="formTop">
@@ -783,9 +788,22 @@ async function doSearch(){const q=$('bkFilter').value.trim();if(q.length<2)retur
 async function loadArrivals(quiet){
   if($('bkFilter')&&$('bkFilter').value.trim().length>=2){doSearch();return}
   if(!quiet&&!arrivals.length)$('arrivals').innerHTML='<p class="muted">Loading bookings…</p>';
-  try{arrivals=await call('getBookings',$('dt').value);renderArrivals()}
+  try{arrivals=await call('getBookings',$('dt').value);renderArrivals();loadDaySum()}
   catch(e){$('arrivals').innerHTML=`<p class="muted">Could not load bookings: ${esc(e.message||e)} <a href="#" onclick="loadArrivals();return false" style="color:var(--teal)">Try again</a></p>`}
 }
+let DSUM=null;
+async function loadDaySum(){
+  const d=$('dt').value;let s;try{s=await call('daySummary',d)}catch(e){return}
+  if(d!==$('dt').value||!$('daySum'))return;DSUM=s;
+  const pct=n=>s.guests?' ('+Math.round(n*100/s.guests)+'%)':'';
+  $('daySum').innerHTML=`<div class="dsum"><div class="dsh"><b>${d===today()?'Today\'s':niceDate(d).split(',')[0]+'\'s'} numbers</b><span class="muted">checked-in guests only</span></div>
+    <div class="dsg"><div><span>Total guests</span><b>${s.guests}</b></div><div><span>First timers (FT)</span><b>${s.ft}</b><small>${pct(s.ft)}</small></div>
+    <div><span>Returning (RG)</span><b>${s.rg}</b><small>${pct(s.rg)}</small></div><div><span>Walk-ins</span><b>${s.walkIns}</b><small>${pct(s.walkIns)}</small></div></div>
+    <p class="muted" style="margin:8px 0 0;font-size:13px">${s.parties} part${s.parties===1?'y':'ies'} checked in${s.expected?` · ${s.expected} booked guest${s.expected>1?'s':''} not checked in yet`:''}${s.noShows?` · ${s.noShows} no-show guest${s.noShows>1?'s':''}`:''}</p>
+    <button class="btn ghost small" style="margin-top:8px" onclick="copyDaySum()">Copy for Team Scorecard</button></div>`;
+}
+function copyDaySum(){const s=DSUM;if(!s)return;const t=`Total guests: ${s.guests}\nFT: ${s.ft}\nRG: ${s.rg}\nWalk-ins: ${s.walkIns}`;
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Copied ✓ Paste it into the Team Scorecard',3000),()=>prompt('Copy these numbers:',t.replace(/\n/g,' · ')))}
 function tMin(t){const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||'');if(!m)return 9999;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2]}
 let showDone=false;
 function renderArrivals(){
