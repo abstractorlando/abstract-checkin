@@ -99,6 +99,13 @@
   .scap input.saving{color:var(--muted)}
   .snote{display:block;font-size:13px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:3px 8px;margin-top:4px;font-style:normal}
   .gbar{border:2px solid;border-radius:12px;padding:10px 14px;margin:0 0 10px;font-size:15px;line-height:1.4}.gbar b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--purp);margin-bottom:2px}.gbar span{white-space:pre-wrap}
+  .bkw{font-size:17px;font-weight:600;margin:4px 0 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .bst{font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;background:#eceaf3;color:var(--ink)}.bst.ok{background:#dff3e9;color:#1a8f5a}.bst.bkd{background:#ece8fb;color:var(--purp)}.bst.wait{background:#fdf0dc;color:#b26a00}.bst.off{background:#fde3ec;color:#c40056}
+  .bkg{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:700px){.bkg{grid-template-columns:1fr}}
+  .bkc{border:2px solid var(--line);border-radius:14px;padding:12px 14px}.bkc.gp{grid-column:1/-1;background:#f8f6fd;border-color:#e2dcf5}
+  .bkc a{color:var(--teal);font-weight:600;text-decoration:none}
+  .bkc h4{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--purp)}
+  .bf{margin:0 0 9px}.bf:last-child{margin-bottom:0}.bf span{display:block;font-size:12px;color:var(--muted);font-weight:600}.bf div{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -1004,14 +1011,17 @@ function viewBooking(row){
   const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?'🍾 Sparkling wine · paid online':/refunded/.test(b.addons)?'🍾 Sparkling wine · refunded':'🍾 Sparkling wine · collect $30 at the studio';
   const st=b.partyId?'✓ Checked in':b.status==='Confirmed'?'Booked':needCard?(cardLate(b)?'No card added · spot released':'Waiting for their card · held until '+new Date(new Date(b.created).getTime()+CARD_MIN*6e4).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})):b.status;
   const ph=b.phone?`<a href="sms:${esc(b.phone.replace(/[^\d+]/g,''))}">${esc(fmtPhone(b.phone))}</a>`:'—';
-  const rows=[['When',`${niceDate(b.date)} · ${esc(b.time)}`],['Party',`${b.size} artist${b.size>1?'s':''}`],['Status',st],['Phone',ph],
-    ['Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'],b.guests?['Artists',esc(b.guests)]:null,b.note?['Their note',`“${esc(b.note)}”`]:null,
-    wine?['Add-on',wine]:null,['Booked from',src],b.created&&exactTime(b.created)?['Booked on',exactTime(b.created)]:null,b.bookingId?['Confirmation',esc(b.bookingId)]:null,
-    b.source==='FareHarbor'?['Deposit',b.deposit?'$'+money(b.deposit)+' paid · take off the bill':'—']:null,
-    b.guestFee?['Late change fees',b.guestFee.split(' | ').map(f=>esc(f.replace(/ · pi_\w+/,''))).join('<br>')]:null,
-    b.card?['Card','Saved for no-show protection']:needCard?['Card','Not saved yet']:null,b.staffNote?['Staff note','📝 '+esc(b.staffNote)]:null,
-    ['History',`${g.visits?g.visits+' past visit'+(g.visits>1?'s':''):'First visit'}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`],
-    g.colors?['Favorite colors','🎨 '+esc(g.colors)]:null,g.notes?['Guest notes','💜 '+esc(g.notes)]:null].filter(Boolean);
+  const F=(l,v)=>v?`<div class="bf"><span>${l}</span><div>${v}</div></div>`:'';
+  const card=(t,body,cls)=>body.trim()?`<div class="bkc ${cls||''}"><h4>${t}</h4>${body}</div>`:'';
+  const stCls=b.partyId?'ok':b.status==='Confirmed'?'bkd':needCard?'wait':'off';
+  const cards=card('Booking',F('Artists',b.guests?esc(b.guests):'')+F('Booked',`${src}${b.created&&exactTime(b.created)?' · '+exactTime(b.created):''}`)+F('Confirmation',b.bookingId?esc(b.bookingId):'')+F('Add-on',wine)
+      +F('Deposit',b.source==='FareHarbor'?(b.deposit?'$'+money(b.deposit)+' paid · take off the bill':'None'):''))
+    +card('Contact',F('Phone',ph)+F('Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'))
+    +card('Notes for this booking',F('From the guest',b.note?`“${esc(b.note)}”`:'')+F('Team note',b.staffNote?'📝 '+esc(b.staffNote):''))
+    +card('Payment',F('Card',b.card?'Saved for no-show protection':needCard?'Not saved yet':'')+F('Late change fees',b.guestFee?b.guestFee.split(' | ').map(f=>esc(f.replace(/ · pi_\w+/,''))).join('<br>'):''))
+    +card('Guest profile',F('History',`${g.visits?g.visits+' past visit'+(g.visits>1?'s':''):'First visit'}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`)
+      +F('Colors / palette',g.colors?'🎨 '+esc(g.colors):'')+F('Profile notes',g.notes?'💜 '+esc(g.notes):'')
+      +`<button class="btn ghost small" style="margin-top:4px" onclick="closeBk();openGuest('${k}')">Open guest profile</button>`,'gp');
   const btn=(label,fn,cls)=>`<button class="btn ${cls||'ghost'}" onclick="${fn}">${label}</button>`;
   const main=b.partyId?btn('See their check-in',`closeBk();openParty('${b.partyId}','${b.date}')`,'main')
     :active?btn('Check in this party',`closeBk();pick(${b.row})`,'main'):'';
@@ -1019,11 +1029,12 @@ function viewBooking(row){
     :!b.partyId?[btn('Undo · put back on the list',`staffAct('${k}','restore')`)]:[];
   if(needCard&&!b.partyId)acts.unshift(btn('Resend card link',`resendCard('${k}')`),btn('Guest is here: enter card',`openCardPage('${k}')`));
   if(!b.partyId&&b.status!=='Cancelled')acts.unshift(btn('✏️ Edit party',`editParty('${k}')`));
-  acts.push(btn(b.staffNote?'Edit note':'Add note',`editNote('${k}')`),btn('Guest profile'+(g.hasNotes?' •':''),`closeBk();openGuest('${k}')`));
+  acts.push(btn(b.staffNote?'Edit team note':'Add team note',`editNote('${k}')`));
   const m=document.createElement('div');m.className='modal';m.id='bkModal';
   m.innerHTML=`<div class="mbox bk"><button class="bkx" onclick="closeBk()" aria-label="Close">×</button>
     <b style="font-size:21px;padding-right:44px;display:block">${esc(b.reservation)}</b>
-    <div class="bkl">${rows.map(r=>`<span>${r[0]}</span><div>${r[1]}</div>`).join('')}</div>
+    <div class="bkw">${niceDate(b.date)} · ${esc(b.time)} · Party of ${b.size} <span class="bst ${stCls}">${st}</span></div>
+    <div class="bkg">${cards}</div>
     ${main?`<div style="margin-top:14px">${main}</div>`:''}
     <div class="bka">${acts.join('')}</div><div id="mv_${k}"></div>
     <div class="bkh">Booking history</div><div id="bkHist"><p class="muted">${b.bookingId?'Loading…':'No changes yet.'}</p></div>
