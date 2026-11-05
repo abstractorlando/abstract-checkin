@@ -925,7 +925,7 @@ async function feeGo(fj,amt){
     amt=parseFloat(String(v).replace(/[^\d.]/g,''));if(!(amt>0&&amt<=full)){toast(`Enter an amount between $1 and $${full}`,4000);return}}
   const m=$('feeModal');if(m)m.querySelectorAll('button').forEach(x=>x.disabled=true);
   try{const r=await call('chargeFee',f.bookingId,f.kind,amt,f.removed?f.size:0);if(m)m.remove();
-    toast(r.waived?'Fee waived ✓':r.declined?`Card declined. We'll retry automatically in 1, 3 and 7 days.`:`Charged $${r.charged} ✓`,6000);
+    toast(r.waived?'Fee waived ✓':r.noRetry?`Card declined. Text ${f.reservation} to settle the $${r.amount}, or charge it at the studio.`:r.declined?`Card declined. We'll retry automatically in 1, 3 and 7 days.`:`Charged $${r.charged} ✓`,7000);
     loadArrivals();loadFees();if($('feesModal'))openFees()}
   catch(e){if(m)m.querySelectorAll('button').forEach(x=>x.disabled=false);toast('Not charged: '+(e.message||e),6000)}
 }
@@ -971,6 +971,7 @@ function viewBooking(row){
     ['Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'],b.guests?['Artists',esc(b.guests)]:null,b.note?['Their note',`“${esc(b.note)}”`]:null,
     wine?['Add-on',wine]:null,['Booked from',src],b.bookingId?['Confirmation',esc(b.bookingId)]:null,
     b.source==='FareHarbor'?['Deposit',b.deposit?'$'+money(b.deposit)+' paid · take off the bill':'—']:null,
+    b.guestFee?['Removed guests',esc(b.guestFee.split(' · pi_')[0])]:null,
     b.card?['Card','Saved for no-show protection']:needCard?['Card','Not saved yet']:null,b.staffNote?['Staff note','📝 '+esc(b.staffNote)]:null,
     g.visits?['History',`${g.visits} visit${g.visits>1?'s':''}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`]:null,
     g.colors?['Favorite colors','🎨 '+esc(g.colors)]:null,g.notes?['Guest notes','💜 '+esc(g.notes)]:null].filter(Boolean);
