@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4e3aa2">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Check-In">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ====== EDIT CLASS TIMES HERE ====== */
+  :root{--mag:#ff009d;--teal:#0093ad;--purp:#4e3aa2;--ink:#1d1b26;--muted:#6b6878;--line:#e6e3ee;--soft:#f6f4fb}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--soft)}
+  header{background:var(--purp);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;font-weight:700}
+  nav{display:flex;gap:6px}
+  nav button{background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;padding:8px 14px;font:600 14px Poppins;cursor:pointer;min-height:40px}
+  nav button.on{background:#fff;color:var(--purp);border-color:#fff}
+  nav button i{display:none;font-style:normal}
+  header{flex-wrap:nowrap}header h1{flex:1}header nav{order:3}
+  .gear{order:4;background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;width:40px;height:40px;font-size:18px;cursor:pointer;flex:none}
+  .imp{position:relative}.imp summary{list-style:none;cursor:pointer}.imp summary::-webkit-details-marker{display:none}
+  .imp .menu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(20,10,60,.15);padding:6px;z-index:4;min-width:230px;display:grid}
+  .imp .menu>*{border:0;background:none;text-align:left;font:600 15px Poppins;color:var(--ink);padding:12px 12px;border-radius:10px;cursor:pointer;display:block}
+  .imp .menu>*:hover{background:var(--soft)}
+  .daynav .today{padding:8px 12px}
+  @media (max-width:640px){
+    header{padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
+    header h1{font-size:18px}
+    nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:#fff;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));gap:0;box-shadow:0 -4px 16px rgba(20,10,60,.06)}
+    nav button{flex:1;border:0;border-radius:12px;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;font-size:12px;min-height:54px}
+    nav button i{display:block;font-size:20px;line-height:1}
+    nav button.on{background:var(--soft);color:var(--purp)}
+    main{padding:12px 12px calc(96px + env(safe-area-inset-bottom))}
+    .card{padding:14px;border-radius:14px}
+    .toast{bottom:calc(84px + env(safe-area-inset-bottom))}
+    .daynav{gap:6px}.daynav .btn{min-width:40px;padding:8px 0}.daynav .today{padding:8px 12px}
+    .daynav input{font-size:16px;padding:8px 10px}
+    .arr{padding:10px 12px;gap:8px}.arr .t{min-width:62px;font-size:14px}.daynav .today{font-size:15px}
+  }
+  main{max-width:760px;margin:0 auto;padding:16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+  label.l{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:0 0 6px}
+  input,select{width:100%;font:500 17px Poppins;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);min-height:48px}
+  input:focus,select:focus{outline:none;border-color:var(--teal)}
+  .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .gl{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .g{display:flex;gap:8px;align-items:center}
+  .g .n{width:28px;font-weight:700;color:var(--muted);text-align:center}
+  .g input{flex:1}
+  .seg{display:flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
+  .seg button{border:0;background:#fff;font:800 15px Poppins;padding:0;width:48px;min-height:44px;cursor:pointer;color:var(--muted)}
+  .pj{display:flex;align-items:center;border:2px solid var(--line);border-radius:12px;flex:none}
+  .pj button{border:0;background:none;font:700 18px Poppins;width:32px;min-height:40px;cursor:pointer;color:var(--muted)}
+  .pj span{min-width:16px;text-align:center;font-weight:700}
+  .pj.multi{border-color:var(--purp)}.pj.multi span{color:var(--purp)}
+  .seg button.on.ft{background:var(--teal);color:#fff}
+  .seg button.on.rg{background:var(--mag);color:#fff}
+  .x{border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer;width:36px;height:44px}
+  .btn{border:0;border-radius:999px;font:700 16px Poppins;padding:14px 22px;cursor:pointer;min-height:48px}
+  .btn.main{background:var(--mag);color:#fff;width:100%;font-size:18px}
+  .btn.ghost{background:#fff;border:2px solid var(--line);color:var(--ink)}
+  .btn.small{padding:8px 14px;font-size:14px;min-height:40px}
+  .btn:disabled{opacity:.5;cursor:default}
+  .add{margin-top:10px}
+  .party{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;background:#fff}
+  .ph{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+  .ph b{font-size:17px}
+  .ph span{color:var(--muted);font-size:14px}
+  .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
+  .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff}
+  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#0b7a3e;font-size:10px;vertical-align:middle}
+  .dep{display:block;font-size:13px;font-weight:700;color:#0b7a3e}
+  .tools{display:flex;gap:6px;margin:4px 0 2px 4px;flex-wrap:wrap}.tl{border:0;background:none;color:var(--muted);font:600 13px Poppins;padding:4px 8px;border-radius:8px;cursor:pointer}.tl:hover{background:var(--soft);color:var(--ink)}
+  .mv{display:flex;gap:8px;margin:6px 0 4px;flex-wrap:wrap}.mv input,.mv select{flex:1;min-width:140px;min-height:44px;padding:8px 10px;font-size:15px}
+  .arrw{margin-bottom:8px}.arrw .arr{margin-bottom:0}.feebtn{margin:6px 0 4px;border-color:#c40056;color:#c40056}.feerow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0 4px 4px}.feerow .feebtn{margin:0}.feebtn.waive{border-color:var(--line);color:var(--muted)}.feeln{font-size:13px;color:#1a8a3a;font-weight:600;margin:4px 0 0 4px}
+  .arr:disabled{cursor:default}.party.isnew{border:2px solid var(--mag)}
+  .tag.FT{background:var(--teal)}.tag.RG{background:var(--mag)}
+  .muted{color:var(--muted);font-size:14px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;display:none;z-index:5}
+  .hide{display:none!important}
+  .sday{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .sday.closed{background:#fff5f8}
+  .scls{display:grid;grid-template-columns:120px 1fr auto auto auto;align-items:center;gap:14px;padding:14px 18px}
+  .scls.off{opacity:.6;background:#fafafa}
+  .stime b{display:block;font-size:18px}.stime .muted{font-size:13px}
+  .sbar{height:10px;background:var(--soft);border-radius:999px;overflow:hidden}.sbar div{height:100%;background:var(--teal);border-radius:999px}
+  .scls.off .sbar div{background:#bbb}
+  .scount{font-size:14px;color:var(--muted);white-space:nowrap}.scount b{color:var(--ink);font-size:18px}
+  .scap{display:flex;align-items:center;border:2px solid var(--line);border-radius:14px}
+  .scap{padding:0 12px 0 0}.scap input{width:74px;border:0;text-align:center;font:800 22px Poppins;min-height:48px;padding:0;background:transparent}
+  .scap input:focus{outline:none}.scap:focus-within{border-color:var(--teal)}.seatl{font-size:13px;color:var(--muted);font-weight:600}
+  .scap input.saving{color:var(--muted)}
+  .snote{display:block;font-size:13px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:3px 8px;margin-top:4px;font-style:normal}
+  .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
+  .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
+  .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
+  .cnote{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .wide main{max-width:1320px}
+  .slots{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.slots .chip{margin:0}
+  .vt{display:flex;gap:6px;margin:0 0 10px}.vt button{flex:1;border:2px solid var(--line);background:#fff;border-radius:999px;font:700 15px Poppins;padding:10px;cursor:pointer;color:var(--muted)}.vt button.on{background:var(--purp);border-color:var(--purp);color:#fff}
+  .wk{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:8px;overflow-x:auto;padding-bottom:6px}
+  .wd{display:flex;flex-direction:column;gap:6px;min-width:130px}
+  .wh{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;font-size:14px;cursor:pointer}.wh.today{background:#fff5d6;border-color:#f0c000}
+  .wn{font-size:12px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:4px 6px}
+  .wc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#efeaff;border:1px solid #d8cff7;border-radius:10px;padding:8px;font:500 13px Poppins;color:var(--ink);cursor:pointer;position:relative}
+  .wc b{font-size:14px;color:var(--purp)}.wc.full{background:#e3dcfb}.wc.closed{background:#f3f3f5;color:var(--muted);border-color:var(--line);cursor:default}.wc.pv{background:#f7f4ff;border-color:var(--purp)}
+  .wc .fl{position:absolute;top:8px;right:8px;background:#4a4a55;color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:1px 6px}
+  .wnum{font-size:12px;color:var(--muted)}.wbar{display:block;width:100%;height:5px;background:#fff;border-radius:9px;overflow:hidden;margin-top:3px}.wbar span{display:block;height:100%;background:var(--purp)}
+  .priv{border-color:var(--purp);background:#f7f4ff;display:grid;gap:10px}.prow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  @media (max-width:640px){.scls{grid-template-columns:1fr auto;}.sbar{grid-column:1/-1;order:3}.scount{order:4}}
+  .daynav{display:flex;gap:8px;align-items:center;margin:0 0 10px}.daynav input{flex:1;min-width:0}.daynav .btn{min-width:44px;font-size:18px}
+  .pk{max-height:300px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:6px 8px 10px}
+  .pc{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px}
+  .chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;margin:0 6px 6px 0;font:600 14px Poppins;cursor:pointer;color:var(--ink)}
+  .chip.on{background:var(--purp);border-color:var(--purp);color:#fff}
+  .si{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+  .modal{position:fixed;inset:0;background:rgba(29,27,38,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
+  .mbox{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center;max-height:92vh;overflow:auto;overscroll-behavior:contain}
+  .arr{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font:500 16px Poppins;color:var(--ink);cursor:pointer;min-height:54px}
+  .arr:hover{border-color:var(--teal)}
+  .arr .t{font-weight:700;color:var(--purp);min-width:78px}
+  .arr .nm{flex:1;font-weight:600}
+  .arr .sz{background:var(--soft);border-radius:999px;padding:2px 10px;font-weight:700;font-size:14px}
+  .arr.in{opacity:.45}
+  .arr.sel{border-color:var(--mag);background:#fff0f8}
+  .bk{max-width:820px;max-height:92vh;overflow:auto;text-align:left;padding:20px 22px;position:relative}
+  .bkx{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:0;background:var(--soft);font:700 20px Poppins;cursor:pointer;color:var(--ink)}
+  .bkl{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;margin:12px 0 4px;font-size:15px}.bkl span{color:var(--muted)}.bkl a{color:var(--teal);font-weight:600;text-decoration:none}
+  .bka{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px}.bka .btn{width:auto;min-height:42px;font-size:15px;padding:0 14px}
+  .bkh{font:700 13px Poppins;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+  .msg{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:14px}
+  .msg summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center}.msg summary::-webkit-details-marker{display:none}
+  .msg p{margin:8px 0 0;white-space:pre-wrap;color:var(--ink);background:var(--soft);border-radius:10px;padding:8px 10px}
+  .ms{font:700 11.5px Poppins;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap;background:#eef3ff;color:#3b5bdb}
+  .ms.ok{background:#e6f6ea;color:#1a8a3a}.ms.bad{background:#fde7ef;color:#c40056}.ms.wait{background:#fff5d6;color:#8a6a00}.ms.off{background:#f0eff3;color:var(--muted)}
+  .mvw{border:1px solid var(--line);border-radius:14px;padding:10px;margin-top:10px}
+  .mvh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.mvh .btn{width:auto;min-height:38px;padding:0 14px}
+  .mvg{display:grid;grid-template-columns:repeat(7,minmax(96px,1fr));gap:6px;overflow-x:auto}
+  .mvc{display:flex;flex-direction:column;gap:5px}.mvd{text-align:center;font-size:13px;padding:4px 0}
+  .mvs{border:2px solid #9fd8b0;background:#eefaf1;border-radius:10px;padding:6px 4px;font:500 12.5px Poppins;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:1px}
+  .mvs b{font-size:13.5px}.mvs span{color:#1a8a3a;font-weight:600}
+  .mvs.full{border-color:var(--line);background:#f3f3f5}.mvs.full span{color:var(--muted)}
+  .mvs.off{border-color:var(--line);background:#fafafa;color:#aaa;cursor:default}.mvs.off span{color:#aaa}
+  .mvs.cur{border-color:var(--purp);background:#efeafd;cursor:default}.mvs.cur span{color:var(--purp)}
+  .bell{position:relative;font-size:17px}.bn{position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--mag);color:#fff;font:700 12.5px/22px Poppins;border:2px solid var(--purp)}
+  .bell.ring{animation:ring 1s ease 3}@keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-18deg)}40%{transform:rotate(14deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(4deg)}}
+  .ev{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:12px 4px;font:500 15px Poppins;color:var(--ink);cursor:pointer}
+  .ev.new{background:#fff0f8;border-radius:10px}.ev i{font-style:normal;font-size:20px;line-height:1.2}.ev small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+  .tday{display:inline-block;background:#c40056;color:#fff;font:700 11px Poppins;letter-spacing:.05em;padding:2px 7px;border-radius:999px;margin-left:4px;vertical-align:2px}
+  .newbar{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#c40056;color:#fff;border-radius:12px;padding:10px 14px;margin:0 0 12px;font-weight:600;cursor:pointer}
+  .abs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+  .hist{border:1px solid var(--line);border-radius:12px;padding:4px 12px}.hi{display:grid;grid-template-columns:112px 1fr auto;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.hi:last-child{border-bottom:0}
+  .hd{color:var(--muted);font-size:13px}.hb{font:700 11px Poppins;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:#efeafd;color:var(--purp)}.hb.g{background:#e6f6fa;color:var(--teal)}
+  .pickbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff0f8;border:2px solid var(--mag);border-radius:12px;padding:8px 12px;margin-bottom:12px;font-weight:600}
+  .ne{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .loc{display:inline-block;background:var(--purp);color:#fff;font-weight:800;font-size:18px;padding:4px 12px;border-radius:10px;letter-spacing:.5px}
+  .st{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--soft);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .sf{margin-top:10px;padding:12px;border:2px solid var(--teal);border-radius:12px;display:grid;gap:10px}
+  .sf .r3{display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px}
+  .chk{display:flex;gap:8px;align-items:center;font-weight:600;font-size:14px}
+  .chk input{width:22px;height:22px;min-height:0}
+  .done{color:#1a8a3a;font-weight:700}
+  @media (max-width:560px){.sf .r3{grid-template-columns:1fr 1fr}.sf .r3>:nth-child(2){grid-column:1/-1;order:-1}}
+
+  /* ====== LABEL: 3in x 2in ====== */
+  #print{display:none}
+  @page{size:3in 2in;margin:0}
+  @media print{
+    body{background:#fff}
+    body>*:not(#print){display:none!important}
+    #print{display:block}
+  }
+  .lbl{width:3in;height:2in;padding:.09in .12in;display:flex;flex-direction:column;justify-content:space-between;page-break-after:always;break-after:page;overflow:hidden;color:#000;font-family:Poppins,Arial,sans-serif}
+  .lbl:last-child{page-break-after:auto;break-after:auto}
+  .lbl .top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+  .lbl .rn{font-weight:800;line-height:1.02;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+  .lbl .gn{font-weight:600;font-size:15pt;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lbl .mid{display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .lbl .ty{font-weight:800;font-size:10pt;padding:1pt 5pt;border:1.5pt solid #000;border-radius:4pt;white-space:nowrap;flex:none}
+  .lbl .ty.FT{background:#000;color:#fff}
+  .lbl .when{font-weight:600;font-size:10pt;line-height:1.15}
+  .lbl .ft{display:flex;justify-content:space-between;gap:4pt;white-space:nowrap;font-size:6.5pt;border-top:1pt solid #000;padding-top:2pt}
+</style>
+</head>
+<body>
+<header>
+  <h1>Abstract Check-In</h1>
+  <button class="gear" onclick="goSearch()" aria-label="Search bookings" title="Search bookings">🔍</button>
+  <button class="gear bell" id="bellBtn" onclick="openBell()" aria-label="New bookings" title="New bookings">🔔<span id="bellN" class="bn hide"></span></button>
+  <button class="gear" onclick="openSettings()" aria-label="Settings" title="Settings">⚙︎</button>
+  <nav>
+    <button id="tabNew" class="on" onclick="show('new')"><i>✚</i><span>Check in</span></button>
+    <button id="tabToday" onclick="show('today')"><i>✓</i><span>Checked in</span></button>
+    <button id="tabFind" onclick="show('find')"><i>⌂</i><span>Pickup</span></button>
+    <button id="tabSched" onclick="show('sched')"><i>▦</i><span>Schedule</span></button>
+  </nav>
+</header>
+
+<main>
+  <div id="todayAlert" class="newbar hide" onclick="openBell()"></div>
+  <div id="feeAlert" class="newbar hide" style="background:#4e3aa2" onclick="openFees()"></div>
+  <!-- CHECK IN -->
+  <section id="vNew">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <b style="font-size:17px" id="arrTitle">Arriving today</b>
+        <span style="display:flex;gap:6px">
+        <button type="button" class="btn main small" style="width:auto" onclick="openAddBooking(null,SLOT)">+ Add booking</button>
+        <button type="button" class="btn ghost small" style="width:auto" onclick="copyBookLink()">🔗 Booking link</button></span>
+      </div>
+      <div class="daynav">
+        <button type="button" class="btn ghost small" onclick="shiftDay(-1)" aria-label="Previous day">‹</button>
+        <input id="arrDay" type="date" onchange="SLOT='';setArrDay(this.value)">
+        <button type="button" class="btn ghost small" onclick="shiftDay(1)" aria-label="Next day">›</button>
+        <button type="button" class="btn ghost small today" onclick="setArrDay(today())">Today</button>
+      </div>
+      <input id="bkFilter" placeholder="Search bookings: name, phone, email, confirmation # or a word from their notes" oninput="onSearch()" autocomplete="off" type="search">
+      <div class="slots" id="slotChips"></div>
+      <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
+    </div>
+    <div id="ciForm" class="hide">
+    <div class="card" id="formTop">
+      <div id="pickBar" class="pickbar hide"></div>
+      <label class="l" for="res">Reservation name</label>
+      <input id="res" placeholder="e.g. Beatriz Castro Silva" autocomplete="off">
+      <div class="row" style="margin-top:12px">
+        <div><label class="l" for="ph">Phone</label><input id="ph" type="tel" placeholder="(407) 555-1234" autocomplete="off"></div>
+        <div><label class="l" for="em">Email</label><input id="em" type="email" placeholder="name@email.com" autocomplete="off" autocapitalize="off"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div><label class="l" for="dt">Class day</label><input id="dt" type="date" onchange="setArrDay(this.value)"></div>
+        <div><label class="l" for="tm">Class time</label><select id="tm"></select></div>
+      </div>
+    </div>
+    <div class="card">
+      <label class="l">Guests · FT = first timer, RG = returning guest · number = stickers to print</label>
+      <div id="guests" class="gl"></div>
+      <button class="btn ghost small add" onclick="addGuest()">+ Add guest</button>
+      <button class="btn ghost small add" onclick="addMany()">+ Add 4</button>
+    </div>
+    <button id="saveBtn" class="btn main" onclick="saveAndPrint()">Check in &amp; print labels</button>
+    <p class="muted" style="text-align:center">Saves to the Google Sheet, then opens the print dialog.</p>
+    </div>
+    <p class="muted" id="ciHint" style="text-align:center;font-size:14px">Tap a booking to check it in. Walk-in? Tap <b>+ Add booking</b>.</p>
+  </section>
+
+  <!-- TODAY -->
+  <section id="vToday" class="hide">
+    <div class="card" style="display:flex;gap:10px;align-items:end">
+      <div style="flex:1"><label class="l" for="dayPick">Date</label><input id="dayPick" type="date" onchange="loadDay()"></div>
+      <button class="btn ghost small" onclick="loadDay()">Refresh</button>
+    </div>
+    <div id="newBar" class="card hide" style="border:2px solid var(--mag);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <b id="newCount" style="font-size:17px"></b>
+      <button class="btn main" style="width:auto;font-size:16px" onclick="printNew()">Print new labels</button>
+    </div>
+    <div id="dayList"><p class="muted">Loading…</p></div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section id="vSched" class="hide">
+    <div class="vt"><button id="vtDay" class="on" onclick="setSchedView('day')">Day</button><button id="vtWeek" onclick="setSchedView('week')">Week</button></div>
+    <div class="card">
+      <div class="daynav" style="margin:0">
+        <button type="button" class="btn ghost small" onclick="schedShift(-1)" aria-label="Previous day">‹</button>
+        <input id="schedDay" type="date" onchange="loadSched()">
+        <button type="button" class="btn ghost small" onclick="schedShift(1)" aria-label="Next day">›</button>
+        <button type="button" class="btn ghost small" onclick="$('schedDay').value=today();loadSched()">Today</button>
+      </div>
+    </div>
+    <div id="schedBox"><p class="muted">Loading…</p></div>
+  </section>
+
+  <!-- FIND -->
+  <section id="vFind" class="hide">
+    <div class="card">
+      <label class="l" for="q">Pickup: search reservation or guest name</label>
+      <input id="q" placeholder="Type a name…" oninput="debFind()">
+      <datalist id="pieceTypes"></datalist>
+    </div>
+    <div id="findList"></div>
+  </section>
+</main>
+
+<div id="print"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<div id="printModal" class="modal hide"><div class="mbox">
+  <div style="font-size:44px">🏷️</div><h2 id="pmCount" style="margin:6px 0 4px">Stickers</h2>
+  <p class="muted" style="margin:0 0 18px">ready for the Rollo</p>
+  <button class="btn main" onclick="sendToPrinter()">Print</button>
+  <button class="btn ghost" style="width:100%;margin-top:10px" onclick="$('printModal').classList.add('hide')">Cancel</button>
+</div></div>
+<div id="setModal" class="modal hide"><div class="mbox" style="text-align:left">
+  <h2 style="margin:0 0 6px">Printer</h2>
+  <p class="muted" style="margin:0 0 16px">Saved on this device only.</p>
+  <label class="chk" style="font-size:16px"><input type="checkbox" id="rotChk"> Turn sticker 90° (use if it prints sideways)</label>
+  <div style="display:flex;gap:8px;margin-top:18px"><button class="btn ghost" style="flex:1" onclick="testPrint()">Test print</button><button class="btn main" style="flex:1" onclick="saveSettings()">Save</button></div>
+  <h2 style="margin:26px 0 6px">Booking notices</h2>
+  <p class="muted" style="margin:0 0 8px">Every new booking, reschedule, cancellation and party request is emailed to:</p>
+  <div id="notifyList"><p class="muted">Loading…</p></div>
+  <div style="display:flex;gap:8px;margin-top:10px"><input id="notifyNew" type="email" placeholder="Add an email" autocapitalize="off" style="flex:1"><button class="btn main" style="width:auto;padding:0 18px" onclick="addNotify()">Add</button></div>
+  <h2 style="margin:26px 0 6px">Guest booking link</h2>
+  <p class="muted" style="margin:0 0 8px">Send this when a guest asks how to book.</p>
+  <button class="btn ghost" style="width:100%" onclick="copyBookLink()">🔗 Copy booking link</button>
+  <details style="margin-top:22px"><summary class="muted" style="cursor:pointer">One-time: import FareHarbor bookings</summary>
+    <p class="muted" style="font-size:14px">Only needed on launch day, to bring over upcoming bookings made on FareHarbor.</p>
+    <label class="btn ghost" style="width:100%;display:flex;align-items:center;justify-content:center">Choose FareHarbor file<input type="file" id="fhFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFH(this)"></label></details>
+  <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('setModal').classList.add('hide')">Close</button>
+</div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ====== EDIT CLASS TIMES HERE (in order) ====== */
+const OLD_TIMES = ['11:00 AM','12:30 PM','2:00 PM','3:30 PM','5:00 PM'];   // through Dec 31, 2026
+const NEW_FROM = '2027-01-01';                                              // new hours start this day
+const NEW_TIMES = {                                                         // Sun=0 … Sat=6
+  3:['3:00 PM','4:30 PM','6:00 PM','7:30 PM'], 4:['3:00 PM','4:30 PM','6:00 PM','7:30 PM'], 5:['3:00 PM','4:30 PM','6:00 PM','7:30 PM'],
+  6:['12:00 PM','1:30 PM','3:00 PM','4:30 PM','6:00 PM'], 0:['12:00 PM','1:30 PM','3:00 PM','4:30 PM']
+};
+// Class times for a date (YYYY-MM-DD). Keep in sync with Booking.gs.
+function timesFor(date){
+  if(!date||date<NEW_FROM)return OLD_TIMES;
+  const [y,m,d]=date.split('-').map(Number);const t=NEW_TIMES[new Date(y,m-1,d).getDay()];
+  return t&&t.length?t:NEW_TIMES[6];   // closed day (Mon/Tue): show Saturday's times so a walk-in can still be entered
+}
+function fillTimes(sel,date,keep){const ts=timesFor(date);sel.innerHTML=ts.map(t=>`<option${t===keep?' selected':''}>${t}</option>`).join('');if(!ts.includes(keep))sel.value=ts[0]}
+const STUDIO = 'Abstract Orlando · (689) 348-8239';
+const FEE_PER_GUEST = 50; // keep in sync with BOOK.feePerGuest in Booking.gs
+/* ====== PIECE TYPES (suggestions when storing) ====== */
+const PIECE_TYPES = {
+  /* Project names as listed in FareHarbor */
+  'Bears':['Kodiak','Silvertip','Grizzly','Yearling','Cub'],
+  'Piggy Banks':['626','Floppy','Winnie','Kitty','Fluffy','Cooper','The Bat','Labubu'],
+  'Sculptures':['Air Abstract','Heart Sculpture','Topolino/Topolina','Trooper','Snoopy','Skully','Tars','Gargantua','Turbo'],
+  'Vases & Lamp':['Daisy- 8" Glass Vase','Magnolia- 10" Glass Vase','Halo'],
+  'Coasters & Trays':['Ear Coasters','Tapas','Goya Bamboo Tray','Dali Bamboo Tray','Warhol Acacia Tray'],
+  'Art Pieces':['Banksy','Pollock','Frida','Hilma'],
+  'Wall Cutouts':['Melody Guitar','The Boss','High Four','Castle','Ears','Crush','Sunshine','Surfboard','Shark','T-REX','Smiley'],
+  'Canvases':['Degas Canvas','Monet Canvas','Van Gogh Canvas']
+};
+
+/* ====== YOUR APPS SCRIPT WEB APP LINK (ends in /exec) ====== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwvba_1OZKz5alSsEVV8pXWKUQJN5wmur6ACjaUD1grRUbJoFN0zJJ5verK4omhuygcKw/exec';
+
+/* ---------- server bridge (demo store if API_URL is empty) ---------- */
+const hasGAS = !!API_URL;
+const demo = {rows:[],st:{},
+  wrap(r){return Object.assign({},r,{storage:this.st[r.partyId]||null})},
+  saveParty(p){const id=Math.random().toString(36).slice(2,10).toUpperCase();const out=p.guests.map((g,i)=>({row:this.rows.length+2+i,ts:Date.now(),date:p.date,time:p.time,reservation:p.reservation,size:p.guests.length,num:i+1,name:g.name,type:g.type,projects:g.projects||1,partyId:id,printed:0,phone:p.phone,email:p.email}));this.rows.push(...out);return out.map(r=>this.wrap(r))},
+  getDay(d){return this.rows.filter(r=>r.date===d).slice().reverse().map(r=>this.wrap(r))},
+  search(q){q=q.toLowerCase();return this.rows.filter(r=>r.name.toLowerCase().includes(q)||r.reservation.toLowerCase().includes(q)).slice().reverse().map(r=>this.wrap(r))},
+  markPrinted(rows){rows.forEach(n=>{const r=this.rows.find(x=>x.row===n);if(r)r.printed++});return true},
+  updateGuest(row,n,t,pj){const r=this.rows.find(x=>x.row===row);r.name=n;r.type=t;if(pj)r.projects=pj;return this.wrap(r)},
+  updateContact(pid,ph,em){this.rows.filter(r=>r.partyId===pid).forEach(r=>{r.phone=ph;r.email=em});return true},
+  storeParty(s){const o=this.st[s.partyId]||{};this.st[s.partyId]={location:s.location.toUpperCase(),pieceType:s.pieceType,pieces:+s.pieces,emailSent:o.emailSent||s.notify,textSent:o.textSent||s.notify,pickedUp:o.pickedUp||false};return {email:s.notify?'sent':'skipped',text:s.notify?'sent':'skipped'}},
+  addGuestToParty(pid,name,type){const party=this.rows.filter(r=>r.partyId===pid);const f=party[0];const size=party.length+1;party.forEach(r=>r.size=size);
+    const g=Object.assign({},f,{row:this.rows.length+2,num:size,size,name,type,projects:1,printed:0});this.rows.push(g);return this.wrap(g)},
+  markPickedUp(pid){this.st[pid].pickedUp=true;return true}};
+function call(fn,...args){
+  return new Promise((res,rej)=>{
+    if(!hasGAS){try{res(demo[fn](...args))}catch(e){rej(e)}return}
+    // text/plain body = no CORS preflight; no cookies = no Google sign-in problems
+    fetch(API_URL,{method:'POST',body:JSON.stringify({pin:PIN,fn,args}),redirect:'follow',credentials:'omit'})
+      .then(r=>r.json()).then(j=>{
+        if(j.ok)return res(j.data);
+        if(/Wrong PIN/.test(j.error))askPin(true);
+        rej(new Error(j.error));
+      }).catch(()=>rej(new Error('No connection — check Wi-Fi')));
+  });
+}
+
+/* ---------- staff PIN ---------- */
+let PIN='';try{PIN=localStorage.getItem('abs_pin')||''}catch(e){}
+let asking=false;
+function askPin(wrong){if(asking)return;asking=true;const v=prompt((wrong?'Wrong PIN. ':'')+'Staff PIN');asking=false;if(v===null)return;PIN=v.trim();try{localStorage.setItem('abs_pin',PIN)}catch(e){};loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()}
+demo.importFareHarbor=function(l){l.forEach(b=>this.bk.push(Object.assign({row:this.bk.length+2,partyId:'',source:'FareHarbor',status:'Confirmed',key:'fh'+this.bk.length},b)));return{added:l.length,updated:0}};demo.bk=[];demo.importBookings=function(l){const d={};l.forEach(b=>d[b.date]=1);this.bk=this.bk.filter(b=>!d[b.date]).concat(l.map((b,i)=>Object.assign({row:this.bk.length+i+2,partyId:''},b)));return {imported:l.length,dates:Object.keys(d)}};
+demo.checkEmail=()=>0;demo.getBookings=function(d){return this.bk.filter(b=>b.date===d)};
+const _dsp=demo.saveParty.bind(demo);demo.saveParty=function(p){const o=_dsp(p);const b=this.bk.find(x=>x.row==p.bookingRow);if(b)b.partyId=o[0].partyId;return o};
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function niceDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+function cap(s){s=s.trim();return s.charAt(0).toUpperCase()+s.slice(1)}
+function titleCase(s){return s.trim().replace(/\s+/g,' ').split(' ').map(cap).join(' ')}
+function toast(m,ms){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',ms||2600)}
+function nearestTime(){
+  const now=new Date(),mins=now.getHours()*60+now.getMinutes();
+  const toM=t=>{let [h,mm]=t.split(/[: ]/);h=+h;const pm=/PM/.test(t);if(pm&&h!==12)h+=12;if(!pm&&h===12)h=0;return h*60+ +mm};
+  const ts=timesFor($('dt').value||today());let best=ts[0],bd=1e9;ts.forEach(t=>{const d=Math.abs(toM(t)-mins);if(d<bd){bd=d;best=t}});return best;
+}
+
+/* ---------- tabs ---------- */
+function show(v){document.body.classList.toggle('wide',v==='sched'&&SVIEW==='week');
+  ['new','today','find','sched'].forEach(k=>{$('v'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==v);$('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on',k===v)});
+  if(v==='sched')loadSched();
+  if(v==='today')loadDay(); if(v==='new')loadArrivals(); if(v==='find')$('q').focus();
+}
+
+/* ---------- check-in form ---------- */
+function addGuest(name='',type='FT',projects=1){
+  const wrap=document.createElement('div');wrap.className='g';
+  wrap.innerHTML=`<span class="n"></span><input placeholder="First name" value="${esc(name)}" autocomplete="off">
+    <div class="seg"><button type="button" class="ft">FT</button><button type="button" class="rg">RG</button></div>
+    <div class="pj" title="Stickers to print"><button type="button" class="m">−</button><span>1</span><button type="button" class="p">+</button></div>
+    <button class="x" type="button" aria-label="Remove guest">×</button>`;
+  const [ft,rg]=wrap.querySelectorAll('.seg button');
+  const set=t=>{wrap.dataset.type=t;ft.classList.toggle('on',t==='FT');rg.classList.toggle('on',t==='RG')};
+  ft.onclick=()=>set('FT');rg.onclick=()=>set('RG');set(type);
+  const pj=wrap.querySelector('.pj span');const setP=n=>{n=Math.min(Math.max(n,1),9);wrap.dataset.projects=n;pj.textContent=n;pj.parentNode.classList.toggle('multi',n>1)};
+  wrap.querySelector('.pj .m').onclick=()=>setP(+wrap.dataset.projects-1);wrap.querySelector('.pj .p').onclick=()=>setP(+wrap.dataset.projects+1);setP(projects);
+  wrap.querySelector('.x').onclick=()=>{wrap.remove();renum()};
+  wrap.querySelector('input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addGuest();}});
+  $('guests').appendChild(wrap);renum();wrap.querySelector('input').focus();
+}
+function addMany(){for(let i=0;i<4;i++)addGuest()}
+function renum(){[...$('guests').children].forEach((g,i)=>g.querySelector('.n').textContent=i+1)}
+function showForm(on){$('ciForm').classList.toggle('hide',!on);$('ciHint').classList.toggle('hide',on)}
+function resetForm(){picked=null;showForm(false);if($('pickBar'))$('pickBar').classList.add('hide');['res','ph','em'].forEach(k=>$(k).value='');$('guests').innerHTML='';addGuest();$('tm').value=nearestTime()}
+
+async function saveAndPrint(){
+  const reservation=$('res').value.trim();
+  const guests=[...$('guests').children].map(g=>({name:cap(g.querySelector('input').value),type:g.dataset.type,projects:+g.dataset.projects||1})).filter(g=>g.name);
+  if(!reservation){toast('Add the reservation name');$('res').focus();return}
+  if(!guests.length){toast('Add at least one guest');return}
+  const em=$('em').value.trim();
+  if(em&&!/^\S+@\S+\.\S+$/.test(em)){toast('Check the email');$('em').focus();return}
+  const btn=$('saveBtn');btn.disabled=true;btn.textContent='Saving…';
+  try{
+    const saved=await call('saveParty',{date:$('dt').value,time:$('tm').value,reservation:titleCase(reservation),phone:$('ph').value.trim(),email:em,guests,bookingRow:picked?picked.row:0});
+    picked=null;$('bkFilter').value='';loadArrivals();
+    printLabels(saved);
+    resetForm();toast(`Checked in ${saved.length} guest${saved.length>1?'s':''}`);
+  }catch(e){toast('Could not save: '+(e.message||e))}
+  btn.disabled=false;btn.textContent='Check in & print labels';
+}
+
+/* ---------- labels: RESERVATION NAME biggest ---------- */
+function resSize(n){const L=n.length;return L<=10?34:L<=14?28:L<=18?24:L<=24?21:18}
+/* ---------- STICKERS: drawn as an exact 3" x 2" PDF so every device prints the same ---------- */
+const DPI=300,LW=900,LH=600,PAD=30,pt=n=>Math.round(n*DPI/72);
+let ROTATE=false;try{ROTATE=localStorage.getItem('abs_rot')==='1'}catch(e){}
+const isTouch=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function wrap(ctx,text,maxW){const words=text.split(' ');const lines=[];let cur='';
+  words.forEach(w=>{const t=cur?cur+' '+w:w;if(ctx.measureText(t).width<=maxW||!cur)cur=t;else{lines.push(cur);cur=w}});if(cur)lines.push(cur);return lines}
+function drawLabel(ctx,g){
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.textBaseline='alphabetic';ctx.textAlign='left';
+  const P=34,maxW=LW-P*2;
+  // FT / RG box: top-right corner
+  ctx.font=`800 ${pt(13)}px Poppins, Arial, sans-serif`;
+  const tw=ctx.measureText(g.type).width+44,th=pt(13)+24,tx=LW-P-tw,ty=P;
+  ctx.lineWidth=7;if(g.type==='FT'){ctx.fillRect(tx,ty,tw,th);ctx.fillStyle='#fff'}else ctx.strokeRect(tx+3.5,ty+3.5,tw-7,th-7);
+  ctx.fillText(g.type,tx+22,ty+th-19);ctx.fillStyle='#000';
+  // reservation name: biggest size that fits in 2 lines, beside the box
+  const resW=maxW-tw-24;let size=40,lines;
+  for(;size>=14;size--){ctx.font=`800 ${pt(size)}px Poppins, Arial, sans-serif`;lines=wrap(ctx,g.reservation,resW);if(lines.length<=2&&lines.every(l=>ctx.measureText(l).width<=resW))break}
+  let y=P-pt(size)*0.12;lines.slice(0,2).forEach(l=>{y+=pt(size)*0.98;ctx.fillText(l,P,y)});
+  // bottom line: day + time left, QTY right
+  const by=LH-P-4;ctx.font=`700 ${pt(12)}px Poppins, Arial, sans-serif`;
+  ctx.fillText(`${niceDate(g.date)} · ${g.time}`,P,by);
+  ctx.font=`800 ${pt(12)}px Poppins, Arial, sans-serif`;ctx.textAlign='right';ctx.fillText(`QTY: ${g.size}`,LW-P,by);ctx.textAlign='left';
+  // guest first name
+  ctx.font=`700 ${pt(19)}px Poppins, Arial, sans-serif`;
+  let nm=g.name;while(ctx.measureText(nm).width>maxW&&nm.length>2)nm=nm.slice(0,-2)+'…';
+  ctx.fillText(nm,P,by-pt(12)-46);
+}
+async function makePdf(copies){
+  try{await Promise.all(['800','700','500'].map(w=>document.fonts.load(`${w} 40px Poppins`)))}catch(e){}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF(ROTATE?{orientation:'portrait',unit:'in',format:[2,3]}:{orientation:'landscape',unit:'in',format:[2,3]});
+  const c=document.createElement('canvas'),ctx=c.getContext('2d');
+  copies.forEach((g,i)=>{
+    c.width=LW;c.height=LH;drawLabel(ctx,g);
+    let img=c;
+    if(ROTATE){const r=document.createElement('canvas');r.width=LH;r.height=LW;const rc=r.getContext('2d');rc.translate(LH,0);rc.rotate(Math.PI/2);rc.drawImage(c,0,0);img=r}
+    if(i)doc.addPage(ROTATE?[2,3]:[3,2],ROTATE?'portrait':'landscape');
+    doc.addImage(img.toDataURL('image/png'),'PNG',0,0,ROTATE?2:3,ROTATE?3:2);
+  });
+  return doc.output('blob');
+}
+let pendingPdf=null;
+async function printLabels(list){
+  if(!list.length)return;
+  const copies=[];list.forEach(g=>{const n=g.projects||1;
+    if(g.onlyProject)copies.push(Object.assign({},g,{pk:g.onlyProject,pn:n}));
+    else for(let k=1;k<=n;k++)copies.push(Object.assign({},g,{pk:k,pn:n}))});
+  let blob;try{blob=await makePdf(copies)}catch(e){toast('Could not make stickers: '+(e.message||e),5000);return}
+  pendingPdf={blob,count:copies.length};
+  if(isTouch){$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
+  else sendToPrinter();
+  if(list[0].row){list.forEach(g=>g.printed=(g.printed||0)+1);call('markPrinted',list.map(g=>g.row)).then(()=>{if(!$('vToday').classList.contains('hide'))loadDay(true)}).catch(()=>{})}
+}
+async function sendToPrinter(){
+  if(!pendingPdf)return;const {blob}=pendingPdf;$('printModal').classList.add('hide');
+  if(isTouch){
+    const file=new File([blob],'abstract-stickers.pdf',{type:'application/pdf'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return}catch(e){if(e.name==='AbortError')return}}
+    window.open(URL.createObjectURL(blob),'_blank');return;
+  }
+  const url=URL.createObjectURL(blob);let f=$('pdfFrame');
+  if(!f){f=document.createElement('iframe');f.id='pdfFrame';f.style.cssText='position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0';document.body.appendChild(f)}
+  f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},300)};
+  f.src=url;
+}
+function openSettings(){$('rotChk').checked=ROTATE;$('setModal').classList.remove('hide');loadNotify()}
+let NOTIFY=null;
+async function loadNotify(){try{NOTIFY=await call('getNotify');renderNotify()}catch(e){$('notifyList').innerHTML=`<p class="muted">Could not load: ${esc(e.message||e)}</p>`}}
+function renderNotify(){$('notifyList').innerHTML=`<div class="ne"><span><b>${esc(NOTIFY.always)}</b></span><span class="muted" style="font-size:13px">always</span></div>`+
+  NOTIFY.extra.map((x,i)=>`<div class="ne"><span>${esc(x)}</span><button class="tl" onclick="removeNotify(${i})">Remove</button></div>`).join('')}
+async function saveNotify(list){try{NOTIFY=await call('setNotify',list);renderNotify();toast('Saved ✓')}catch(e){toast(e.message||String(e),5000)}}
+function addNotify(){const v=$('notifyNew').value.trim();if(!v)return;$('notifyNew').value='';saveNotify(NOTIFY.extra.concat(v))}
+function removeNotify(i){if(!confirm(`Stop sending booking notices to ${NOTIFY.extra[i]}?`))return;saveNotify(NOTIFY.extra.filter((x,j)=>j!==i))}
+function saveSettings(){ROTATE=$('rotChk').checked;try{localStorage.setItem('abs_rot',ROTATE?'1':'0')}catch(e){};$('setModal').classList.add('hide');toast('Saved for this device')}
+function testPrint(){saveSettings();printLabels([{reservation:'Beatriz Castro Silva',name:'Mike',type:'FT',date:today(),time:timesFor(today())[0],num:1,size:2,projects:1}])}
+
+/* ---------- lists ---------- */
+function groupParties(list){const m=new Map();list.forEach(g=>{if(!m.has(g.partyId))m.set(g.partyId,[]);m.get(g.partyId).push(g)});return [...m.values()].map(a=>a.sort((x,y)=>x.num-y.num))}
+let cache={},parties={};
+function storageLine(p){
+  const s=p[0].storage,id=p[0].partyId;
+  if(!s)return `<div class="st"><span class="muted">Not in storage yet</span><button class="btn ghost small" onclick="openStore('${id}')">Store &amp; notify</button></div>`;
+  const sent=[s.emailSent?'email':'',s.textSent?'text':''].filter(Boolean).join(' + ');
+  return `<div class="st"><div><span class="loc">${esc(s.location)}</span>
+      <span style="margin-left:8px;font-weight:600">${s.pieces} piece${s.pieces>1?'s':''}</span><br><span style="font-size:14px">${esc(s.pieceType||'')}</span><br>
+      <span class="muted">${s.pickedUp?'<span class="done">✓ Picked up</span>':sent?'Guest notified by '+sent:'Not notified'}</span></div>
+    <div style="display:flex;gap:6px">${s.pickedUp?'':`<button class="btn ghost small" onclick="pickedUp('${id}')">Picked up</button>`}
+      <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
+}
+function renderParties(list,el){
+  if(!list.length){el.innerHTML='<p class="muted">No check-ins found.</p>';return}
+  cache={};list.forEach(g=>cache[g.row]=g);
+  el.innerHTML=groupParties(list).map(p=>{parties[p[0].partyId]=p;const f=p[0];return `
+    <div class="party${p.every(g=>!g.printed)?' isnew':''}" id="p_${f.partyId}">
+      <div class="ph"><div>${p.every(g=>!g.printed)?'<span class="tag NEW">NEW</span> ':''}${f.source==='Guest'?'<span class="muted">(self check-in)</span><br>':''}<b>${esc(f.reservation)}</b><br><span>${esc(niceDate(f.date))} · ${esc(f.time)} · ${f.size} guest${f.size>1?'s':''}</span><br>
+        <span>${esc(f.phone||'no phone')} · ${esc(f.email||'no email')}</span> <a href="#" onclick="editContact('${f.partyId}');return false" style="color:var(--teal);font-size:13px;font-weight:600">edit</a></div>
+        <button class="btn ghost small" onclick='reprint(${JSON.stringify(p.map(g=>g.row))})'>Print all</button></div>
+      ${storageLine(p)}
+      <div id="sf_${f.partyId}"></div>
+      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b> <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span></div>
+        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button></div></div>`).join('')}
+      <button class="btn ghost small" style="margin-top:10px" onclick="addToParty('${f.partyId}')">+ Add guest to this party</button>
+    </div>`}).join('');
+}
+function reprint(rows){printLabels(rows.map(r=>cache[r]).filter(Boolean).map(g=>Object.assign({},g,{projects:1})))}
+/* extra project later on: saves the new count, prints only the new sticker */
+async function addProject(row){
+  const g=cache[row];const n=(g.projects||1)+1;
+  try{const u=await call('updateGuest',row,g.name,g.type,n);Object.assign(g,u||{},{projects:n});
+    printLabels([Object.assign({},g,{onlyProject:n})]);toast(g.name+' now has '+n+' projects');setTimeout(refreshView,2500)}
+  catch(e){toast('Could not update')}
+}
+async function addToParty(id){
+  const n=prompt('New guest first name');if(!n||!n.trim())return;
+  const ft=confirm(cap(n)+': first timer?\nOK = FT (first timer), Cancel = RG (returning guest)');
+  try{const g=await call('addGuestToParty',id,cap(n),ft?'FT':'RG');cache[g.row]=g;printLabels([g]);toast('Added '+g.name);setTimeout(refreshView,2500)}
+  catch(e){toast('Could not add: '+(e.message||e))}
+}
+
+/* ---- storage form: pick one or more piece types, with a count for each ---- */
+let pickMap={};
+function parsePieces(str,total){const m={};if(!str)return m;
+  str.split(/,\s*/).forEach(x=>{const r=/^(\d+)\s*[×x]\s*(.+)$/.exec(x.trim());if(r)m[r[2]]=+r[1];else if(x.trim())m[x.trim()]=0});
+  const known=Object.values(m).reduce((a,b)=>a+b,0);Object.keys(m).forEach(k=>{if(!m[k])m[k]=Math.max(1,(total||1)-known)});return m}
+function piecesText(m){return Object.entries(m).map(([k,v])=>`${v}× ${k}`).join(', ')}
+function openStore(id){
+  const box=$('sf_'+id);if(box.innerHTML){box.innerHTML='';return}
+  const p=parties[id],s=p[0].storage||{},first=!p[0].storage;
+  pickMap[id]=parsePieces(s.pieceType,s.pieces);
+  box.innerHTML=`<div class="sf">
+    <div><label class="l">Shelf</label><input id="loc_${id}" placeholder="e.g. B-23 (or B-23, C-4)" value="${esc(s.location||'')}" autocapitalize="characters"></div>
+    <div><label class="l">Pieces (tap every type that's going on the shelf)</label>
+      <div id="sel_${id}" class="sel"></div>
+      <input id="pf_${id}" placeholder="Search projects…" oninput="renderPicker('${id}')" autocomplete="off" style="margin-top:8px">
+      <div id="pk_${id}" class="pk"></div></div>
+    <label class="chk"><input type="checkbox" id="nt_${id}" ${first?'checked':''}> Send "ready for pickup" email + text now</label>
+    <button class="btn main" style="font-size:16px" onclick="saveStore('${id}')">Save</button></div>`;
+  renderPicker(id);$('loc_'+id).focus();
+}
+function renderPicker(id){
+  const m=pickMap[id],q=($('pf_'+id).value||'').toLowerCase();
+  const total=Object.values(m).reduce((a,b)=>a+b,0);
+  $('sel_'+id).innerHTML=Object.keys(m).length?Object.entries(m).map(([k,v])=>`<div class="si"><b>${esc(k)}</b>
+      <span class="pj multi"><button type="button" onclick="bump('${id}',${JSON.stringify(k).replace(/"/g,'&quot;')},-1)">−</button><span>${v}</span><button type="button" onclick="bump('${id}',${JSON.stringify(k).replace(/"/g,'&quot;')},1)">+</button></span></div>`).join('')+
+      `<div class="muted" style="margin-top:4px">Total: <b>${total}</b> piece${total>1?'s':''}</div>`:'<p class="muted" style="margin:0">Nothing selected yet.</p>';
+  $('pk_'+id).innerHTML=Object.entries(PIECE_TYPES).map(([cat,items])=>{
+    const f=items.filter(t=>!q||t.toLowerCase().includes(q));if(!f.length)return '';
+    return `<div class="pc">${esc(cat)}</div>`+f.map(t=>`<button type="button" class="chip${m[t]?' on':''}" onclick="bump('${id}',${JSON.stringify(t).replace(/"/g,'&quot;')},${m[t]?0:1})">${esc(t)}${m[t]?' ✓':''}</button>`).join('');
+  }).join('')||'<p class="muted">No match.</p>';
+}
+function bump(id,k,d){const m=pickMap[id];
+  if(d===0){delete m[k]}else{m[k]=(m[k]||0)+d;if(m[k]<=0)delete m[k]}
+  renderPicker(id)}
+async function saveStore(id){
+  const loc=$('loc_'+id).value.trim();if(!loc){toast('Add the shelf');return}
+  const m=pickMap[id];const total=Object.values(m).reduce((a,b)=>a+b,0);
+  if(!total){toast('Tap at least one piece type');return}
+  const notify=$('nt_'+id).checked,p=parties[id][0];
+  if(notify&&!p.email&&!p.phone){toast('No phone or email on this party — tap edit next to the contact');return}
+  try{
+    const r=await call('storeParty',{partyId:id,location:loc,pieceType:piecesText(m),pieces:total,notify});
+    toast(notify?`Saved · email: ${r.email} · text: ${r.text}`:'Saved',4000);refreshView();
+  }catch(e){toast('Could not save: '+(e.message||e))}
+}
+async function pickedUp(id){if(!confirm('Mark '+parties[id][0].reservation+' as picked up?'))return;try{await call('markPickedUp',id);toast('Picked up ✓');refreshView()}catch(e){toast('Could not update')}}
+async function editContact(id){
+  const f=parties[id][0];const ph=prompt('Phone',f.phone);if(ph===null)return;const em=prompt('Email',f.email);if(em===null)return;
+  try{await call('updateContact',id,ph.trim(),em.trim());toast('Updated');refreshView()}catch(e){toast('Could not update')}
+}
+async function editGuest(row){
+  const g=cache[row];const n=prompt('Guest first name',g.name);if(n===null)return;
+  const ft=confirm('Is '+(n||g.name)+' a first timer?\nOK = FT (first timer), Cancel = RG (returning guest)');
+  const pj=prompt('How many projects (labels)?',g.projects||1);if(pj===null)return;
+  try{await call('updateGuest',row,cap(n||g.name),ft?'FT':'RG',parseInt(pj)||1);toast('Updated');refreshView()}catch(e){toast('Could not update')}
+}
+function refreshView(){if(!$('vToday').classList.contains('hide'))loadDay();else if(!$('vFind').classList.contains('hide'))find()}
+let dayData=[];
+async function loadDay(quiet){
+  if(!quiet)$('dayList').innerHTML='<p class="muted">Loading…</p>';
+  try{
+    const list=await call('getDay',$('dayPick').value);
+    if(quiet&&JSON.stringify(list)===JSON.stringify(dayData))return;
+    if(quiet&&document.querySelector('#dayList .sf'))return; // don't wipe a form being filled
+    dayData=list;renderParties(list,$('dayList'));
+    const fresh=list.filter(g=>!g.printed);
+    $('newBar').classList.toggle('hide',!fresh.length);
+    $('newCount').textContent=fresh.length+' new label'+(fresh.length>1?'s':'')+' to print';
+  }catch(e){if(!quiet)$('dayList').innerHTML='<p class="muted">Could not load.</p>'}
+}
+function printNew(){const fresh=dayData.filter(g=>!g.printed).sort((a,b)=>a.row-b.row);fresh.forEach(g=>cache[g.row]=g);printLabels(fresh);setTimeout(()=>loadDay(true),2500)}
+setInterval(()=>{if(!$('vNew').classList.contains('hide')&&!document.hidden)loadArrivals(true)},60000);
+setInterval(()=>{if(!$('vToday').classList.contains('hide')&&!document.hidden)loadDay(true)},15000);
+
+let fh;function debFind(){clearTimeout(fh);fh=setTimeout(find,300)}
+async function find(){const q=$('q').value.trim();if(q.length<2){$('findList').innerHTML='';return}try{renderParties(await call('search',q),$('findList'))}catch(e){$('findList').innerHTML='<p class="muted">Could not search.</p>'}}
+
+/* ---------- Toast bookings: arriving today ---------- */
+let arrivals=[],picked=null;
+function setArrDay(d){if(!d)return;$('dt').value=d;$('arrDay').value=d;fillTimes($('tm'),d,$('tm').value);
+  $('arrTitle').textContent=d===today()?'Arriving today':'Arriving '+niceDate(d);picked=null;arrivals=[];loadArrivals()}
+function shiftDay(n){SLOT='';const [y,m,dd]=$('arrDay').value.split('-').map(Number);const x=new Date(y,m-1,dd+n);
+  setArrDay(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'))}
+let SLOT='';
+/* ---------- staff: add a booking ---------- */
+function openAddBooking(date,time){
+  date=date||$('dt').value||today();AB_G=null;
+  const ts=timesFor(date),m=document.createElement('div');m.className='modal';m.id='addModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:460px">
+    <b style="font-size:20px">Add a booking</b><p class="muted" id="abSub" style="margin:4px 0 12px"></p>
+    <label class="l">Day</label><input type="date" id="abDate" value="${date}" min="${today()}" onchange="AB_T='';abMode();abSlots()">
+    <label class="l" style="margin-top:10px">Time</label><input type="hidden" id="abTime" value="${time||''}"><div id="abSlots" class="abs"><p class="muted">Loading open spots…</p></div>
+    <label class="chk" id="abWalkRow" style="margin-top:12px"><input type="checkbox" id="abWalk" checked onchange="abMode()"> They're here now (walk-in, no card needed)</label>
+    <label class="l" style="margin-top:12px">Returning guest? <span class="muted">(optional)</span></label>
+    <input id="abFind" type="search" placeholder="Find them by name, phone or email" autocomplete="off" oninput="abSearch()">
+    <div id="abFound"></div>
+    <label class="l" style="margin-top:10px">Name</label><input id="abName" placeholder="First and last name" autocapitalize="words">
+    <label class="l" style="margin-top:10px">Mobile</label>
+    <div style="display:flex;gap:8px"><select id="abCC" aria-label="Country code" style="width:auto;flex:none;padding:0 8px" onchange="$('abPhone').placeholder=CC[this.value][2]==='+1'?'(407) 555-1234':'Mobile number'">${CC.map(([c,f,d],i)=>`<option value="${i}">${f} ${d}</option>`).join('')}</select>
+      <input id="abPhone" type="tel" placeholder="(407) 555-1234" style="flex:1"></div>
+    <p class="muted" style="font-size:13px;margin:4px 0 0">Double-check the number. Their texts go here.</p>
+    <label class="l" style="margin-top:10px">Artists</label><input id="abSize" type="number" min="1" value="2" inputmode="numeric" style="max-width:140px" oninput="abSlots(true)">
+    <label class="l" style="margin-top:10px">Email</label><input id="abEmail" type="email" autocapitalize="off" placeholder="name@email.com">
+    <label class="l" style="margin-top:10px">Note <span class="muted">(optional, only staff see this)</span></label><input id="abNote" placeholder="e.g. Booked their next visit at checkout">
+    <div id="abCardRow" class="hide" style="margin-top:12px"></div>
+    <label class="chk" id="abNotifyRow" style="margin-top:12px"><input type="checkbox" id="abNotify" checked> Text them a confirmation</label>
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('addModal').remove()">Cancel</button>
+      <button class="btn main" style="flex:1" id="abSave" onclick="saveAddBooking()">Add booking</button></div></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);AB_T=time||'';abMode();abSlots();
+}
+/* walk-in today = no card; booking ahead = guest gets a link to save a card (spot held 15 minutes) */
+let AB_G=null,abT,AB_T='',AB_W={};
+/* time buttons with open spots for the chosen day (same numbers as the Schedule) */
+async function abSlots(quick){
+  const date=$('abDate').value,box=$('abSlots');if(!date||!box)return;
+  const ws=weekStart(date);
+  if(!AB_W[ws]){if(!quick)box.innerHTML='<p class="muted">Loading open spots…</p>';try{AB_W[ws]=await call('getWeek',ws)}catch(e){box.innerHTML=`<p class="muted">${esc(e.message||e)}</p>`;return}}
+  if($('abDate').value!==date)return;
+  const day=AB_W[ws].find(d=>d.date===date),need=Math.max(1,+$('abSize').value||1),now=Date.now();
+  const cls=(day&&day.open?day.classes:[]).filter(c=>dateTime(date,c.time)>now-15*6e4);
+  if(!cls.length){box.innerHTML='<p class="muted">No classes left on this day. Pick another day.</p>';$('abTime').value='';return}
+  if(!cls.some(c=>c.time===AB_T))AB_T='';$('abTime').value=AB_T;
+  box.innerHTML=cls.map(c=>{const open=Math.max(0,c.cap-c.booked),fits=open>=need&&c.cap>0;
+    return `<button type="button" class="mvs ${c.time===AB_T?'cur':fits?'':'full'}" onclick="AB_T='${c.time}';abSlots(true)">${c.private?'🔒 ':''}<b>${esc(c.time)}</b><span>${c.cap===0?'Closed':open?open+' open':'Full'}</span></button>`}).join('');
+}
+function abSearch(){clearTimeout(abT);const q=$('abFind').value.trim();if(q.length<2){$('abFound').innerHTML='';return}
+  $('abFound').innerHTML='<p class="muted" style="font-size:14px;margin:6px 0">Searching…</p>';
+  abT=setTimeout(async()=>{let L;try{L=await call('findGuests',q)}catch(e){$('abFound').innerHTML=`<p class="muted">${esc(e.message||e)}</p>`;return}
+    if($('abFind').value.trim()!==q)return;window.AB_L=L;
+    $('abFound').innerHTML=L.length?L.map((g,i)=>`<button type="button" class="ev" style="padding:8px 4px" onclick="abPick(${i})"><i>👤</i><span><b>${esc(g.name)}</b>${g.owes?' <span class="tag LATE">OWES $'+g.owes+'</span>':''}<small>${esc(fmtPhone(g.phone))} · ${esc(g.email)}${g.visits?' · '+g.visits+' visit'+(g.visits>1?'s':''):''}${g.hasCard?' · 💳 card on file':''}</small></span></button>`).join('')
+      :'<p class="muted" style="font-size:14px;margin:6px 0">No past guest found. Fill in their details below.</p>'},350)}
+async function abPick(i){const g=window.AB_L[i];AB_G=g;g.cards=[];$('abFind').value='';$('abFound').innerHTML='';
+  $('abName').value=g.name;$('abEmail').value=g.email;
+  const intl=/^\+/.test(g.phone)&&!/^\+1/.test(g.phone);$('abCC').value='0';$('abPhone').value=intl?g.phone:fmtPhone(g.phone);
+  if(g.owes)toast(`${g.name} still owes $${g.owes} from a past no-show or late cancel.`,6000);abMode();
+  if(g.hasCard){try{g.cards=await call('guestCards',g.phone,g.email)}catch(e){g.cards=[]}if(AB_G===g){$('abCardRow').dataset.k='';abMode()}}}
+function abMode(){
+  const isToday=$('abDate').value===today();$('abWalkRow').classList.toggle('hide',!isToday);
+  const walk=isToday&&$('abWalk').checked,cards=(!walk&&AB_G&&AB_G.cards)||[];
+  $('abCardRow').classList.toggle('hide',!cards.length);
+  if(cards.length&&$('abCardRow').dataset.k!==AB_G.key){$('abCardRow').dataset.k=AB_G.key;
+    $('abCardRow').innerHTML=`<label class="l">Card to hold their spot</label>`+cards.map((c,i)=>`<label class="chk" style="margin:6px 0"><input type="radio" name="abCard" value="${c.pm}"${i?'':' checked'} onchange="abMode()"> 💳 ${esc(c.label)} (on file)</label>`).join('')+
+      `<label class="chk" style="margin:6px 0"><input type="radio" name="abCard" value="" onchange="abMode()"> Send them a link to add a new card</label>
+      <p class="muted" style="font-size:13px;margin:4px 0 0">Let them know the same cancellation policy applies ($${FEE_PER_GUEST} per guest within 24 hours or no-show).</p>`}
+  const pm=cards.length?(document.querySelector('input[name=abCard]:checked')||{}).value||'':'';
+  $('abNotifyRow').classList.toggle('hide',!(walk||pm));
+  $('abSub').textContent=walk?'Walk-in for today. No card needed. Next you\'ll add their names and print stickers.':'We\'ll send them a secure link to save a card (nothing is charged). Their spot is held for 15 minutes, so ask them to do it right away.';
+  if(pm)$('abSub').textContent='Returning guest. Their card on file holds the spot, so they\'re confirmed right away.';
+  $('abSave').textContent=walk?'Add & check in':pm?'Book with card on file':'Hold spot & send card link';
+}
+/* country codes: same list as the booking page */
+const CC=[['US','🇺🇸','+1'],['CA','🇨🇦','+1'],['PR','🇵🇷','+1'],['GB','🇬🇧','+44'],['MX','🇲🇽','+52'],['BR','🇧🇷','+55'],['CO','🇨🇴','+57'],
+  ['AR','🇦🇷','+54'],['DE','🇩🇪','+49'],['FR','🇫🇷','+33'],['ES','🇪🇸','+34'],['IT','🇮🇹','+39'],['NL','🇳🇱','+31'],['IE','🇮🇪','+353'],['AU','🇦🇺','+61'],['IN','🇮🇳','+91']];
+/** US/Canada "(407) 555-1234", everyone else "+44 7700900123"; '' if it doesn't look right */
+function abPhone(){const raw=$('abPhone').value.trim(),d=raw.replace(/\D/g,''),code=CC[$('abCC').value][2];
+  if(raw.startsWith('+'))return d.length>=8&&d.length<=15?'+'+d:'';
+  if(code==='+1'){const n=d.replace(/^1(?=\d{10}$)/,'');return n.length===10?`(${n.slice(0,3)}) ${n.slice(3,6)}-${n.slice(6)}`:''}
+  return d.length>=6?code+' '+d.replace(/^0/,''):''}
+async function saveAddBooking(force){
+  const walk=$('abDate').value===today()&&$('abWalk').checked;
+  if(!$('abTime').value)return toast('Pick a time');
+  const d={date:$('abDate').value,time:$('abTime').value,name:$('abName').value.trim(),phone:abPhone(),email:$('abEmail').value.trim(),
+    size:$('abSize').value,staffNote:$('abNote').value,walkIn:walk,force:!!force};
+  d.pm=!walk&&AB_G&&document.querySelector('input[name=abCard]:checked')?document.querySelector('input[name=abCard]:checked').value:'';
+  d.notify=(walk||!!d.pm)&&$('abNotify').checked;
+  if(d.name.split(/\s+/).length<2)return toast('Add their first and last name');
+  if(!d.phone)return toast('Check their mobile number');
+  if(!/^\S+@\S+\.\S+$/.test(d.email))return toast('Add their email');
+  const btn=$('abSave'),label=btn.textContent;btn.disabled=true;btn.textContent='Adding…';
+  try{const r=await call('staffBook',d);
+    if(r.owes){btn.disabled=false;btn.textContent=label;
+      if(confirm(`${titleCase(d.name)} still owes $${r.owes} from a past no-show or late cancel.\n\nBook them anyway?`))return saveAddBooking(true);return}
+    if(r.needsForce){btn.disabled=false;btn.textContent=label;
+      if(confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for ${d.size}. Add them anyway?`))return saveAddBooking(true);return}
+    $('addModal').remove();setArrDay(d.date);if(SVIEW==='week'&&!$('vSched').classList.contains('hide'))loadSched();
+    if(r.onFile){toast(`Booked ${titleCase(d.name)} · ${niceDate(d.date)} ${d.time} with their card on file ✓`,5000);return}
+    if(!r.needsCard){
+      // walk-in: go straight to check-in with their party filled in
+      show('new');$('bkFilter').value='';SR=[];SLOT='';
+      for(let t=0;t<24;t++){await new Promise(z=>setTimeout(z,250));const b=arrivals.find(x=>x.bookingId===r.id);
+        if(b){pick(b.row);toast(`${titleCase(d.name)} added. Add their names, then Check in & print.`,5000);return}}
+      toast(`Booked ${titleCase(d.name)} · ${d.time} ✓`,4000);return}
+    cardSentModal(titleCase(d.name),r.sent,r.link);
+  }catch(e){btn.disabled=false;btn.textContent=label;toast('Could not add: '+(e.message||e),5000)}
+}
+function cardSentModal(name,sent,link){
+  const how=sent==='text'?'by text':sent==='email'?'by email':'';
+  const m=document.createElement('div');m.className='modal';m.id='cardModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px"><b style="font-size:20px">Spot held for ${esc(name)}</b>
+    <p style="margin:8px 0">${how?`We sent them a link ${how} to save a card. Once they do, they're confirmed and you'll see it on the 🔔.`:'We couldn\'t send the link automatically. Copy it below and send it to them.'}</p>
+    <p class="muted" style="margin:0 0 14px;font-size:14px">Their spot is held for 15 minutes. If they don't save a card by then, it opens up again. On the phone? Stay on the line while they open the link.</p>
+    <button class="btn main" onclick="window.open('${link}','_blank')">They're here: enter the card on this device</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="copyLink('${link}')">Copy card link</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="$('cardModal').remove()">Done</button></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+let SR=[],SQ='',sTimer;
+function goSearch(){show('new');window.scrollTo(0,0);setTimeout(()=>$('bkFilter').focus(),50)}
+document.addEventListener('keydown',e=>{if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'')){e.preventDefault();goSearch()}});
+function onSearch(){const q=$('bkFilter').value.trim();clearTimeout(sTimer);
+  if(q.length<2){SR=[];SQ='';renderArrivals();return}
+  if(!SR.length||SQ!==q)$('arrivals').innerHTML='<p class="muted">Searching all days…</p>';$('slotChips').innerHTML='';
+  sTimer=setTimeout(doSearch,350)}
+async function doSearch(){const q=$('bkFilter').value.trim();if(q.length<2)return;
+  try{const r=await call('searchBookings',q);if($('bkFilter').value.trim()!==q)return;SR=r;SQ=q;renderArrivals()}
+  catch(e){$('arrivals').innerHTML=`<p class="muted">Could not search: ${esc(e.message||e)}</p>`}}
+async function loadArrivals(quiet){
+  if($('bkFilter')&&$('bkFilter').value.trim().length>=2){doSearch();return}
+  if(!quiet&&!arrivals.length)$('arrivals').innerHTML='<p class="muted">Loading bookings…</p>';
+  try{arrivals=await call('getBookings',$('dt').value);renderArrivals()}
+  catch(e){$('arrivals').innerHTML=`<p class="muted">Could not load bookings: ${esc(e.message||e)} <a href="#" onclick="loadArrivals();return false" style="color:var(--teal)">Try again</a></p>`}
+}
+function tMin(t){const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||'');if(!m)return 9999;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2]}
+let showDone=false;
+function renderArrivals(){
+  const q=$('bkFilter').value.trim().toLowerCase(),searching=q.length>=2;
+  const isToday=$('dt').value===today(),now=new Date(),nowM=now.getHours()*60+now.getMinutes();
+  // a class drops off the list once checked in, or 2 hours after it started (no-show)
+  const isPast=b=>b.date<today()||(isToday&&tMin(b.time)+120<nowM);
+  const live=b=>b.status==='Confirmed'||b.status==='Needs card';
+  const done=b=>b.partyId||!live(b)||b.date<today();
+  const slotTimes=[...new Set(arrivals.filter(b=>live(b)||b.partyId).map(b=>b.time))].sort((a,b)=>tMin(a)-tMin(b));
+  if(SLOT&&!slotTimes.includes(SLOT))SLOT='';
+  const cnt=t=>arrivals.filter(b=>b.time===t&&(live(b)||b.partyId)).reduce((s,b)=>s+b.size,0);
+  $('slotChips').innerHTML=searching?'':slotTimes.length>1?[`<button class="chip${!SLOT?' on':''}" onclick="SLOT='';renderArrivals()">All times</button>`]
+    .concat(slotTimes.map(t=>`<button class="chip${SLOT===t?' on':''}" onclick="SLOT='${t}';renderArrivals()">${t} · ${cnt(t)}</button>`)).join(''):'';
+  const all=searching?SR:arrivals.filter(b=>!SLOT||b.time===SLOT).sort((a,b)=>tMin(a.time)-tMin(b.time));
+  const hidden=searching?[]:all.filter(done);
+  const list=(searching||showDone)?all:all.filter(b=>!done(b));
+  if(searching&&!SR.length){$('arrivals').innerHTML=SQ?`<p class="muted">No bookings found for “${esc($('bkFilter').value.trim())}” on any day.</p>`:'<p class="muted">Searching all days…</p>';return}
+  if(!searching&&!arrivals.length){$('arrivals').innerHTML='<p class="muted">No bookings for this day yet. New bookings show up here on their own. For walk-ins or phone bookings, tap <b>+ Add booking</b>.</p>';return}
+  $('arrivals').innerHTML=list.map(b=>{
+    const off=!live(b);
+    const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FH</span>':b.source==='Staff'?' <span class="tag WEB">STAFF</span>':'';
+    const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?' <span class="tag WINE">🍾 WINE PAID</span>':/refunded/.test(b.addons)?'':' <span class="tag WINE">🍾 WINE · collect $30</span>';
+    const dep=b.source==='FareHarbor'?`<span class="dep">${b.deposit?'$'+money(b.deposit)+' deposit paid · take off bill':'FareHarbor booking · check deposit'}</span>`:'';
+    const started=dateTime(b.date,b.time)+60*6e4<Date.now();
+    const st=b.partyId?' <span class="tag OK">CHECKED IN</span>':b.status==='Confirmed'?(started?' <span class="tag NC">NOT CHECKED IN</span>':searching?' <span class="tag BK">BOOKED</span>':''):b.status==='Needs card'?(cardLate(b)?' <span class="tag LATE">NO CARD · SPOT RELEASED</span>':' <span class="tag WINE">WAITING FOR CARD</span>'):b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
+    const fee=FEE_PER_GUEST*b.size;
+    const feeKind=b.status==='Late cancel'?'late':b.status==='No-show'?'noshow':'';
+    const fb=(label,amt,cls)=>`<button class="btn ghost small feebtn${cls||''}" onclick="chargeFee('${b.bookingId}','${feeKind||((b.fee||'').split('|')[4])||'noshow'}',${fee},${amt})">${label}</button>`;
+    const fd=`<button class="btn ghost small feebtn" onclick="feeDecision({bookingId:'${b.bookingId}',reservation:'${esc(b.reservation).replace(/'/g,'&#39;')}',date:'${b.date}',time:'${b.time}',size:${b.size},kind:'${feeKind}'})">Decide the fee</button>`;
+    const due=/^DUE\|/.test(b.fee||'')?b.fee.split('|'):null;
+    const act=!b.card?'':due?`<div class="feerow"><span class="tag LATE">$${due[1]} DECLINED</span><span class="muted" style="font-size:13px">${+due[2]<=3?'Retrying automatically':'Still unpaid after 4 tries'} · they can't book again until it's paid</span>${fb('Try again now',due[1])}${fb('Waive','0',' waive')}</div>`
+      :b.fee?`<div class="feeln">${/^Waived/.test(b.fee)?'Fee waived':'✓ Fee charged: '+esc(b.fee.split(' · ')[0])}</div>`
+      :feeKind?`<div class="feerow"><span class="tag LATE">FEE NOT DECIDED</span>${fd}</div>`:'';
+    const k=encodeURIComponent(b.key);
+    const g=b.guest||{},gt='';
+    const hist=g.visits?` <span class="tag GV" title="This guest's history">${g.visits} visit${g.visits>1?'s':''}</span>`:'';
+    const ns=g.noShows?` <span class="tag GN" title="This guest's history, not this booking">no-showed ${g.noShows===1?'once':g.noShows+'×'} before</span>`:'';
+    const snote=b.staffNote?`<span class="snote">📝 ${esc(b.staffNote)}</span>`:'';
+    const gnote=g.colors?`<span class="snote">🎨 ${esc(g.colors)}</span>`:'';
+        const tools='';
+    return `<div class="arrw"><button class="arr${b.partyId||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
+    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz">${b.size}</span></button>${tools}${act}</div>`}).join('')+
+    (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
+    ||'<p class="muted">No match.</p>';
+  if(searching)$('arrivals').insertAdjacentHTML('afterbegin',`<p class="muted" style="margin:0 0 8px;font-size:14px">${SR.length} booking${SR.length>1?'s':''} on any day · upcoming first${SR.length>=30?' · showing the first 30':''}</p>`);
+}
+function bookingByKey(k){k=decodeURIComponent(k);return arrivals.find(b=>b.key===k)||SR.find(b=>b.key===k)}
+function bookingByRow(row){return arrivals.find(x=>x.row===row)||SR.find(x=>x.row===row)}
+/* ---------- staff notes + guest profiles (never shown to guests) ---------- */
+async function editNote(k){
+  const b=bookingByKey(k);if(!b)return;
+  const v=prompt(`Private staff note for ${b.reservation}\n(only your team sees this)`,b.staffNote||'');if(v===null)return;
+  try{await call('setBookingNote',b.key,v);b.staffNote=v.trim();toast(v.trim()?'Note saved ✓':'Note removed');loadArrivals();if($('bkModal'))viewBooking(b.row)}catch(e){toast('Could not save: '+(e.message||e),5000)}
+}
+let GUEST=null,GUESTB=null;
+async function openGuest(k){
+  const b=bookingByKey(k);if(!b)return;GUESTB=b;
+  try{GUEST=await call('getGuest',b.phone,b.email,b.reservation)}catch(e){toast(e.message||String(e),5000);return}
+  const g=GUEST,s=g.stats,tags=[...new Set([...g.allTags,...g.tags])];
+  const line=[s.visits?`${s.visits} visit${s.visits>1?'s':''}${s.fhVisits?'':` (${s.visitsYear} in the last year)`}`:'First visit',s.firstVisit?'since '+new Date(s.firstVisit+'T12:00').toLocaleDateString('en-US',{month:'short',year:'numeric'}):'',
+    s.lastVisit?'last '+niceDate(s.lastVisit):'',s.visits&&s.guestsBrought?(s.guestsBrought-s.visits>0?'has brought '+(s.guestsBrought-s.visits)+' guest'+(s.guestsBrought-s.visits>1?'s':'')+' with them':'usually comes solo'):'',
+    s.noShows?s.noShows+' no-show'+(s.noShows>1?'s':''):'',s.lateCancels?s.lateCancels+' late cancel'+(s.lateCancels>1?'s':''):''].filter(Boolean).join(' · ');
+  const m=document.createElement('div');m.className='modal';m.id='guestModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px">
+    <b style="font-size:20px">${esc(b.reservation)}</b><p class="muted" style="margin:4px 0 12px">${esc(line)}</p>
+    <label class="l" for="gColors">Favorite colors</label><input id="gColors" value="${esc(g.colors||'')}" placeholder="e.g. teal, gold, white" style="margin-bottom:12px">
+    <label class="l" for="gNotes">Notes to help us take care of them (only staff see this)</label><textarea id="gNotes" style="width:100%;min-height:110px;font:500 16px Poppins;padding:12px;border:2px solid var(--line);border-radius:12px" placeholder="e.g. Loves glitter. Celebrated her daughter's birthday here. Prefers a stool to sit on.">${esc(g.notes||'')}</textarea>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" style="flex:1" onclick="$('guestModal').remove()">Close</button><button class="btn main" style="flex:1" onclick="saveGuest()">Save</button></div></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+async function saveGuest(){
+  try{await call('saveGuest',GUESTB.phone,GUESTB.email,GUESTB.reservation,{tags:[],colors:$('gColors').value,notes:$('gNotes').value});
+    $('guestModal').remove();toast('Profile saved ✓ You\'ll see it on their bookings',4000);loadArrivals()}catch(e){toast('Could not save: '+(e.message||e),5000)}
+}
+function dateTime(d,t){const [y,m,dd]=d.split('-').map(Number);let [hh,mm]=t.split(/[: ]/);hh=+hh%12+(/PM/.test(t)?12:0);return new Date(y,m-1,dd,hh,+mm).getTime()}
+async function staffAct(k,action){
+  const b=bookingByKey(k);if(!b)return;const web=b.source==='Website'&&b.email;let email=false;
+  if(action==='noshow'&&b.card&&b.bookingId){closeBk();return feeDecision({bookingId:b.bookingId,reservation:b.reservation,date:b.date,time:b.time,size:b.size,kind:'noshow'},true)}
+  if(action==='noshow'&&!confirm(`Mark ${b.reservation} as a NO-SHOW?`+(b.card?`\n\nYou'll then see a button to charge the $${FEE_PER_GUEST*b.size} no-show fee.`:'')))return;
+  const late=(dateTime(b.date,b.time)-Date.now())/36e5<24&&b.card&&b.bookingId&&b.source!=='FareHarbor';
+  if(action==='cancel'){if(!confirm(late?`Cancel ${b.reservation}'s booking (party of ${b.size})?\n\nThis is within 24 hours of class, so it's a LATE cancel. Next you'll choose to charge or waive the $${FEE_PER_GUEST*b.size} fee.`:`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir seats open up again. No fee is charged.`))return;
+    if(web)email=confirm(`Let ${b.reservation} know their booking is cancelled?`)}
+  let refund=true;
+  if(action==='cancel'&&/\|paid\|/.test(b.addons||'')){
+    const hrs=(dateTime(b.date,b.time)-Date.now())/36e5;
+    refund=confirm(`Refund ${b.reservation}'s $30 sparkling wine?\n\n`+(hrs<24?'They are cancelling within 24 hours, so the policy says you can keep it. OK = refund, Cancel = keep it.':'They cancelled more than 24 hours ahead, so the policy says refund it. OK = refund, Cancel = keep it.'))}
+  try{await call('staffUpdate',b.key,action,{email,refund,late:action==='cancel'&&late});closeBk();
+    if(action==='cancel'&&late){loadArrivals();return feeDecision({bookingId:b.bookingId,reservation:b.reservation,date:b.date,time:b.time,size:b.size,kind:'late'})}
+    toast({noshow:'Marked no-show',cancel:'Booking cancelled',restore:'Back on the list'}[action]);showDone=action!=='restore'?showDone:false;loadArrivals()}
+  catch(e){toast('Could not update: '+(e.message||e),5000)}
+}
+/* Reschedule: pick a class from a week view that shows open spots (like FareHarbor's rebook) */
+let MV=null;
+function openMove(k){
+  const box=$('mv_'+k);if(!box)return;if(box.innerHTML){box.innerHTML='';MV=null;return}
+  const b=bookingByKey(k);MV={k,b,start:weekStart(b.date)};loadMoveWeek();
+}
+function moveShift(n){const [y,m,d]=MV.start.split('-').map(Number);MV.start=ymd(new Date(y,m-1,d+7*n));loadMoveWeek()}
+async function loadMoveWeek(){
+  const box=$('mv_'+MV.k);if(!box)return;
+  box.innerHTML=`<div class="mvw"><div class="mvh"><button class="btn ghost small" onclick="moveShift(-1)" aria-label="Previous week">‹</button><b>Pick a new class</b><button class="btn ghost small" onclick="moveShift(1)" aria-label="Next week">›</button></div><p class="muted">Loading open spots…</p></div>`;
+  let W;try{W=await call('getWeek',MV.start)}catch(e){box.querySelector('p').textContent='Could not load: '+(e.message||e);return}
+  if(!MV||!$('mv_'+MV.k))return;
+  const b=MV.b,need=b.size,now=Date.now();
+  const days=W.filter(d=>d.date>=today()).map(d=>{
+    const [y,m,dd]=d.date.split('-').map(Number),dt=new Date(y,m-1,dd);
+    const head=`<div class="mvd"><b>${dt.toLocaleDateString('en-US',{weekday:'short'})}</b> ${m}/${dd}</div>`;
+    if(!d.open||!d.classes.length)return `<div class="mvc">${head}<div class="mvs off">Closed</div></div>`;
+    return `<div class="mvc">${head}`+d.classes.map(c=>{
+      const cur=d.date===b.date&&c.time===b.time,past=dateTime(d.date,c.time)<now;
+      const open=Math.max(0,c.cap-c.booked)+(cur?need:0),fits=open>=need;
+      const cls=cur?'cur':past||c.cap===0?'off':!fits?'full':'';
+      const label=cur?'Their class now':past?'Past':c.cap===0?'Closed':open+' open';
+      return `<button class="mvs ${cls}" ${cur||past||c.cap===0?'disabled':''} onclick="pickMove('${d.date}','${c.time}',${open})">${c.private?'🔒 ':''}<b>${esc(c.time)}</b><span>${label}</span></button>`}).join('')+'</div>'}).join('');
+  box.innerHTML=`<div class="mvw"><div class="mvh"><button class="btn ghost small" onclick="moveShift(-1)" aria-label="Previous week">‹</button><b>Pick a new class · party of ${need}</b><button class="btn ghost small" onclick="moveShift(1)" aria-label="Next week">›</button></div>
+    <div class="mvg">${days||'<p class="muted">This week has passed. Tap › for the next one.</p>'}</div><p class="muted" style="font-size:13px;margin:8px 0 0">Green = room for this party · grey = not enough spots</p></div>`;
+}
+function pickMove(date,time,open){
+  const b=MV.b;
+  if(open<b.size&&!confirm(`${niceDate(date)} · ${time} only has ${open} spot${open===1?'':'s'} open, and ${b.reservation} is a party of ${b.size}.\n\nBook them in anyway (over capacity)?`))return;
+  saveMove(MV.k,date,time,open<b.size);
+}
+async function saveMove(k,date,time,force){
+  const b=bookingByKey(k);if(!b)return;const web=b.source==='Website'&&b.email;
+  if(!force&&!confirm(`Reschedule ${b.reservation} (party of ${b.size}) to ${niceDate(date)} · ${time}?`))return;
+  const email=web&&confirm(`Let ${b.reservation} know their new time (${niceDate(date)} · ${time})?`);
+  try{let r=await call('staffUpdate',b.key,'move',{date,time,email,force:!!force});
+    if(r.needsForce){if(!confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for a party of ${b.size}. Reschedule them anyway?`))return;
+      r=await call('staffUpdate',b.key,'move',{date,time,email,force:true})}
+    MV=null;closeBk();toast(`Rescheduled to ${niceDate(date)} · ${time}`,3500);loadArrivals();
+    if((dateTime(b.date,b.time)-Date.now())/36e5<24&&b.card&&b.bookingId&&!b.fee)feeDecision({bookingId:b.bookingId,reservation:b.reservation,date:b.date,time:b.time,size:b.size,kind:'late',resched:true})}
+  catch(e){toast('Could not reschedule: '+(e.message||e),5000)}
+}
+/* ---------- fees in one step ---------- */
+function feeDecision(f,marking){
+  const full=FEE_PER_GUEST*f.size,what=f.kind==='noshow'?'No-show':f.removed?'Guests removed late':f.resched?'Late reschedule':'Late cancel';
+  const m=document.createElement('div');m.className='modal';m.id='feeModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:420px"><b style="font-size:20px">${what}: ${esc(f.reservation)}</b>
+    <p class="muted" style="margin:4px 0 14px">${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size}${marking?'<br>Choose what to do with the fee. This also marks them as a no-show.':f.removed?`<br>They removed ${f.size} guest${f.size>1?'s':''} within 24 hours of class, so the late-change fee applies to ${f.size>1?'them':'that guest'}. Charge it or waive it.`:f.resched?'<br>They rescheduled within 24 hours of class, so the late-change fee applies. Charge it or waive it.':''}</p>
+    <button class="btn main" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},null)">Charge the full $${full}</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},-1)">Charge part of it…</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="feeGo(${JSON.stringify(JSON.stringify(f)).replace(/"/g,'&quot;')},0)">Waive the fee</button>
+    <button class="tl" style="width:100%;margin-top:10px;padding:10px" onclick="$('feeModal').remove()">Go back</button>
+    <p class="muted" style="font-size:13px;margin:8px 0 0">Charges the card they saved when booking. If it's declined, we retry in 1, 3 and 7 days.</p></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+async function feeGo(fj,amt){
+  const f=JSON.parse(fj),full=FEE_PER_GUEST*f.size;
+  if(amt===-1){const v=prompt(`How much should we charge ${f.reservation}? (up to $${full})`,'');if(v===null)return;
+    amt=parseFloat(String(v).replace(/[^\d.]/g,''));if(!(amt>0&&amt<=full)){toast(`Enter an amount between $1 and $${full}`,4000);return}}
+  const m=$('feeModal');if(m)m.querySelectorAll('button').forEach(x=>x.disabled=true);
+  try{const r=await call('chargeFee',f.bookingId,f.kind,amt,f.removed?f.size:0);if(m)m.remove();
+    toast(r.waived?'Fee waived ✓':r.noRetry?`Card declined. Text ${f.reservation} to settle the $${r.amount}, or charge it at the studio.`:r.declined?`Card declined. We'll retry automatically in 1, 3 and 7 days.`:`Charged $${r.charged} ✓`,7000);
+    loadArrivals();loadFees();if($('feesModal'))openFees()}
+  catch(e){if(m)m.querySelectorAll('button').forEach(x=>x.disabled=false);toast('Not charged: '+(e.message||e),6000)}
+}
+let FEES=[];
+async function loadFees(){if(!PIN)return;try{FEES=await call('pendingFees')}catch(e){return}
+  const nc=FEES.filter(f=>f.kind==='unchecked').length,fz=FEES.length-nc;
+  $('feeAlert').innerHTML=FEES.length?`<span>${nc?`❓ ${nc} not checked in`:''}${nc&&fz?' · ':''}${fz?`💳 ${fz} fee${fz>1?'s':''} to decide`:''}</span><b>Decide ›</b>`:'';
+  $('feeAlert').classList.toggle('hide',!FEES.length)}
+function openFees(){
+  const old=$('feesModal');if(old)old.remove();
+  const m=document.createElement('div');m.className='modal';m.id='feesModal';
+  m.innerHTML=`<div class="mbox bk" style="max-width:520px"><button class="bkx" onclick="$('feesModal').remove()" aria-label="Close">×</button>
+    <b style="font-size:21px">To decide</b><p class="muted" style="margin:4px 0 10px;font-size:14px">Parties nobody checked in, plus no-show and late-cancel fees. Go through these at the end of the shift.</p>
+    ${FEES.length?FEES.map((f,i)=>f.kind==='unchecked'?`<button class="ev" onclick="uncheckedDecide(${i})"><i>❓</i><span><b>${esc(f.reservation)}</b> wasn't checked in<small>${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size} · no-show, or did they come?</small></span></button>`
+      :`<button class="ev" onclick="feeDecision(FEES[${i}])"><i>${f.kind==='noshow'?'🚫':'⚠️'}</i><span><b>${esc(f.reservation)}</b> ${f.kind==='noshow'?'no-show':'cancelled late'}<small>${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size} · fee up to $${FEE_PER_GUEST*f.size}</small></span></button>`).join('')
+      :'<p class="muted">All done. Nothing left to decide.</p>'}
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('feesModal').remove()">Close</button></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+function uncheckedDecide(i){
+  const f=FEES[i],m=document.createElement('div');m.className='modal';m.id='ucModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:420px"><b style="font-size:20px">${esc(f.reservation)}</b>
+    <p class="muted" style="margin:4px 0 14px">${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size}<br>Nobody checked this party in.</p>
+    <button class="btn main" onclick="ucNoShow(${i})">They didn't come: no-show</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="ucCame(${i})">They came: check them in</button>
+    <button class="tl" style="width:100%;margin-top:10px;padding:10px" onclick="$('ucModal').remove()">Go back</button></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+async function ucNoShow(i){const f=FEES[i];$('ucModal').remove();
+  if(f.card&&f.bookingId){if($('feesModal'))$('feesModal').remove();return feeDecision(Object.assign({},f,{kind:'noshow'}),true)}
+  try{await call('staffUpdate',f.key,'noshow',{});toast('Marked no-show (no card on file, so no fee)',4500);loadFees();loadArrivals();if($('feesModal'))$('feesModal').remove()}catch(e){toast(e.message||String(e),5000)}}
+async function ucCame(i){const f=FEES[i];$('ucModal').remove();if($('feesModal'))$('feesModal').remove();
+  show('new');SLOT='';setArrDay(f.date);
+  for(let t=0;t<20;t++){await new Promise(z=>setTimeout(z,250));const b=arrivals.find(x=>x.key===f.key);if(b){pick(b.row);toast('Add their names, then Check in & print.',4500);return}}}
+async function chargeFee(id,kind,full,amt){
+  const bk=arrivals.find(x=>x.bookingId===id),name=bk?bk.reservation:'this guest';
+  const why=kind==='noshow'?'not showing up':'cancelling late';
+  if(amt===-1){const v=prompt(`How much should we charge ${name} for ${why}? (up to $${full})`,'');if(v===null)return;
+    amt=parseFloat(String(v).replace(/[^\d.]/g,''));if(!(amt>0&&amt<=full)){toast(`Enter an amount between $1 and $${full}`,4000);return}}
+  if(amt===0){if(!confirm(`Waive the fee for ${name}? Nothing will be charged.`))return}
+  else if(!confirm(`Charge ${name} $${amt===null?full:amt} for ${why}?\nThis charges the card they saved when booking.`))return;
+  try{const r=await call('chargeFee',id,kind,amt);toast(r.waived?'Fee waived ✓':r.declined?`Card declined. We'll retry automatically in 1, 3 and 7 days.`:`Charged $${r.charged} ✓`,6000);loadArrivals()}
+  catch(e){toast('Not charged: '+(e.message||e),6000)}
+}
+async function openParty(id,date){
+  $('dayPick').value=date;show('today');await loadDay();
+  const el=$('p_'+id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.boxShadow='0 0 0 4px var(--teal)';setTimeout(()=>el.style.boxShadow='',2500)}
+}
+function closeBk(){const m=$('bkModal');if(m)m.remove()}
+function stopPick(){resetForm();renderArrivals()}
+function fmtWhen(iso){const d=new Date(iso);return isNaN(d)?'':d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+function viewBooking(row){
+  const b=bookingByRow(row);if(!b)return;closeBk();
+  const k=encodeURIComponent(b.key),g=b.guest||{},needCard=b.status==='Needs card',active=(b.status==='Confirmed'||needCard)&&!b.partyId;
+  const src=b.source==='Website'?'Website':b.source==='FareHarbor'?'FareHarbor'+(b.fhId?' #'+esc(b.fhId):''):b.source==='Staff'?'Added by staff':esc(b.source);
+  const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?'🍾 Sparkling wine · paid online':/refunded/.test(b.addons)?'🍾 Sparkling wine · refunded':'🍾 Sparkling wine · collect $30 at the studio';
+  const st=b.partyId?'✓ Checked in':b.status==='Confirmed'?'Booked':needCard?(cardLate(b)?'No card added · spot released':'Waiting for their card · held until '+new Date(new Date(b.created).getTime()+CARD_MIN*6e4).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})):b.status;
+  const ph=b.phone?`<a href="sms:${esc(b.phone.replace(/[^\d+]/g,''))}">${esc(fmtPhone(b.phone))}</a>`:'—';
+  const rows=[['When',`${niceDate(b.date)} · ${esc(b.time)}`],['Party',`${b.size} artist${b.size>1?'s':''}`],['Status',st],['Phone',ph],
+    ['Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'],b.guests?['Artists',esc(b.guests)]:null,b.note?['Their note',`“${esc(b.note)}”`]:null,
+    wine?['Add-on',wine]:null,['Booked from',src],b.created&&exactTime(b.created)?['Booked on',exactTime(b.created)]:null,b.bookingId?['Confirmation',esc(b.bookingId)]:null,
+    b.source==='FareHarbor'?['Deposit',b.deposit?'$'+money(b.deposit)+' paid · take off the bill':'—']:null,
+    b.guestFee?['Late change fees',b.guestFee.split(' | ').map(f=>esc(f.replace(/ · pi_\w+/,''))).join('<br>')]:null,
+    b.card?['Card','Saved for no-show protection']:needCard?['Card','Not saved yet']:null,b.staffNote?['Staff note','📝 '+esc(b.staffNote)]:null,
+    g.visits?['History',`${g.visits} visit${g.visits>1?'s':''}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`]:null,
+    g.colors?['Favorite colors','🎨 '+esc(g.colors)]:null,g.notes?['Guest notes','💜 '+esc(g.notes)]:null].filter(Boolean);
+  const btn=(label,fn,cls)=>`<button class="btn ${cls||'ghost'}" onclick="${fn}">${label}</button>`;
+  const main=b.partyId?btn('See their check-in',`closeBk();openParty('${b.partyId}','${b.date}')`,'main')
+    :active?btn('Check in this party',`closeBk();pick(${b.row})`,'main'):'';
+  const acts=active?[btn('Reschedule',`openMove('${k}')`),btn('Cancel',`staffAct('${k}','cancel')`),btn('No-show',`staffAct('${k}','noshow')`)]
+    :!b.partyId?[btn('Undo · put back on the list',`staffAct('${k}','restore')`)]:[];
+  if(needCard&&!b.partyId)acts.unshift(btn('Resend card link',`resendCard('${k}')`),btn('Guest is here: enter card',`openCardPage('${k}')`));
+  if(!b.partyId&&b.status!=='Cancelled')acts.unshift(btn('✏️ Edit party',`editParty('${k}')`));
+  acts.push(btn(b.staffNote?'Edit note':'Add note',`editNote('${k}')`),btn('Guest profile'+(g.hasNotes?' •':''),`closeBk();openGuest('${k}')`));
+  const m=document.createElement('div');m.className='modal';m.id='bkModal';
+  m.innerHTML=`<div class="mbox bk"><button class="bkx" onclick="closeBk()" aria-label="Close">×</button>
+    <b style="font-size:21px;padding-right:44px;display:block">${esc(b.reservation)}</b>
+    <div class="bkl">${rows.map(r=>`<span>${r[0]}</span><div>${r[1]}</div>`).join('')}</div>
+    ${main?`<div style="margin-top:14px">${main}</div>`:''}
+    <div class="bka">${acts.join('')}</div><div id="mv_${k}"></div>
+    <div class="bkh">Booking history</div><div id="bkHist"><p class="muted">${b.bookingId?'Loading…':'No changes yet.'}</p></div>
+    <div class="bkh">Messages to the guest</div><div id="bkMsgs"><p class="muted">${b.bookingId?'Loading…':'Bookings imported from Toast or FareHarbor have no messages from this system.'}</p></div>
+    <div id="bkResend"></div>
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="closeBk()">Close</button></div>`;
+  m.onclick=e=>{if(e.target===m)closeBk()};document.body.appendChild(m);
+  if(b.bookingId)loadBkMsgs(b);
+}
+async function loadBkMsgs(b,fresh){
+  let d;try{d=fresh||await call('getBookingDetail',b.key)}catch(e){if($('bkMsgs'))$('bkMsgs').innerHTML=`<p class="muted">Could not load messages: ${esc(e.message||e)}</p>`;return}
+  if(!$('bkMsgs'))return;
+  if($('bkHist'))$('bkHist').innerHTML=(d.history||[]).length?`<div class="hist">${d.history.map(h=>`<div class="hi"><span class="hd">${esc(fmtWhen(h.at))}</span><span>${esc(h.what)}</span><span class="hb ${h.by==='Guest'?'g':''}">${esc(h.by)}</span></div>`).join('')}</div>`:'<p class="muted">No changes yet.</p>';
+  const chip=x=>{const s=x.status;
+    if(x.channel==='Email'&&x.opened)return `<span class="ms ok">Opened ${esc(fmtWhen(x.opened))}</span>`;
+    const c=s==='Delivered'?'ok':/Failed|Not delivered/.test(s)?'bad':s==='Waiting'?'wait':s==='Cancelled'?'off':'';
+    return `<span class="ms ${c}">${esc(s==='Waiting'?'Scheduled':s)}</span>`};
+  $('bkMsgs').innerHTML=d.messages.length?d.messages.map(x=>`<details class="msg"><summary><span>${x.channel==='Email'?'✉️':'💬'} <b>${esc(x.what)}</b><br><span class="muted" style="font-size:13px">${x.channel} to ${esc(x.channel==='Text'?fmtPhone(x.to.replace(/^\+1/,'')):x.to)} · ${esc(fmtWhen(x.at))}</span></span>${chip(x)}</summary>
+    ${x.message?`<p>${esc(x.message)}</p>`:''}${x.error?`<p style="color:#c40056">${esc(x.error)}</p>`:''}${x.channel==='Email'&&!x.opened&&!x.error?'<p class="muted" style="background:none;padding:0">Not opened yet. Some email apps hide this, so it may have been read anyway.</p>':''}</details>`).join('')
+    :'<p class="muted">No texts or emails sent yet.</p>';
+  if(b.status==='Confirmed'&&b.card!==undefined&&!b.partyId)$('bkResend').innerHTML=`<div class="bka">${d.textsOn&&b.phone?`<button class="btn ghost" onclick="resend('${encodeURIComponent(b.key)}','text')">Resend confirmation by text</button>`:''}${b.email?`<button class="btn ghost" onclick="resend('${encodeURIComponent(b.key)}','email')">Resend by email</button>`:''}</div>`;
+}
+const CARD_MIN=15;   // same as CARD_MINUTES in Booking.gs
+function cardLate(b){return b.created&&Date.now()>new Date(b.created).getTime()+CARD_MIN*6e4}
+async function resendCard(k){const b=bookingByKey(k);if(!b||!confirm(`Send ${b.reservation} the card link again?`))return;
+  try{const d=await call('resendCardLink',b.key);toast('Card link sent ✓');loadBkMsgs(b,d)}catch(e){toast(e.message||String(e),6000)}}
+async function openCardPage(k){const b=bookingByKey(k);if(!b)return;
+  try{const d=await call('getBookingDetail',b.key);if(d.manage)window.open(d.manage,'_blank')}catch(e){toast(e.message||String(e),5000)}}
+/* ---------- edit party: names, add/remove guests, contact ---------- */
+function editParty(k){
+  const b=bookingByKey(k);if(!b)return;closeBk();
+  const names=(b.guests||'').split(/,\s*/).filter(Boolean);
+  const m=document.createElement('div');m.className='modal';m.id='epModal';m.dataset.k=k;
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:460px"><b style="font-size:20px">Edit party</b>
+    <p class="muted" style="margin:4px 0 12px">${niceDate(b.date)} · ${esc(b.time)}</p>
+    <label class="l">Reservation name</label><input id="epName" value="${esc(b.reservation)}">
+    <div class="row" style="margin-top:10px"><div><label class="l">Mobile</label><input id="epPhone" type="tel" value="${esc(b.phone)}"></div>
+      <div><label class="l">Email</label><input id="epEmail" type="email" value="${esc(b.email)}" autocapitalize="off"></div></div>
+    <label class="l" style="margin-top:12px">Artists</label>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <button type="button" class="btn ghost small" style="width:44px" onclick="epSize(-1)">−</button><b id="epN" style="font-size:22px;min-width:28px;text-align:center">${b.size}</b>
+      <button type="button" class="btn ghost small" style="width:44px" onclick="epSize(1)">+</button><span class="muted" id="epHint" style="font-size:14px"></span></div>
+    <div id="epList"></div>
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('epModal').remove()">Cancel</button>
+      <button class="btn main" style="flex:1" id="epSave" onclick="saveParty()">Save changes</button></div></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+  m._was=b.size;m._names=names;epRender(b.size);
+}
+function epRender(n){const m=$('epModal'),cur=[...m.querySelectorAll('#epList input')].map(i=>i.value);if(cur.length)m._names=cur.concat(m._names.slice(cur.length));
+  $('epN').textContent=n;$('epList').innerHTML=Array.from({length:n},(_,i)=>`<input style="margin-bottom:6px" placeholder="Artist ${i+1} first name" value="${esc(m._names[i]||'')}">`).join('');
+  const d=n-m._was;$('epHint').textContent=d>0?`adding ${d}`:d<0?`removing ${-d}`:''}
+function epSize(d){const n=Math.max(1,+$('epN').textContent+d);epRender(n)}
+async function saveParty(force){
+  const m=$('epModal'),b=bookingByKey(m.dataset.k);if(!b)return;
+  const d={name:$('epName').value.trim(),phone:$('epPhone').value.trim(),email:$('epEmail').value.trim(),size:+$('epN').textContent,
+    guests:[...m.querySelectorAll('#epList input')].map(i=>i.value.trim()),force:!!force};
+  if(d.email&&!/^\S+@\S+\.\S+$/.test(d.email))return toast('Check the email');
+  const btn=$('epSave');btn.disabled=true;
+  try{const r=await call('editBooking',b.key,d);btn.disabled=false;
+    if(r.needsForce){if(confirm(`That class only has ${Math.max(0,r.left)} spot(s) left and you're adding ${r.adding}. Add them anyway (over capacity)?`))return saveParty(true);return}
+    m.remove();toast('Party updated ✓',3500);loadArrivals();
+    if(r.late){const gone=r.was-r.size;feeDecision({bookingId:b.bookingId,reservation:d.name,date:b.date,time:b.time,size:gone,kind:'late',removed:true})}}
+  catch(e){btn.disabled=false;toast('Could not save: '+(e.message||e),5000)}
+}
+async function resend(k,how){
+  const b=bookingByKey(k);if(!b)return;
+  if(!confirm(`Send ${b.reservation} their booking confirmation again by ${how}?`))return;
+  try{const d=await call('resendConfirmation',b.key,how);toast(how==='text'?'Text sent ✓':'Email sent ✓');loadBkMsgs(b,d)}catch(e){toast(e.message||String(e),6000)}
+}
+function pick(row){
+  const b=bookingByRow(row);if(!b)return;
+  if(b.date!==$('dt').value){$('dt').value=b.date;fillTimes($('tm'),b.date,b.time)}
+  if(b.partyId){openParty(b.partyId,b.date);return}
+  if(b.source==='FareHarbor')toast(b.deposit?`FareHarbor booking · $${money(b.deposit)} deposit already paid`:'FareHarbor booking',4000);
+  showForm(true);picked=b;$('pickBar').innerHTML=`<span>Checking in ${esc(b.reservation)} · ${esc(b.time)}</span><button class="tl" onclick="stopPick()">Not now ✕</button>`;$('pickBar').classList.remove('hide');$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
+  if(![...$('tm').options].some(o=>o.value===b.time)){const o=document.createElement('option');o.textContent=b.time;$('tm').appendChild(o)}
+  $('tm').value=b.time;
+  const names=b.guests?b.guests.split(/,\s*/):[b.reservation.split(' ')[0]];
+  $('guests').innerHTML='';for(let i=0;i<b.size;i++)addGuest(names[i]||'');
+  renderArrivals();$('formTop').scrollIntoView({behavior:'smooth'});
+  const empty=[...$('guests').querySelectorAll('input')].find(i=>!i.value);(empty||$('guests').querySelector('input')).focus();
+}
+async function checkEmail(){
+  const b=$('mailBtn');b.disabled=true;b.textContent='Checking…';
+  try{const n=await call('checkEmail');toast(n?`Imported ${n} bookings from email`:'No new report in email yet',3500);loadArrivals()}
+  catch(e){toast('Could not check email: '+(e.message||e),5000)}
+  b.disabled=false;b.textContent='Check email for new report';
+}
+/* Toast dates look like "10/29/2026, 12:30:00 PM" */
+function toDate(v){
+  if(v instanceof Date)return isNaN(v)?null:v;
+  const m=/(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)/i.exec(String(v));
+  if(!m){const d=new Date(String(v));return isNaN(d)?null:d}
+  let h=+m[4]%12;if(/pm/i.test(m[6]))h+=12;return new Date(+m[3],+m[1]-1,+m[2],h,+m[5]);
+}
+function fmtPhone(v){const d=String(v).replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');return d.length===10?`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`:String(v).trim()}
+/* Reads the Toast "Bookings" report download (CSV or Excel). Column names are matched loosely. */
+async function importFile(inp){
+  const f=inp.files[0];inp.value='';if(!f)return;
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{cellDates:true});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false});
+    if(!rows.length)throw new Error('empty file');
+    const keys=Object.keys(rows[0]),K=re=>keys.find(k=>re.test(k.toLowerCase()));
+    const kFirst=K(/first/),kLast=K(/last/),kName=K(/^(guest )?name$|full name|guest name/),kEmail=K(/e-?mail/),kPhone=K(/phone|mobile/),
+      kSize=K(/party size/)||K(/party|size|covers|guests/),kStart=K(/expected start/)||K(/start|date|time/),kStatus=K(/^status$/)||K(/status/),
+      kNote=K(/special request/),kType=K(/^type$/);
+    if(!kStart||!(kFirst||kName))throw new Error('could not find name/time columns ('+keys.join(', ')+')');
+    const out=[];
+    rows.forEach(r=>{
+      if(kStatus&&/cancel|no.?show/i.test(r[kStatus]))return;
+      if(kType&&/waitlist/i.test(r[kType]))return;
+      const d=toDate(r[kStart]);if(!d)return;
+      const name=titleCase(kName?String(r[kName]):(String(r[kFirst])+' '+String(kLast?r[kLast]:'')));if(!name.trim())return;
+      out.push({date:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),
+        time:d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),reservation:name,
+        size:parseInt(r[kSize])||1,phone:kPhone?fmtPhone(r[kPhone]):'',email:kEmail?String(r[kEmail]).trim():'',
+        note:kNote?String(r[kNote]).trim():''});
+    });
+    if(!out.length)throw new Error('no bookings found');
+    const res=await call('importBookings',out);
+    toast(`Imported ${res.imported} bookings`,3500);loadArrivals();
+  }catch(e){toast('Import failed: '+(e.message||e),6000)}
+}
+
+function money(n){n=+n||0;return n%1?n.toFixed(2):String(n)}
+/* Reads the FareHarbor bookings export (CSV or Excel). Every booking gets the FH tag and its deposit. */
+async function importFH(inp){
+  const f=inp.files[0];inp.value='';if(!f)return;
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{cellDates:true});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false});
+    if(!rows.length)throw new Error('empty file');
+    const keys=Object.keys(rows[0]),K=(...res)=>{for(const re of res){const k=keys.find(k=>re.test(k.toLowerCase().trim()));if(k)return k}};
+    const kStart=K(/^start$/,/^start (date|at)/,/availability.*start/,/^start/,/^date$/,/date/),
+      kTime=K(/^start time$/,/^time$/,/time/),
+      kFirst=K(/first name/),kLast=K(/last name/),
+      kName=K(/^contact( name)?$/,/contact.*name/,/customer name|full name|^name$|guest name/),
+      kEmail=K(/contact.*e-?mail/,/e-?mail/),kPhone=K(/contact.*phone/,/phone|mobile/),
+      kSize=K(/^total pax$|^# ?(of )?pax|^pax$/,/pax/,/party size|^guests$|number of guests|^customers$|^qty$|quantity/),
+      kPaid=K(/^total paid$/,/amount paid/,/^paid$/,/deposit/,/paid/),
+      kId=K(/^booking (id|#|number|pk)$/,/^booking$/,/^#$|^id$|^pk$/,/booking.*(id|#|number)/),
+      kStatus=K(/^status$/,/status/),kNote=K(/note/,/special/);
+    if(!kStart||!(kName||kFirst))throw new Error('could not find the date or name columns ('+keys.join(', ')+')');
+    const out=[];let skipped=0;
+    rows.forEach(r=>{
+      if(kStatus&&/cancel|rebooked|no.?show|refund/i.test(r[kStatus])){skipped++;return}
+      let raw=String(r[kStart]);if(kTime&&kTime!==kStart&&!/\d:\d\d/.test(raw))raw+=' '+r[kTime];
+      const d=r[kStart] instanceof Date?r[kStart]:toDate(raw)||toDate(raw.replace(/\b(at|@)\b/i,' ').replace(/(\d)(am|pm)/i,'$1 $2'));
+      if(!d){skipped++;return}
+      const name=titleCase(kName?String(r[kName]):(String(r[kFirst])+' '+String(kLast?r[kLast]:'')));if(!name.trim()){skipped++;return}
+      const date=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(date<today()){skipped++;return}   // only upcoming bookings
+      out.push({date,time:d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),reservation:name,
+        size:parseInt(r[kSize])||1,phone:kPhone?fmtPhone(r[kPhone]):'',email:kEmail?String(r[kEmail]).trim():'',
+        note:kNote?String(r[kNote]).trim().slice(0,300):'',deposit:kPaid?parseFloat(String(r[kPaid]).replace(/[^\d.]/g,''))||0:0,
+        fhId:kId?String(r[kId]).replace(/^#/,'').trim():''});
+    });
+    if(!out.length)throw new Error('no upcoming bookings found');
+    const dep=out.reduce((s,b)=>s+b.deposit,0),ppl=out.reduce((s,b)=>s+b.size,0);
+    if(!confirm(`Import ${out.length} FareHarbor bookings (${ppl} guests, $${money(dep)} in deposits)?\nFirst: ${out[0].reservation} · ${niceDate(out[0].date)} ${out[0].time}`+(skipped?`\n${skipped} rows skipped (cancelled or past).`:'')))return;
+    const res=await call('importFareHarbor',out);
+    toast(`FareHarbor: ${res.added} added${res.updated?`, ${res.updated} updated`:''}`,4000);loadArrivals();
+  }catch(e){toast('FareHarbor import failed: '+(e.message||e),7000)}
+}
+
+/* ---------- Schedule: seats per class, one tap ---------- */
+let SCH=null;
+function schedShift(n){if(SVIEW==='week')n*=7;const [y,m,d]=$('schedDay').value.split('-').map(Number);const x=new Date(y,m-1,d+n);
+  $('schedDay').value=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');loadSched()}
+let SVIEW='day';
+function setSchedView(v){SVIEW=v;document.body.classList.toggle('wide',v==='week');$('vtDay').classList.toggle('on',v==='day');$('vtWeek').classList.toggle('on',v==='week');loadSched()}
+function ymd(x){return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')}
+function weekStart(d){const [y,m,dd]=d.split('-').map(Number);const x=new Date(y,m-1,dd);x.setDate(x.getDate()-((x.getDay()+6)%7));return ymd(x)}
+async function loadWeek(){
+  const st=weekStart($('schedDay').value);$('schedBox').innerHTML='<p class="muted">Loading the week…</p>';
+  let W;try{W=await call('getWeek',st)}catch(e){$('schedBox').innerHTML=`<p class="muted">Could not load: ${esc(e.message||e)}</p>`;return}
+  const tot=W.reduce((s,d)=>s+d.classes.reduce((a,c)=>a+c.booked,0),0),cap=W.reduce((s,d)=>s+d.classes.reduce((a,c)=>a+c.cap,0),0);
+  $('schedBox').innerHTML=`<p class="muted" style="margin:0 0 8px">${tot} booked of ${cap} spots this week · tap a class to see who's coming</p><div class="wk">`+W.map(d=>{
+    const [y,m,dd]=d.date.split('-').map(Number),dt=new Date(y,m-1,dd);
+    const head=`<div class="wh${d.date===today()?' today':''}" onclick="$('schedDay').value='${d.date}';setSchedView('day')"><b>${dt.toLocaleDateString('en-US',{weekday:'short'})}</b> ${m}/${dd}</div>`;
+    const note=d.dayNote?`<div class="wn">📝 ${esc(d.dayNote)}</div>`:'';
+    if(!d.open)return `<div class="wd">${head}${note}<div class="wc closed">${d.regular?'Closed':'—'}</div></div>`;
+    return `<div class="wd">${head}${note}`+d.classes.map(c=>{const full=c.cap>0&&c.booked>=c.cap,closed=c.cap===0,pct=c.cap?Math.min(100,c.booked/c.cap*100):0;
+      return `<button class="wc${full?' full':''}${closed?' closed':''}${c.private?' pv':''}" onclick="SLOT='${c.time}';setArrDay('${d.date}');show('new');window.scrollTo(0,0)">
+        <b>${c.private?'🔒 ':''}${esc(c.time)}</b>${full?'<span class="fl">Full</span>':''}
+        <span class="wnum">${closed?'Closed':`${c.booked} booked · ${Math.max(0,c.cap-c.booked)} open`}</span>
+        ${c.private?`<span class="wnum">${esc(c.private)}</span>`:''}${c.note?`<span class="wnum">📝 ${esc(c.note)}</span>`:''}
+        <span class="wbar"><span style="width:${pct}%"></span></span></button>`}).join('')+'</div>'}).join('')+'</div>';
+}
+async function loadSched(){
+  if(!$('schedDay').value)$('schedDay').value=today();
+  if(SVIEW==='week')return loadWeek();
+  $('schedBox').innerHTML='<p class="muted">Loading…</p>';
+  try{SCH=await call('getSchedule',$('schedDay').value);renderSched()}catch(e){$('schedBox').innerHTML=`<p class="muted">Could not load: ${esc(e.message||e)}</p>`}
+}
+function privHtml(d){
+  const list=(d.privates||[]).map(p=>`<div class="card priv">
+      <div class="prow"><div class="stime"><b>🔒 ${esc(p.time)}</b><span class="muted">Private link${p.name?' · '+esc(p.name):''} · ${p.booked} booked · hidden from the booking page</span></div>
+        <div class="scap"><input type="number" min="0" inputmode="numeric" value="${p.cap}" data-t="${esc(p.time)}" aria-label="Seats for private ${esc(p.time)}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div></div>
+      <div class="prow"><button class="btn ghost small" onclick="copyLink('${esc(p.link)}')">Copy link</button>
+        ${p.regular?`<button class="btn ghost small" onclick="if(confirm('Make ${esc(p.time)} public again?\\n\\nIt goes back on the public booking page with the normal ${d.defaultCap} seats. The ${p.booked} people already booked stay booked.'))privCall('removePrivate','${p.code}')">Make public</button>`
+          :`<button class="tl" onclick="if(confirm('Remove this extra class? Bookings already made stay.'))privCall('removePrivate','${p.code}')">Remove</button>`}</div>
+    </div>`).join('');
+  const times=timesFor(d.date);
+  return list+`<div class="card"><details id="privForm"><summary class="btn ghost small" style="display:inline-flex">🔒 + Private booking link</summary>
+    <p class="muted" style="margin:10px 0">Hides a class from the public booking page so only the people you send the link to can book it. Use it for a private group, or to save the last few spots for one guest you're texting.</p>
+    <div class="mv"><select id="pvTime">${times.map(t=>`<option>${t}</option>`).join('')}<option value="other">Other time…</option></select>
+      <input id="pvOther" class="hide" placeholder="e.g. 7:00 PM"><input id="pvSeats" type="number" min="1" inputmode="numeric" value="${d.defaultCap}" style="max-width:110px" aria-label="Seats">
+      <input id="pvName" placeholder="Who it's for (optional)"></div>
+    <button class="btn main" style="margin-top:8px" onclick="makePrivate()">Create link + copy it</button></details></div>`;
+}
+function dayNote(d){const n=(d.notes||{})['*'];return `<div style="margin-top:6px">${n?`<span class="snote">📝 ${esc(n)}</span> `:''}<button class="tl" style="padding-left:0" onclick="classNote('*')">${n?'Edit day note':'Add day note'}</button></div>`}
+async function classNote(time){
+  const cur=(SCH.notes||{})[time]||'';
+  const v=prompt(time==='*'?`Note for the whole day (only staff see it), e.g. Thanksgiving`:`Note for ${time} (only staff see it)`,cur);if(v===null)return;
+  try{SCH=await call('setClassNote',SCH.date,time,v);renderSched()}catch(e){toast(e.message||String(e),5000)}
+}
+async function privCall(fn,...a){try{SCH=await call(fn,...a,SCH.date);renderSched()}catch(e){toast(e.message||String(e),5000)}}
+async function makePrivate(){
+  const t=$('pvTime').value==='other'?$('pvOther').value:$('pvTime').value;
+  try{SCH=await call('createPrivate',SCH.date,t,$('pvSeats').value,$('pvName').value);renderSched();
+    const p=(SCH.privates||[]).find(x=>x.time.toUpperCase()===String(t).trim().toUpperCase().replace(/^(\d{1,2})\s*(AM|PM)$/,'$1:00 $2'))||(SCH.privates||[]).slice(-1)[0];
+    if(p)copyLink(p.link)}catch(e){toast(e.message||String(e),5000)}
+}
+let BOOK_URL='';
+async function copyBookLink(){try{BOOK_URL=BOOK_URL||await call('bookingLink');copyLink(BOOK_URL)}catch(e){toast(e.message||String(e),5000)}}
+function copyLink(u){(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Link copied ✓ Paste it in a text or email',4000),()=>prompt('Copy this link:',u))}
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='pvTime')$('pvOther').classList.toggle('hide',e.target.value!=='other')});
+function renderSched(){
+  const d=SCH,title=niceDate(d.date);
+  if(!d.dayOpen){$('schedBox').innerHTML=`<div class="card sday closed"><div><b style="font-size:20px">${esc(title)}</b><br>
+    <span class="muted">${d.regular?'Closed for booking':'Not a regular class day'}</span>${dayNote(d)}</div>
+    <button class="btn main" style="width:auto;padding:0 22px" onclick="setCap('*',${d.regular?'null':d.defaultCap})">Open this day</button></div>`+privHtml(d);return}
+  const nt=d.notes||{};
+  $('schedBox').innerHTML=`<div class="card sday"><div><b style="font-size:20px">${esc(title)}</b><br><span class="muted">Online booking is open · <a href="#" style="color:var(--teal);font-weight:600" onclick="copyLink('${esc(d.bookUrl||'')}');return false">copy booking page link</a></span>${dayNote(d)}</div>
+      <button class="btn ghost" style="border-color:#c40056;color:#c40056" onclick="if(confirm('Close ALL classes on ${esc(title)} for new bookings?'))setCap('*',0)">Close whole day</button></div>`+
+    d.classes.map(c=>{const closed=c.cap===0,full=!closed&&c.booked>=c.cap,pct=c.cap?Math.min(100,c.booked/c.cap*100):100;
+      return `<div class="card scls${closed?' off':''}">
+        <div class="stime"><b>${c.time}</b><span class="muted">${closed?'Closed':full?'Full':(c.cap-c.booked)+' open'}</span></div>
+        <div class="sbar"><div style="width:${pct}%"></div></div>
+        <div class="scount"><b>${c.booked}</b> booked of</div>
+        <div class="scap"><input type="number" min="0" max="99" inputmode="numeric" value="${c.cap}" data-t="${c.time}" aria-label="Seats for ${c.time}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div>
+        <button class="btn ghost small" onclick="setCap('${c.time}',${closed?d.defaultCap:0})">${closed?'Open':'Close'}</button>
+        ${c.custom?`<button class="tl" onclick="setCap('${c.time}',null)">Reset to ${d.defaultCap}</button>`:''}
+        <div class="cnote">${nt[c.time]?`<span class="snote">📝 ${esc(nt[c.time])}</span>`:''}<button class="tl" onclick="classNote('${c.time}')">${nt[c.time]?'Edit note':'Add note'}</button>${c.link&&!closed?`<button class="tl" onclick="copyLink('${esc(c.link)}')">🔗 Copy link to this class</button>`:''}</div>
+      </div>`}).join('')+privHtml(d);
+}
+function capInput(el){
+  const n=parseInt(el.value,10),c=SCH.classes.find(x=>x.time===el.dataset.t);
+  if(isNaN(n)||n<0){el.value=c.cap;return}
+  if(n===c.cap)return;
+  el.classList.add('saving');setCap(el.dataset.t,n);
+}
+async function setCap(time,n){
+  // show the change instantly, save in the background
+  const prev=JSON.stringify(SCH);
+  if(time==='*'){if(n===0)SCH.dayOpen=false;else{SCH.dayOpen=true;SCH.classes.forEach(c=>{c.cap=SCH.defaultCap;c.custom=false})}}
+  else{const c=SCH.classes.find(x=>x.time===time);c.cap=n===null?SCH.defaultCap:n;c.custom=n!==null}
+  renderSched();
+  try{const fresh=await call('setCapacity',SCH.date,time,n);if(fresh.date===SCH.date){SCH=fresh;if(!document.activeElement||!document.activeElement.dataset||!document.activeElement.dataset.t)renderSched()}toast('Saved · booking page updated')}
+  catch(e){SCH=JSON.parse(prev);renderSched();toast('Not saved: '+(e.message||e),5000)}
+}
+
+/* ---------- init ---------- */
+$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();
+
+/* ---------- 🔔 new bookings bell ---------- */
+let ACT=[],ACT_SEEN='',ACT_FIRST=true,AUDIO=null;
+try{ACT_SEEN=localStorage.getItem('abs_seen')||''}catch(e){}
+const EV={confirmed:['🎨','booked'],moved:['🔁','rescheduled to'],cancelled:['✖️','cancelled'],late:['⚠️','cancelled late'],changed:['👥','changed party size'],party:['🎈','sent a party request'],card:['💳','saved their card for']};
+function exactTime(iso){const d=new Date(iso);return isNaN(d)?'':d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
+function ago(iso){const m=Math.round((Date.now()-new Date(iso))/6e4);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' hr ago':new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function chime(){try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioContext)();const t=AUDIO.currentTime;[880,1320].forEach((f,i)=>{const o=AUDIO.createOscillator(),g=AUDIO.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.0001,t+i*.18);g.gain.exponentialRampToValueAtTime(.25,t+i*.18+.02);g.gain.exponentialRampToValueAtTime(.0001,t+i*.18+.5);o.connect(g).connect(AUDIO.destination);o.start(t+i*.18);o.stop(t+i*.18+.55)})}catch(e){}}
+document.addEventListener('pointerdown',()=>{try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioContext)();AUDIO.resume()}catch(e){}},{once:true});
+async function pollActivity(){
+  if(!PIN||document.hidden&&!ACT_FIRST)return;
+  let list;try{list=await call('getActivity')}catch(e){return}
+  const before=new Set(ACT.map(a=>a.at+a.key+a.kind));const fresh=ACT_FIRST?[]:list.filter(a=>!before.has(a.at+a.key+a.kind));
+  ACT=list;ACT_FIRST=false;
+  if(!ACT_SEEN&&list.length){ACT_SEEN=list[0].at;try{localStorage.setItem('abs_seen',ACT_SEEN)}catch(e){}}
+  renderBellCount();
+  if(fresh.length){chime();$('bellBtn').classList.remove('ring');void $('bellBtn').offsetWidth;$('bellBtn').classList.add('ring');
+    const a=fresh[0],e=EV[a.kind]||['•',a.kind];toast(`${e[0]} ${a.name} ${e[1]}${a.time?' '+(a.date===today()?'TODAY ':niceDate(a.date)+' ')+a.time:''}`,6000);
+    if(fresh.some(x=>x.date===$('dt').value))loadArrivals(true);}
+}
+function unseen(){return ACT.filter(a=>a.at>ACT_SEEN)}
+function renderBellCount(){
+  const u=unseen(),n=$('bellN');n.textContent=u.length>9?'9+':u.length;n.classList.toggle('hide',!u.length);
+  document.title=(u.length?`(${u.length}) `:'')+'Abstract Check-In';
+  const t=u.filter(a=>a.date===today()&&a.kind!=='party');
+  $('todayAlert').innerHTML=t.length?`<span>🔔 ${t.length} change${t.length>1?'s':''} for <b>today's</b> classes: ${t.slice(0,2).map(a=>esc(a.name.split(' ')[0])+' '+EV[a.kind][1].replace(' to','')+' '+esc(a.time)).join(', ')}${t.length>2?'…':''}</span><b>See ›</b>`:'';
+  $('todayAlert').classList.toggle('hide',!t.length);
+}
+function openBell(){
+  const u=new Set(unseen().map(a=>a.at));
+  const m=document.createElement('div');m.className='modal';m.id='bellModal';
+  m.innerHTML=`<div class="mbox bk" style="max-width:520px"><button class="bkx" onclick="$('bellModal').remove()" aria-label="Close">×</button>
+    <b style="font-size:21px">New activity</b><p class="muted" style="margin:4px 0 10px;font-size:14px">Bookings, changes and party requests from guests. Tap one to open it.</p>
+    ${ACT.length?ACT.map((a,i)=>{const e=EV[a.kind]||['•',a.kind];const td=a.date===today()&&a.kind!=='party';
+      const what=a.kind==='party'?`${a.date?'for '+niceDate(a.date):''}${a.size?' · '+esc(a.size)+' kids':''}`:`${td?'':niceDate(a.date)+' · '}${esc(a.time)}${a.size?' · party of '+esc(a.size):''}`;
+      return `<button class="ev${u.has(a.at)?' new':''}" onclick="goActivity(${i})"><i>${e[0]}</i><span><b>${esc(a.name)}</b> ${e[1]}${td?'<span class="tday">TODAY</span>':''}<small>${what}${(a.kind==='moved'||a.kind==='changed')&&a.detail?' (was '+esc(a.detail)+')':''}${a.kind==='party'&&a.detail?' · '+esc(a.detail):''} · ${exactTime(a.at)}</small></span></button>`}).join('')
+      :'<p class="muted">Nothing yet. New bookings will show up here.</p>'}
+    <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('bellModal').remove()">Close</button></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+  if(ACT.length){ACT_SEEN=ACT[0].at;try{localStorage.setItem('abs_seen',ACT_SEEN)}catch(e){};renderBellCount()}
+}
+async function goActivity(i){
+  const a=ACT[i];$('bellModal').remove();
+  if(a.kind==='party'){toast(`Party request from ${a.name}${a.detail?' · '+a.detail:''}. Details are in your email and the "Party Requests" tab.`,8000);return}
+  show('new');SLOT='';setArrDay(a.date);
+  for(let t=0;t<20;t++){await new Promise(r=>setTimeout(r,250));const b=arrivals.find(x=>x.key===a.key);if(b&&b.date===a.date){viewBooking(b.row);return}}
+}
+setInterval(pollActivity,60000);setInterval(()=>{if(!document.hidden)loadFees()},300000);setTimeout(()=>{pollActivity();loadFees()},1500);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollActivity()});
+resetForm();
+if(hasGAS&&!PIN)askPin();
+show('new');
+</script>
+</body>
+</html>
