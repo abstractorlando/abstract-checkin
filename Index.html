@@ -858,7 +858,7 @@ async function staffAct(k,action){
   if(action==='noshow'&&b.card&&b.bookingId){closeBk();return feeDecision({bookingId:b.bookingId,reservation:b.reservation,date:b.date,time:b.time,size:b.size,kind:'noshow'},true)}
   if(action==='noshow'&&!confirm(`Mark ${b.reservation} as a NO-SHOW?`+(b.card?`\n\nYou'll then see a button to charge the $${FEE_PER_GUEST*b.size} no-show fee.`:'')))return;
   const late=(dateTime(b.date,b.time)-Date.now())/36e5<24&&b.card&&b.bookingId&&b.source!=='FareHarbor';
-  if(action==='cancel'){if(!confirm(late?`Cancel ${b.reservation}'s booking (party of ${b.size})?\n\nThis is within 24 hours of class, so it's a LATE cancel. Next you'll choose to charge or waive the $${FEE_PER_GUEST*b.size} fee.`:`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir seats open up again. No fee is charged.`))return;
+  if(action==='cancel'){if(!confirm(late?`Cancel ${b.reservation}'s booking (party of ${b.size})?\n\nThis is within 24 hours of class, so it's a LATE cancel. Next you'll choose to charge or waive the $${FEE_PER_GUEST*b.size} fee.`:`Cancel ${b.reservation}'s booking (party of ${b.size})?\nTheir spots open up again. No fee is charged.`))return;
     if(web)email=confirm(`Let ${b.reservation} know their booking is cancelled?`)}
   let refund=true;
   if(action==='cancel'&&/\|paid\|/.test(b.addons||'')){
@@ -1208,17 +1208,17 @@ async function loadSched(){
 function privHtml(d){
   const list=(d.privates||[]).map(p=>`<div class="card priv">
       <div class="prow"><div class="stime"><b>🔒 ${esc(p.time)}</b><span class="muted">Private link${p.name?' · '+esc(p.name):''} · ${p.booked} booked · hidden from the booking page</span></div>
-        <div class="scap"><input type="number" min="0" inputmode="numeric" value="${p.cap}" data-t="${esc(p.time)}" aria-label="Seats for private ${esc(p.time)}"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div></div>
+        <div class="scap"><input type="number" min="0" inputmode="numeric" value="${p.cap}" data-t="${esc(p.time)}" aria-label="Spots for private ${esc(p.time)}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">spots</span></div></div>
       <div class="prow"><button class="btn ghost small" onclick="copyLink('${esc(p.link)}')">Copy link</button>
-        ${p.regular?`<button class="btn ghost small" onclick="if(confirm('Make ${esc(p.time)} public again?\\n\\nIt goes back on the public booking page with the normal ${d.defaultCap} seats. The ${p.booked} people already booked stay booked.'))privCall('removePrivate','${p.code}')">Make public</button>`
+        ${p.regular?`<button class="btn ghost small" onclick="if(confirm('Make ${esc(p.time)} public again?\\n\\nIt goes back on the public booking page with the normal ${d.defaultCap} spots. The ${p.booked} people already booked stay booked.'))privCall('removePrivate','${p.code}')">Make public</button>`
           :`<button class="tl" onclick="if(confirm('Remove this extra class? Bookings already made stay.'))privCall('removePrivate','${p.code}')">Remove</button>`}</div>
     </div>`).join('');
   const times=timesFor(d.date);
   return list+`<div class="card"><details id="privForm"><summary class="btn ghost small" style="display:inline-flex">🔒 + Private booking link</summary>
     <p class="muted" style="margin:10px 0">Hides a class from the public booking page so only the people you send the link to can book it. Use it for a private group, or to save the last few spots for one guest you're texting.</p>
     <div class="mv"><select id="pvTime">${times.map(t=>`<option>${t}</option>`).join('')}<option value="other">Other time…</option></select>
-      <input id="pvOther" class="hide" placeholder="e.g. 7:00 PM"><input id="pvSeats" type="number" min="1" inputmode="numeric" value="${d.defaultCap}" style="max-width:110px" aria-label="Seats">
+      <input id="pvOther" class="hide" placeholder="e.g. 7:00 PM"><input id="pvSeats" type="number" min="1" inputmode="numeric" value="${d.defaultCap}" style="max-width:110px" aria-label="Spots">
       <input id="pvName" placeholder="Who it's for (optional)"></div>
     <button class="btn main" style="margin-top:8px" onclick="makePrivate()">Create link + copy it</button></details></div>`;
 }
@@ -1252,8 +1252,8 @@ function renderSched(){
         <div class="stime"><b>${c.time}</b><span class="muted">${closed?'Closed':full?'Full':(c.cap-c.booked)+' open'}</span></div>
         <div class="sbar"><div style="width:${pct}%"></div></div>
         <div class="scount"><b>${c.booked}</b> booked of</div>
-        <div class="scap"><input type="number" min="0" max="99" inputmode="numeric" value="${c.cap}" data-t="${c.time}" aria-label="Seats for ${c.time}"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">seats</span></div>
+        <div class="scap"><input type="number" min="0" max="99" inputmode="numeric" value="${c.cap}" data-t="${c.time}" aria-label="Spots for ${c.time}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" onfocus="this.select()" onblur="capInput(this)"><span class="seatl">spots</span></div>
         <button class="btn ghost small" onclick="setCap('${c.time}',${closed?d.defaultCap:0})">${closed?'Open':'Close'}</button>
         ${c.custom?`<button class="tl" onclick="setCap('${c.time}',null)">Reset to ${d.defaultCap}</button>`:''}
         <div class="cnote">${nt[c.time]?`<span class="snote">📝 ${esc(nt[c.time])}</span>`:''}<button class="tl" onclick="classNote('${c.time}')">${nt[c.time]?'Edit note':'Add note'}</button>${c.link&&!closed?`<button class="tl" onclick="copyLink('${esc(c.link)}')">🔗 Copy link to this class</button>`:''}</div>
