@@ -106,6 +106,7 @@
   .bkc a{color:var(--teal);font-weight:600;text-decoration:none}
   .bkc h4{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--purp)}
   .bf{margin:0 0 9px}.bf:last-child{margin-bottom:0}.bf span{display:block;font-size:12px;color:var(--muted);font-weight:600}.bf div{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+  .evb{display:block}.evl{display:block;font-size:14px;margin-top:3px;color:var(--ink);font-weight:500}.evl em{font-style:normal;display:inline-block;min-width:44px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--purp);margin-right:6px}.evt{display:block;font-size:12px;color:var(--muted);margin-top:4px}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -1307,7 +1308,7 @@ $('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$(
 /* ---------- 🔔 new bookings bell ---------- */
 let ACT=[],ACT_SEEN='',ACT_FIRST=true,AUDIO=null;
 try{ACT_SEEN=localStorage.getItem('abs_seen')||''}catch(e){}
-const EV={confirmed:['🎨','booked'],moved:['🔁','rescheduled to'],cancelled:['✖️','cancelled'],late:['⚠️','cancelled late'],changed:['👥','changed party size'],party:['🎈','sent a party request'],card:['💳','saved their card for']};
+const EV={confirmed:['🎨','booked','Booked'],moved:['🔁','rescheduled','Rescheduled'],cancelled:['✖️','cancelled','Cancelled'],late:['⚠️','cancelled late','Cancelled'],changed:['👥','changed party size','Changed'],party:['🎈','sent a party request','Sent'],card:['💳','saved their card','Card saved']};
 function exactTime(iso){const d=new Date(iso);return isNaN(d)?'':d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
 function ago(iso){const m=Math.round((Date.now()-new Date(iso))/6e4);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' hr ago':new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
 function chime(){try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioContext)();const t=AUDIO.currentTime;[880,1320].forEach((f,i)=>{const o=AUDIO.createOscillator(),g=AUDIO.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.0001,t+i*.18);g.gain.exponentialRampToValueAtTime(.25,t+i*.18+.02);g.gain.exponentialRampToValueAtTime(.0001,t+i*.18+.5);o.connect(g).connect(AUDIO.destination);o.start(t+i*.18);o.stop(t+i*.18+.55)})}catch(e){}}
@@ -1336,9 +1337,15 @@ function openBell(){
   const m=document.createElement('div');m.className='modal';m.id='bellModal';
   m.innerHTML=`<div class="mbox bk" style="max-width:520px"><button class="bkx" onclick="$('bellModal').remove()" aria-label="Close">×</button>
     <b style="font-size:21px">New activity</b><p class="muted" style="margin:4px 0 10px;font-size:14px">Bookings, changes and party requests from guests. Tap one to open it.</p>
-    ${ACT.length?ACT.map((a,i)=>{const e=EV[a.kind]||['•',a.kind];const td=a.date===today()&&a.kind!=='party';
-      const what=a.kind==='party'?`${a.date?'for '+niceDate(a.date):''}${a.size?' · '+esc(a.size)+' kids':''}`:`${td?'':niceDate(a.date)+' · '}${esc(a.time)}${a.size?' · party of '+esc(a.size):''}`;
-      return `<button class="ev${u.has(a.at)?' new':''}" onclick="goActivity(${i})"><i>${e[0]}</i><span><b>${esc(a.name)}</b> ${e[1]}${td?'<span class="tday">TODAY</span>':''}<small>${what}${(a.kind==='moved'||a.kind==='changed')&&a.detail?' (was '+esc(a.detail)+')':''}${a.kind==='party'&&a.detail?' · '+esc(a.detail):''} · ${exactTime(a.at)}</small></span></button>`}).join('')
+    ${ACT.length?ACT.map((a,i)=>{const e=EV[a.kind]||['•',a.kind,'Done'];const td=a.date===today();
+      const day=a.date?(new Date(a.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})):'';
+      const cls=a.kind==='party'?`${day?'for '+day:'Date not set'}${a.size?' · '+esc(a.size)+' kids':''}${a.detail?' · '+esc(a.detail):''}`
+        :`${day}${a.time?' · '+esc(a.time):''}${a.size?' · party of '+esc(a.size):''}`;
+      const was=a.kind==='moved'&&a.detail?esc(a.detail):a.kind==='changed'&&a.detail?'party of '+esc(String(a.detail).replace(/\D+/g,'')):'';
+      return `<button class="ev${u.has(a.at)?' new':''}" onclick="goActivity(${i})"><i>${e[0]}</i><span class="evb"><b>${esc(a.name)}</b> ${e[1]}
+        <span class="evl"><em>${a.kind==='party'?'Party':'Class'}</em>${cls}${td&&a.kind!=='party'?' <span class="tday">TODAY</span>':''}</span>
+        ${was?`<span class="evl"><em>Was</em>${was}</span>`:''}
+        <span class="evt">🕒 ${e[2]} ${new Date(a.at).toDateString()===new Date().toDateString()?'today at '+new Date(a.at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):exactTime(a.at).replace(/, (\d)/,' at $1')}</span></span></button>`}).join('')
       :'<p class="muted">Nothing yet. New bookings will show up here.</p>'}
     <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('bellModal').remove()">Close</button></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
