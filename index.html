@@ -598,8 +598,9 @@ function storageLine(p){
   const sent=[s.emailSent?'email':'',s.textSent?'text':''].filter(Boolean).join(' + '),items=s.items||[],left=items.filter(i=>!i.picked);
   return `<div class="st sto"><div style="flex:1"><div class="stt">${s.pickedUp?'<span class="done">✓ All picked up</span>':`<b>${left.length} piece${left.length===1?'':'s'} on the shelf</b>${left.length<items.length?` <span class="muted">(${items.length-left.length} already picked up)</span>`:''}`}</div>
       ${items.map((i,k)=>`<div class="pcs${i.picked?' gone':''}"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}${i.picked?` <span class="muted">· picked up ${exactTime(i.picked)}</span>`:''}</span></div>`).join('')}
-      <span class="muted" style="font-size:13px">${sent?'Guest notified by '+sent:'Guest not notified yet'}</span></div>
+      <span class="muted" style="font-size:13px">${sent?'Guest notified by '+sent:s.notifyAt?'Guest will be notified '+exactTime(s.notifyAt).replace(/, (\d)/,' at $1'):'Guest not notified yet'}</span></div>
     <div style="display:flex;gap:6px;flex-direction:column">${s.pickedUp?'':`<button class="btn main small" style="width:auto" onclick="pickedUp('${id}')">Picked up</button>`}
+      ${s.pickedUp?'':`<button class="btn ghost small" onclick="printTicket('${id}')">🧾 Ticket</button>`}
       <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
 }
 let DAYSLOT='',DAYBK=[];
@@ -715,6 +716,8 @@ function addToParty(id){
 }
 
 /* ---- storage form: pick one or more piece types, with a count for each ---- */
+/* closed Monday and Tuesday: pickup notices wait until Tuesday 7 PM (same rule as the server) */
+const closedToday=()=>[1,2].includes(new Date().getDay());
 /* ---- storage form: one line per piece, each with its own shelf ---- */
 function openStore(id){
   const box=$('sf_'+id);if(box.innerHTML){box.innerHTML='';return}
@@ -727,7 +730,7 @@ function openStore(id){
     <div class="pcl" id="pcl_${id}">${rows.map(pieceRow).join('')}</div>
     <button type="button" class="tl" onclick="$('pcl_${id}').insertAdjacentHTML('beforeend',pieceRow({project:'',shelf:'',who:''}))">+ add a piece</button>
     <datalist id="ptList">${PT_ALL().map(t=>`<option value="${esc(t)}">`).join('')}</datalist>
-    <label class="chk"><input type="checkbox" id="nt_${id}" ${first?'checked':''}> Send "ready for pickup" text (or email) now</label>
+    <label class="chk"><input type="checkbox" id="nt_${id}" ${first?'checked':''}> ${closedToday()?'Tell the guest it\'s ready <b>Tuesday at 7 PM</b> (we\'re closed today)':'Send the "ready for pickup" text (or email) now'}</label>
     <button class="btn main" style="font-size:16px" onclick="saveStore('${id}')">Save</button></div>`;
   const f=box.querySelector('.pcr input[data-k=shelf]');if(f)f.focus();
 }
@@ -743,7 +746,8 @@ async function saveStore(id){
   const notify=$('nt_'+id).checked,p=parties[id][0];
   if(notify&&!p.email&&!p.phone){toast('No phone or email on this party. Tap edit next to the contact.');return}
   try{const r=await call('storeParty',{partyId:id,items,notify});
-    toast(notify?`Saved ✓ · text: ${r.text} · email: ${r.email}`:'Saved ✓',4500);refreshView()}
+    toast(r.notifyAt?`Saved ✓ · the guest will be told ${exactTime(r.notifyAt).replace(/, (\d)/,' at $1')}`:notify?`Saved ✓ · text: ${r.text} · email: ${r.email}`:'Saved ✓',5000);refreshView();
+    if(confirm('Print a pickup ticket for these pieces?'))printTicket(id)}
   catch(e){toast('Could not save: '+(e.message||e),5000)}
 }
 /* ---- pickup: all pieces, or only the ones they're taking today ---- */
@@ -751,11 +755,32 @@ function pickedUp(id){
   const p=parties[id][0],items=(p.storage.items||[]).map((i,k)=>Object.assign({k},i)).filter(i=>!i.picked);
   const m=document.createElement('div');m.className='modal';m.id='puModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px"><b style="font-size:20px">Pickup: ${esc(p.reservation)}</b>
-    <p class="muted" style="margin:4px 0 12px">Grab these from the shelves. Untick anything they're leaving for another day.</p>
+    <p class="muted" style="margin:4px 0 12px">Grab these from the shelves. Untick anything that's being left for someone else to pick up later (partial pickups aren't recommended).</p>
+    <button class="btn ghost small" style="margin:0 0 6px" onclick="printTicket('${id}')">🧾 Print ticket for the vault</button>
     ${items.map(i=>`<label class="chk pu"><input type="checkbox" value="${i.k}" checked> <span class="loc">${esc(i.shelf)}</span> <b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}</label>`).join('')}
     <button class="btn main" style="margin-top:12px" onclick="confirmPickup('${id}')">Mark as picked up</button>
     <button class="btn ghost" style="width:100%;margin-top:8px" onclick="$('puModal').remove()">Cancel</button></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+}
+/* Pickup ticket for the Star receipt printer (80 mm): big reservation name, every piece with its shelf */
+function printTicket(id){
+  const p=parties[id],f=p[0],s=f.storage||{},items=(s.items||[]).filter(i=>!i.picked);
+  const byShelf=[...items].sort((a,b)=>a.shelf.localeCompare(b.shelf,undefined,{numeric:true}));
+  const w=window.open('','ticket','width=420,height=700');if(!w)return toast('Allow pop-ups to print the ticket',5000);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Pickup ticket</title><style>
+    @page{size:80mm auto;margin:3mm}*{box-sizing:border-box}body{margin:0;width:72mm;font-family:Arial,Helvetica,sans-serif;color:#000}
+    .c{text-align:center}.br{font-weight:900;font-size:15pt;letter-spacing:2px}.sm{font-size:10pt}.hr{border-top:2px dashed #000;margin:8px 0}
+    .nm{font-size:26pt;font-weight:900;line-height:1.05;margin:6px 0 2px;word-wrap:break-word}.ct{font-size:16pt;font-weight:900;margin:4px 0}
+    .it{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #000}.sh{font-size:24pt;font-weight:900;border:3px solid #000;border-radius:6px;padding:1px 6px;min-width:22mm;text-align:center}
+    .pr{font-size:14pt;font-weight:700;line-height:1.15}.wh{font-size:11pt;font-weight:400}.bx{width:6mm;height:6mm;border:2px solid #000;margin-left:auto;flex:none}</style></head><body>
+    <div class="c br">ABSTRACT ORLANDO</div><div class="c sm">PICKUP TICKET</div><div class="hr"></div>
+    <div class="nm">${esc(f.reservation)}</div>
+    <div class="sm">Class: ${esc(niceDate(f.date))} · ${esc(f.time)}<br>${f.phone?esc(f.phone):''}</div><div class="hr"></div>
+    <div class="ct">${items.length} PIECE${items.length===1?'':'S'}</div>
+    ${byShelf.map(i=>`<div class="it"><span class="sh">${esc(i.shelf)}</span><span class="pr">${esc(i.project)}${i.who?`<br><span class="wh">${esc(i.who)}</span>`:''}</span><span class="bx"></span></div>`).join('')}
+    <div class="hr"></div><div class="c sm">Printed ${new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}${ME?' by '+esc(ME.name.split(' ')[0]):''}</div>
+    <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),1500)}<\/script></body></html>`);
+  w.document.close();
 }
 async function confirmPickup(id){
   const idx=[...$('puModal').querySelectorAll('input:checked')].map(x=>+x.value);if(!idx.length)return toast('Tick at least one piece');
