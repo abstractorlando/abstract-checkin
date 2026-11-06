@@ -49,6 +49,9 @@
   label.l{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:0 0 6px}
   input,select{width:100%;font:500 17px Poppins;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);min-height:48px}
   input:focus,select:focus{outline:none;border-color:var(--teal)}
+  #printArea{display:none}
+  @media print{body>*:not(#printArea){display:none!important}html,body{margin:0!important;padding:0!important;background:#fff!important}
+    #printArea{display:block!important}#printArea canvas{display:block;break-after:page;page-break-after:always}#printArea canvas:last-child{break-after:auto;page-break-after:auto}}
   .dwrap{position:relative;display:block;flex:1;min-width:0}.dwrap input{color:transparent;-webkit-text-fill-color:transparent}
   .dwrap .dlbl{position:absolute;left:16px;right:44px;top:50%;transform:translateY(-50%);pointer-events:none;font:600 17px Poppins;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dlbl .ds{display:none}
   @media(max-width:600px){.dwrap .dlbl{left:0;right:0;text-align:center;font-size:15px}.dwrap input::-webkit-calendar-picker-indicator{opacity:0}.dlbl .dl{display:none}.dlbl .ds{display:inline}}
@@ -280,7 +283,7 @@
       </div>
     </div>
     <div class="card">
-      <label class="l">Guests · tap <b>FT</b> (first timer) or <b>RG</b> (returning) for each guest who's here · number = stickers to print</label>
+      <label class="l">Guests · tap <b>FT</b> (first timer) or <b>RG</b> (returning) for each guest who's here</label>
       <p class="muted" style="margin:-2px 0 8px;font-size:13px">Part of the party still on the way? Leave their FT/RG blank. They stay on the booking and you can check them in when they arrive.</p>
       <div id="guests" class="gl"></div>
       <button class="btn ghost small add" onclick="addGuest()">+ Add guest</button>
@@ -344,6 +347,7 @@
   <h2 style="margin:0 0 6px">Printer</h2>
   <p class="muted" style="margin:0 0 16px">Saved on this device only.</p>
   <label class="chk" style="font-size:16px"><input type="checkbox" id="rotChk"> Turn sticker 90° (use if it prints sideways)</label>
+  <label class="chk" style="font-size:16px;margin-top:8px"><input type="checkbox" id="oldPrintChk"> iPad: print the old way (through the share sheet)</label>
   <div style="display:flex;gap:8px;margin-top:18px"><button class="btn ghost" style="flex:1" onclick="testPrint()">Test print</button><button class="btn main" style="flex:1" onclick="saveSettings()">Save</button></div>
   <div id="teamBox"></div>
   <div id="projBox"></div>
@@ -462,13 +466,11 @@ function addGuest(name='',type='',projects=1){
   const wrap=document.createElement('div');wrap.className='g';
   wrap.innerHTML=`<span class="n"></span><input placeholder="First name" value="${esc(name)}" autocomplete="off">
     <div class="seg"><button type="button" class="ft">FT</button><button type="button" class="rg">RG</button></div>
-    <div class="pj" title="Stickers to print"><button type="button" class="m">−</button><span>1</span><button type="button" class="p">+</button></div>
     <button class="x" type="button" aria-label="Remove guest">×</button>`;
   const [ft,rg]=wrap.querySelectorAll('.seg button');
   const set=t=>{wrap.dataset.type=t;ft.classList.toggle('on',t==='FT');rg.classList.toggle('on',t==='RG');wrap.classList.remove('need')};
   ft.onclick=()=>set('FT');rg.onclick=()=>set('RG');set(type);
-  const pj=wrap.querySelector('.pj span');const setP=n=>{n=Math.min(Math.max(n,1),9);wrap.dataset.projects=n;pj.textContent=n;pj.parentNode.classList.toggle('multi',n>1)};
-  wrap.querySelector('.pj .m').onclick=()=>setP(+wrap.dataset.projects-1);wrap.querySelector('.pj .p').onclick=()=>setP(+wrap.dataset.projects+1);setP(projects);
+  wrap.dataset.projects=Math.min(Math.max(projects||1,1),9);
   wrap.querySelector('.x').onclick=()=>{wrap.remove();renum()};
   wrap.querySelector('input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addGuest();}});
   $('guests').appendChild(wrap);renum();wrap.querySelector('input').focus();
@@ -490,11 +492,13 @@ async function saveAndPrint(){
   const guests=here.map(g=>({name:g.name,type:g.type,projects:g.projects}));
   const em=$('em').value.trim();
   if(em&&!/^\S+@\S+\.\S+$/.test(em)){toast('Check the email');$('em').focus();return}
-  const btn=$('saveBtn');btn.disabled=true;btn.textContent='Saving…';
+  const btn=$('saveBtn');if(btn.disabled)return;btn.disabled=true;btn.textContent='Saving…';
+  const quick=quickPrintOn();
+  if(quick)printLabels(guests.map((g,i)=>({reservation:titleCase(reservation),name:g.name,type:g.type,date:$('dt').value,time:$('tm').value,size:guests.length,num:i+1,projects:g.projects})),{direct:true,noMark:true});
   try{
     const saved=await call('saveParty',{date:$('dt').value,time:$('tm').value,reservation:titleCase(reservation),phone:$('ph').value.trim(),email:em,guests,bookingRow:picked?picked.row:0,expected:picked?all.length:0,allNames:picked?all.map(g=>g.name).filter(Boolean):[]});
     picked=null;$('bkFilter').value='';loadArrivals();
-    printLabels(saved);
+    if(quick){if(saved.length)call('markPrinted',saved.map(g=>g.row)).catch(()=>{})}else printLabels(saved);
     resetForm();toast(`Checked in ${saved.length} guest${saved.length>1?'s':''}`);
   }catch(e){toast('Could not save: '+(e.message||e))}
   btn.disabled=false;btn.textContent='Check in & print labels';
@@ -543,19 +547,41 @@ async function makePdf(copies){
   });
   return doc.output('blob');
 }
-let pendingPdf=null;
-async function printLabels(list){
-  if(!list.length)return;
-  const copies=[];list.forEach(g=>{const n=g.projects||1;
+let pendingPdf=null,pendingCopies=null;
+/* iPad: print the stickers straight from the page (tap Print, then Print in the iPad box). The old way went through the share sheet. */
+let OLDPRINT=false;try{OLDPRINT=localStorage.getItem('abs_oldprint')==='1'}catch(e){}
+const quickPrintOn=()=>isTouch&&!OLDPRINT;
+function stickerCopies(list){const copies=[];list.forEach(g=>{const n=g.projects||1;
     if(g.onlyProject)copies.push(Object.assign({},g,{pk:g.onlyProject,pn:n}));
-    else for(let k=1;k<=n;k++)copies.push(Object.assign({},g,{pk:k,pn:n}))});
-  let blob;try{blob=await makePdf(copies)}catch(e){toast('Could not make stickers: '+(e.message||e),5000);return}
-  pendingPdf={blob,count:copies.length};
-  if(isTouch){$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
-  else sendToPrinter();
-  if(list[0].row){list.forEach(g=>g.printed=(g.printed||0)+1);call('markPrinted',list.map(g=>g.row)).then(()=>{if(!$('vToday').classList.contains('hide'))loadDay(true)}).catch(()=>{})}
+    else for(let k=1;k<=n;k++)copies.push(Object.assign({},g,{pk:k,pn:n}))});return copies}
+function quickPrint(copies){
+  let area=$('printArea');if(!area){area=document.createElement('div');area.id='printArea';document.body.appendChild(area)}
+  let ps=$('pageCss');if(!ps){ps=document.createElement('style');ps.id='pageCss';document.head.appendChild(ps)}
+  const W=ROTATE?2:3,H=ROTATE?3:2;
+  ps.textContent=`@page{size:${W}in ${H}in;margin:0}#printArea canvas{width:${W}in;height:${H}in}`;
+  area.innerHTML='';
+  copies.forEach(g=>{const c=document.createElement('canvas');c.width=LW;c.height=LH;drawLabel(c.getContext('2d'),g);
+    if(ROTATE){const r=document.createElement('canvas');r.width=LH;r.height=LW;const rc=r.getContext('2d');rc.translate(LH,0);rc.rotate(Math.PI/2);rc.drawImage(c,0,0);area.appendChild(r)}
+    else area.appendChild(c)});
+  window.print();
+}
+/* direct = called right from a tap, so the iPad print box can open straight away */
+async function printLabels(list,opts){
+  opts=opts||{};if(!list.length)return;
+  const copies=stickerCopies(list);
+  if(quickPrintOn()){
+    if(opts.direct)quickPrint(copies);
+    else{pendingCopies=copies;$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
+  }else{
+    let blob;try{blob=await makePdf(copies)}catch(e){toast('Could not make stickers: '+(e.message||e),5000);return}
+    pendingPdf={blob,count:copies.length};
+    if(isTouch){$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
+    else sendToPrinter();
+  }
+  if(!opts.noMark&&list[0].row){list.forEach(g=>g.printed=(g.printed||0)+1);call('markPrinted',list.map(g=>g.row)).then(()=>{if(!$('vToday').classList.contains('hide'))loadDay(true)}).catch(()=>{})}
 }
 async function sendToPrinter(){
+  if(quickPrintOn()&&pendingCopies){$('printModal').classList.add('hide');const c=pendingCopies;pendingCopies=null;quickPrint(c);return}
   if(!pendingPdf)return;const {blob}=pendingPdf;$('printModal').classList.add('hide');
   if(isTouch){
     const file=new File([blob],'abstract-stickers.pdf',{type:'application/pdf'});
@@ -567,7 +593,7 @@ async function sendToPrinter(){
   f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},300)};
   f.src=url;
 }
-function openSettings(){$('rotChk').checked=ROTATE;$('setModal').classList.remove('hide');loadNotify();loadTeam()}
+function openSettings(){$('rotChk').checked=ROTATE;$('oldPrintChk').checked=OLDPRINT;$('setModal').classList.remove('hide');loadNotify();loadTeam()}
 async function loadTeam(){const box=$('teamBox');box.innerHTML='';if(!PROJECTS)await loadProjects();setTimeout(renderProjBox,0);
   try{ME=await call('whoAmI')}catch(e){return}
   const mail=typeof ME.emailsLeft==='number'?`<p class="muted" style="margin:6px 0 0;font-size:14px">Emails Google lets us send today: <b>${ME.emailsLeft}</b> left</p>`:'';
@@ -594,8 +620,8 @@ function renderNotify(){$('notifyList').innerHTML=`<div class="ne"><span><b>${es
 async function saveNotify(list){try{NOTIFY=await call('setNotify',list);renderNotify();toast('Saved ✓')}catch(e){toast(e.message||String(e),5000)}}
 function addNotify(){const v=$('notifyNew').value.trim();if(!v)return;$('notifyNew').value='';saveNotify(NOTIFY.extra.concat(v))}
 function removeNotify(i){if(!confirm(`Stop sending booking notices to ${NOTIFY.extra[i]}?`))return;saveNotify(NOTIFY.extra.filter((x,j)=>j!==i))}
-function saveSettings(){ROTATE=$('rotChk').checked;try{localStorage.setItem('abs_rot',ROTATE?'1':'0')}catch(e){};$('setModal').classList.add('hide');toast('Saved for this device')}
-function testPrint(){saveSettings();printLabels([{reservation:'Beatriz Castro Silva',name:'Mike',type:'FT',date:today(),time:timesFor(today())[0],num:1,size:2,projects:1}])}
+function saveSettings(){ROTATE=$('rotChk').checked;OLDPRINT=$('oldPrintChk').checked;try{localStorage.setItem('abs_rot',ROTATE?'1':'0');localStorage.setItem('abs_oldprint',OLDPRINT?'1':'0')}catch(e){};$('setModal').classList.add('hide');toast('Saved for this device')}
+function testPrint(){saveSettings();printLabels([{reservation:'Beatriz Castro Silva',name:'Mike',type:'FT',date:today(),time:timesFor(today())[0],num:1,size:2,projects:1}],{direct:true})}
 
 /* ---------- lists ---------- */
 function groupParties(list){const m=new Map();list.forEach(g=>{if(!m.has(g.partyId))m.set(g.partyId,[]);m.get(g.partyId).push(g)});return [...m.values()].map(a=>a.sort((x,y)=>x.num-y.num))}
@@ -680,7 +706,7 @@ function renderParties(list,el,byClass){
       <button class="btn ghost small" style="margin-top:10px" onclick="addToParty('${f.partyId}')">+ Add guest to this party</button>
     </div>`}).join('');
 }
-function reprint(rows){printLabels(rows.map(r=>cache[r]).filter(Boolean).map(g=>Object.assign({},g,{projects:1})))}
+function reprint(rows){printLabels(rows.map(r=>cache[r]).filter(Boolean).map(g=>Object.assign({},g,{projects:1})),{direct:true})}
 /* extra project later on: saves the new count, prints only the new sticker */
 async function addProject(row){
   const g=cache[row];const n=(g.projects||1)+1;
@@ -710,10 +736,16 @@ async function guestNoShow(id,name,undo){
     else toast(`${name} marked as a no-show. No card on file, so there's no fee to charge.`,5000)}
   catch(e){toast('Could not update: '+(e.message||e),5000)}
 }
+const ARRIVING={};
 async function arrive(id,inp,type,extra){
   const n=cap(($(inp).value||'').trim());if(!n){$(inp).focus();return toast('Add their first name')}
-  try{const g=await call('addGuestToParty',id,n,type,!!extra);cache[g.row]=g;printLabels([g]);toast(`Checked in ${g.name} (${type})`);setTimeout(refreshView,2500)}
-  catch(e){toast('Could not check in: '+(e.message||e))}
+  const k=id+'|'+n.toLowerCase();if(ARRIVING[k])return;ARRIVING[k]=1;
+  // lock this guest's buttons right away so extra taps don't check them in twice
+  const row=$(inp).closest('.gi'),btns=row?[...row.querySelectorAll('button')]:[];btns.forEach(x=>x.disabled=true);
+  const lbl=row&&row.querySelector('.muted');if(lbl)lbl.textContent='Checking in…';
+  try{const g=await call('addGuestToParty',id,n,type,!!extra);cache[g.row]=g;if(!g.dup)printLabels([g]);toast(g.dup?`${g.name} was already checked in`:`Checked in ${g.name} (${type})`);if(row)row.style.opacity=.5;setTimeout(refreshView,1500)}
+  catch(e){toast('Could not check in: '+(e.message||e));btns.forEach(x=>x.disabled=false);if(lbl)lbl.textContent='Arrived?'}
+  finally{setTimeout(()=>delete ARRIVING[k],3000)}
 }
 function addToParty(id){
   const box=$('ap_'+id);if(box.innerHTML){box.innerHTML='';return}
@@ -870,7 +902,7 @@ async function loadDay(quiet){
     $('newCount').textContent=fresh.length+' new label'+(fresh.length>1?'s':'')+' to print';
   }catch(e){if(!quiet)$('dayList').innerHTML='<p class="muted">Could not load.</p>'}
 }
-function printNew(){const fresh=dayData.filter(g=>!g.printed).sort((a,b)=>a.row-b.row);fresh.forEach(g=>cache[g.row]=g);printLabels(fresh);setTimeout(()=>loadDay(true),2500)}
+function printNew(){const fresh=dayData.filter(g=>!g.printed).sort((a,b)=>a.row-b.row);fresh.forEach(g=>cache[g.row]=g);printLabels(fresh,{direct:true});setTimeout(()=>loadDay(true),2500)}
 setInterval(()=>{if(!$('vNew').classList.contains('hide')&&!document.hidden)loadArrivals(true)},60000);
 setInterval(()=>{if(!$('vToday').classList.contains('hide')&&!document.hidden)loadDay(true)},15000);
 
@@ -918,14 +950,14 @@ function openAddBooking(date,time){
     <p class="muted" style="font-size:13px;margin:4px 0 0">Double-check the number. Their texts go here.</p>
     <label class="l" style="margin-top:12px">Number of guests</label>
     <div class="stp"><button type="button" onclick="abStep(-1)" aria-label="Fewer guests">−</button><b id="abSizeV">2</b><button type="button" onclick="abStep(1)" aria-label="More guests">+</button><input type="hidden" id="abSize" value="2"></div>
-    <label class="l" style="margin-top:10px">Artist names <span class="muted">(optional)</span></label><div id="abNames" class="abn"></div>
+    <label class="l" style="margin-top:10px">Artist names <span class="muted">(first names)</span></label><div id="abNames" class="abn"></div>
     <label class="l" style="margin-top:10px">Email</label><input id="abEmail" type="email" autocapitalize="off" placeholder="name@email.com">
     <label class="l" style="margin-top:10px">Note <span class="muted">(optional, only staff see this)</span></label><input id="abNote" placeholder="e.g. Booked their next visit at checkout">
     <div id="abCardRow" class="hide" style="margin-top:12px"></div>
     <label class="chk" id="abNotifyRow" style="margin-top:12px"><input type="checkbox" id="abNotify" checked> Text them a confirmation</label>
     <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('addModal').remove()">Cancel</button>
       <button class="btn main" style="flex:1" id="abSave" onclick="saveAddBooking()">Add booking</button></div></div>`;
-  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);AB_T=time||'';abNames();abMode();abSlots();
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);AB_T=time||'';abNames();abMode();abSlots();loadGuestIndex().catch(()=>{});
 }
 /* guest count stepper + one optional name box per artist (names carry over to check-in) */
 function abStep(n){const v=Math.min(40,Math.max(1,(+$('abSize').value||1)+n));$('abSize').value=v;$('abSizeV').textContent=v;abNames();abSlots(true)}
@@ -950,14 +982,30 @@ async function abSlots(quick){
   box.innerHTML=cls.map(c=>{const open=Math.max(0,c.cap-c.booked),fits=open>=need&&c.cap>0;
     return `<button type="button" class="mvs ${c.time===AB_T?'cur':fits?'':'full'}" onclick="AB_T='${c.time}';abSlots(true)">${c.private?'🔒 ':''}<b>${esc(c.time)}</b><span>${c.cap===0?'Closed':open?open+' open':'Full'}</span></button>`}).join('');
 }
-function abSearch(){clearTimeout(abT);const q=$('abFind').value.trim();if(q.length<2){$('abFound').innerHTML='';return}
-  $('abFound').innerHTML='<p class="muted" style="font-size:14px;margin:6px 0">Searching…</p>';
-  abT=setTimeout(async()=>{let L;try{L=await call('findGuests',q)}catch(e){$('abFound').innerHTML=`<p class="muted">${esc(e.message||e)}</p>`;return}
-    if($('abFind').value.trim()!==q)return;window.AB_L=L;
-    $('abFound').innerHTML=L.length?L.map((g,i)=>`<button type="button" class="ev" style="padding:8px 4px" onclick="abPick(${i})"><i>👤</i><span><b>${esc(g.name)}</b>${g.owes?' <span class="tag LATE">OWES $'+g.owes+'</span>':''}<small>${esc(fmtPhone(g.phone))} · ${esc(g.email)}${g.visits?' · '+g.visits+' visit'+(g.visits>1?'s':''):''}${g.hasCard?' · 💳 card on file':''}</small></span></button>`).join('')
-      :'<p class="muted" style="font-size:14px;margin:6px 0">No past guest found. Fill in their details below.</p>'},350)}
+/* past guests: the whole list is downloaded once (in the background) and searched right here, so results show as you type */
+let GIDX=null,GIDX_AT=0,GIDX_P=null;
+function loadGuestIndex(force){
+  if(!force&&GIDX&&Date.now()-GIDX_AT<15*6e4)return Promise.resolve(GIDX);
+  if(GIDX_P)return GIDX_P;
+  GIDX_P=call('guestIndex').then(L=>{GIDX=L.map(g=>({name:g[0]||'',phone:g[1]||'',email:g[2]||'',last:g[3]||'',visits:g[4]||0,owes:g[5]||0,hasCard:!!g[6],
+    hay:((g[0]||'')+' '+(g[2]||'')).toLowerCase(),dig:String(g[1]||'').replace(/\D/g,''),key:String(g[1]||'').replace(/\D/g,'').slice(-10)||String(g[2]||'').toLowerCase()}));GIDX_AT=Date.now();GIDX_P=null;return GIDX})
+    .catch(e=>{GIDX_P=null;throw e});
+  return GIDX_P;
+}
+function searchGuests(q){q=q.toLowerCase();const words=q.split(/\s+/).filter(Boolean),digits=q.replace(/\D/g,'');
+  return GIDX.filter(g=>words.every(w=>g.hay.includes(w))||(digits.length>=4&&g.dig.includes(digits)))
+    .sort((a,b)=>b.last.localeCompare(a.last)||a.name.localeCompare(b.name)).slice(0,8)}
+async function abSearch(){const q=$('abFind').value.trim();if(q.length<2){$('abFound').innerHTML='';return}
+  let L;
+  if(GIDX)L=searchGuests(q);
+  else{$('abFound').innerHTML='<p class="muted" style="font-size:14px;margin:6px 0">Loading the guest list (only the first time)…</p>';
+    try{await loadGuestIndex()}catch(e){$('abFound').innerHTML=`<p class="muted">${esc(e.message||e)}</p>`;return}
+    if($('abFind').value.trim()!==q)return;L=searchGuests(q)}
+  window.AB_L=L;
+  $('abFound').innerHTML=L.length?L.map((g,i)=>`<button type="button" class="ev" style="padding:8px 4px" onclick="abPick(${i})"><i>👤</i><span><b>${esc(g.name)}</b>${g.owes?' <span class="tag LATE">OWES $'+g.owes+'</span>':''}<small>${esc(fmtPhone(g.phone))} · ${esc(g.email)}${g.visits?' · '+g.visits+' visit'+(g.visits>1?'s':''):''}${g.hasCard?' · 💳 card on file':''}</small></span></button>`).join('')
+      :'<p class="muted" style="font-size:14px;margin:6px 0">No past guest found. Fill in their details below.</p>'}
 async function abPick(i){const g=window.AB_L[i];AB_G=g;g.cards=[];$('abFind').value='';$('abFound').innerHTML='';
-  $('abName').value=g.name;$('abEmail').value=g.email;
+  $('abName').value=g.name;$('abEmail').value=g.email;abFirst();
   const intl=/^\+/.test(g.phone)&&!/^\+1/.test(g.phone);$('abCC').value='0';$('abPhone').value=intl?g.phone:fmtPhone(g.phone);
   if(g.owes)toast(`${g.name} still owes $${g.owes} from a past no-show or late cancel.`,6000);abMode();
   if(g.hasCard){try{g.cards=await call('guestCards',g.phone,g.email)}catch(e){g.cards=[]}if(AB_G===g){$('abCardRow').dataset.k='';abMode()}}}
@@ -994,6 +1042,9 @@ async function saveAddBooking(force){
   if(d.name.split(/\s+/).length<2)return toast('Add their first and last name');
   if(!d.phone)return toast('Check their mobile number');
   if(!/^\S+@\S+\.\S+$/.test(d.email))return toast('Add their email');
+  const nb=[...$('abNames').querySelectorAll('input')],miss=nb.filter(i=>!i.value.trim());
+  nb.forEach(i=>i.style.borderColor=i.value.trim()?'':'#c40056');
+  if(miss.length){miss[0].focus();return toast(`Add the first name of every artist (${miss.length} missing)`,4000)}
   const btn=$('abSave'),label=btn.textContent;btn.disabled=true;btn.textContent='Adding…';
   try{const r=await call('staffBook',d);
     if(r.owes){btn.disabled=false;btn.textContent=label;
@@ -1584,7 +1635,7 @@ async function setCap(time,n){
 }
 
 /* ---------- init ---------- */
-$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();syncDates();
+$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();syncDates();setTimeout(()=>loadGuestIndex().catch(()=>{}),4000);try{['800','700','500'].forEach(w=>document.fonts.load(`${w} 40px Poppins`))}catch(e){}
 
 /* ---------- 🔔 new bookings bell ---------- */
 let ACT=[],ACT_SEEN='',ACT_FIRST=true,AUDIO=null;
