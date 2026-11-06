@@ -633,7 +633,7 @@ function storageLine(p){
   return `<div class="st sto"><div style="flex:1"><div class="stt">${s.pickedUp?'<span class="done">✓ All picked up</span>':`<b>${left.length} piece${left.length===1?'':'s'} on the shelf</b>${left.length<items.length?` <span class="muted">(${items.length-left.length} already picked up)</span>`:''}`}</div>
       ${items.map((i,k)=>`<div class="pcs${i.picked?' gone':''}"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}${i.picked?` <span class="muted">· picked up ${exactTime(i.picked)}</span>`:''}</span></div>`).join('')}
       <span class="muted" style="font-size:13px">${sent?'Guest notified by '+sent:s.notifyAt?'Guest will be notified '+exactTime(s.notifyAt).replace(/, (\d)/,' at $1'):'Guest not notified yet'}</span></div>
-    <div style="display:flex;gap:6px;flex-direction:column">${s.pickedUp?'':`<button class="btn main small" style="width:auto" onclick="pickedUp('${id}')">Picked up</button>`}
+    <div style="display:flex;gap:6px;flex-direction:column">${s.pickedUp?'':`<button class="btn main small" style="width:auto" onclick="pickedUp('${id}')">Mark picked up</button>`}
       ${s.pickedUp?'':`<button class="btn ghost small" onclick="printTicket('${id}')">🧾 Ticket</button>`}
       <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
 }
@@ -909,6 +909,14 @@ let fh;function debFind(){clearTimeout(fh);fh=setTimeout(find,300)}
 async function find(){const q=$('q').value.trim();if(q.length<2){$('findList').innerHTML='';return}
   try{const list=await call('search',q);if($('q').value.trim()!==q)return;renderPickup(list)}catch(e){$('findList').innerHTML='<p class="muted">Could not search.</p>'}}
 /* Pickup tab: only what matters at the counter. Pieces waiting first, then not stored yet, then already picked up. */
+/* Pickup: what happened to the pieces that aren't on the shelf, so the concierge never has to guess */
+function otherPieces(p){
+  const rows=[];
+  p.forEach(g=>{const d=(g.details||[]).filter(x=>x.where!=='shelf');
+    d.forEach(x=>rows.push(`<div class="pcs"><span class="loc" style="background:${x.where==='ship'?'#0e7c86':'#6b6878'}">${x.where==='ship'?'SHIP':'HOME'}</span><span><b>${esc(x.project||'Project')}</b> <span class="muted">· ${esc(g.name)} · ${x.where==='ship'?'shipping':'took it home'}</span></span></div>`));
+    if(!(g.details||[]).length)rows.push(`<div class="pcs"><span class="loc" style="background:#c9c5d6;color:#1d1b26">?</span><span><b>${esc(g.name)}</b> <span class="muted">· no project info added</span></span></div>`)});
+  return rows.length?`<div class="st" style="display:block"><div class="stt"><b>Not on the shelf</b></div>${rows.join('')}</div>`:'';
+}
 function renderPickup(list){
   cache={};list.forEach(g=>cache[g.row]=g);
   const ps=groupParties(list);ps.forEach(p=>parties[p[0].partyId]=p);
@@ -917,6 +925,7 @@ function renderPickup(list){
   $('findList').innerHTML=ps.length?ps.map(p=>{const f=p[0],s=f.storage;
     return `<div class="party pkp"><div class="ph"><div><b style="font-size:20px">${esc(f.reservation)}</b><br><span>Class ${esc(niceDate(f.date))} · ${esc(f.time)} · ${p.length} guest${p.length>1?'s':''}</span></div></div>
       ${s?storageLine(p):`<div class="st"><span class="muted">Not stored yet. Pieces from this class are still drying or haven't been shelved.</span></div>`}
+      ${otherPieces(p)}
       <div id="sf_${f.partyId}"></div></div>`}).join(''):'<p class="muted">No checked-in party found with that name.</p>';
 }
 
