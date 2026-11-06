@@ -76,6 +76,7 @@
   .timer{background:#fff0f8;color:#b8006f;border-radius:12px;padding:10px 14px;font-weight:700;font-size:15px;margin:0 0 12px;text-align:center}
   .timer.out{background:#fff5e6;color:#8a5a00}
   .closed{padding:14px;border-radius:14px;background:#fff5e6;font-size:14px}
+  input.bad{border-color:#c40056!important;background:#fff0f5}
 </style>
 </head>
 <body>
@@ -302,8 +303,8 @@ function renderDays(){
 function renderNames(){
   const box=$('guestNames');const have=[...box.querySelectorAll('input')].map(i=>i.value);
   if(size<2){box.innerHTML='';return}
-  box.innerHTML=`<label class="l">Who's creating with you? <span class="muted">(optional, first names)</span></label>
-    <div class="row">${Array.from({length:size-1},(_,i)=>`<input placeholder="Guest ${i+2}" value="${esc(have[i]||'')}" autocapitalize="words">`).join('')}</div>`;
+  box.innerHTML=`<label class="l">Who's creating with you? <span class="muted">(first names)</span></label>
+    <div class="row">${Array.from({length:size-1},(_,i)=>`<input placeholder="Guest ${i+2} first name" value="${esc(have[i]||'')}" autocapitalize="words" required oninput="this.classList.remove('bad')">`).join('')}</div>`;
 }
 $('toPay').onclick=async()=>{
   $('err1').textContent='';
@@ -312,6 +313,8 @@ $('toPay').onclick=async()=>{
   if(!first||!last)return $('err1').textContent='Please add your first and last name.';
   if(!phone)return $('err1').textContent='Please check your mobile number. Your confirmation is texted there.';
   if(!/^\S+@\S+\.\S+$/.test(email))return $('err1').textContent='Please check your email.';
+  const missing=[...$('guestNames').querySelectorAll('input')].filter(i=>!i.value.trim());
+  if(missing.length){missing.forEach(i=>i.classList.add('bad'));missing[0].focus();return $('err1').textContent=`Please add the first name of everyone creating with you (${missing.length} missing).`}
   const fee=AV.feePerGuest,h=AV.lateHours;
   $('summary').innerHTML=`<div class="sum"><span>Day</span><b>${esc(niceDate(sel.date))}</b></div>
     <div class="sum"><span>Time</span><b>${esc(sel.time)}</b></div><div class="sum"><span>Party</span><b>${size} guest${size>1?'s':''}</b></div>
@@ -412,7 +415,13 @@ function renderMine(){
     <div class="sum"><span>Day</span><b>${esc(niceDate(b.date))}</b></div><div class="sum"><span>Time</span><b>${esc(b.time)}</b></div>
     <div class="sum"><span>Party</span><b>${b.size} guest${b.size>1?'s':''}</b></div>
     <div class="sum"><span>Status</span><b>${b.status==='Confirmed'?(b.past?'Done':'Confirmed ✓'):esc(b.status==='Late cancel'?'Cancelled':b.status)}</b></div>
-    ${active?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> You can still reschedule, change your party size or cancel here. A late-change fee of $${fee} per guest applies and goes on the card you saved. We'll show you the exact amount before anything is final.</div>`
+    ${b.deposit?`<div class="sum"><span>${b.fareharbor?'Deposit paid':'Credit'}</span><b>$${b.deposit} · comes off your bill</b></div>`:''}
+    ${active&&b.depositOnly?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> If you cancel or reschedule now, your $${b.deposit} deposit can't be carried over. Nothing else is charged.</div>`
+      :`<div class="policy"><b>Free changes anytime before ${esc(deadlineText(b))}.</b> Reschedule and your $${b.deposit} deposit moves with you. Cancel before then and we'll save it as credit for your next visit. After that, cancelling or not showing up means the deposit can't be carried over.</div>`)
+      +`<button class="go" id="mMove">Reschedule</button>
+       <button class="ghost" id="mSize">Change party size</button>
+       <button class="ghost" id="mCancel">Cancel my booking</button>`:''}
+    ${active&&!b.depositOnly?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> You can still reschedule, change your party size or cancel here. A late-change fee of $${fee} per guest applies and goes on the card you saved. We'll show you the exact amount before anything is final.</div>`
       :`<div class="policy"><b>Free changes anytime before ${esc(deadlineText(b))}.</b> After that, rescheduling, removing guests, cancelling or not showing up is $${fee} per guest.</div>`)
       +`<button class="go" id="mMove">Reschedule</button>
        <button class="ghost" id="mSize">Change party size</button>
@@ -422,7 +431,8 @@ function renderMine(){
   $('mMove').onclick=()=>{move={date:null,time:null};renderMove();open('moveCard')};
   $('mSize').onclick=()=>{newSize=b.size;renderSize();open('mSizeCard')};
   $('mCancel').onclick=async()=>{
-    if(!confirm(b.late?`Cancel your booking?\n\nYour class is less than ${h} hours away, so a late-cancel fee of $${b.fee} ($${fee} x ${b.size} guest${b.size>1?'s':''}) will be charged to the card you saved.`:'Cancel your booking? Nothing will be charged.'))return;
+    if(b.depositOnly){if(!confirm(b.late?`Cancel your booking?\n\nYour class is less than ${h} hours away, so your $${b.deposit} deposit can't be carried over. Nothing else is charged.`:`Cancel your booking?\n\nYour $${b.deposit} deposit will be saved as credit for your next visit.`))return}
+    else if(!confirm(b.late?`Cancel your booking?\n\nYour class is less than ${h} hours away, so a late-cancel fee of $${b.fee} ($${fee} x ${b.size} guest${b.size>1?'s':''}) will be charged to the card you saved.`:'Cancel your booking? Nothing will be charged.'))return;
     try{mine=await call('cancelMyBooking',q.get('b'),q.get('t'),!!b.late);['moveCard','mSizeCard'].forEach(c=>$(c).classList.add('hide'));renderMine()}catch(e){alert(e.message)}
   };
 }
@@ -430,14 +440,14 @@ let newSize=1;
 function renderSize(){
   const b=mine,fee=b.feePerGuest||AV.feePerGuest,less=b.size-newSize;
   $('sNum').textContent=newSize;$('sMinus').disabled=newSize<=1;$('sPlus').disabled=newSize>=20;
-  $('sNote').textContent=newSize===b.size?'Your party is '+b.size+' now.':less>0&&b.late?`Removing ${less} guest${less>1?'s':''}: late-change fee of $${less*fee}.`:less>0?`Removing ${less} guest${less>1?'s':''}. No charge.`:`Adding ${-less} guest${-less>1?'s':''}, if there's room. No charge.`;
+  $('sNote').textContent=newSize===b.size?'Your party is '+b.size+' now.':less>0&&b.late&&!b.depositOnly?`Removing ${less} guest${less>1?'s':''}: late-change fee of $${less*fee}.`:less>0?`Removing ${less} guest${less>1?'s':''}. No charge.`:`Adding ${-less} guest${-less>1?'s':''}, if there's room. No charge.`;
   $('sSave').disabled=newSize===b.size;$('sErr').textContent='';
 }
 $('sMinus').onclick=()=>{if(newSize>1){newSize--;renderSize()}};
 $('sPlus').onclick=()=>{if(newSize<20){newSize++;renderSize()}};
 $('sSave').onclick=async()=>{
   const b=mine,q=new URLSearchParams(location.search),fee=b.feePerGuest||AV.feePerGuest,less=b.size-newSize,late=b.late&&less>0;
-  if(late&&!confirm(`Change your party to ${newSize}?\n\nYour class is less than ${AV.lateHours} hours away, so a late-change fee of $${less*fee} ($${fee} x ${less} guest${less>1?'s':''}) will be charged to the card you saved.`))return;
+  if(late&&!b.depositOnly&&!confirm(`Change your party to ${newSize}?\n\nYour class is less than ${AV.lateHours} hours away, so a late-change fee of $${less*fee} ($${fee} x ${less} guest${less>1?'s':''}) will be charged to the card you saved.`))return;
   $('sSave').disabled=true;
   try{mine=await call('changeMySize',q.get('b'),q.get('t'),newSize,late);$('mSizeCard').classList.add('hide');renderMine();window.scrollTo(0,0);loadAvailability()}
   catch(e){$('sErr').textContent=e.message;$('sSave').disabled=false}
@@ -501,7 +511,8 @@ function renderMove(){
 }
 $('mSave').onclick=async()=>{
   const q=new URLSearchParams(location.search),b=mine,fee=b.feePerGuest||AV.feePerGuest;$('mErr').textContent='';
-  if(b.late&&!confirm(`Reschedule to ${niceDate(move.date)} at ${move.time}?
+  if(b.late&&b.depositOnly&&!confirm(`Reschedule to ${niceDate(move.date)} at ${move.time}?\n\nYour current class is less than ${AV.lateHours} hours away, so your $${b.deposit} deposit can't be carried over to the new time.`))return;
+  if(b.late&&!b.depositOnly&&!confirm(`Reschedule to ${niceDate(move.date)} at ${move.time}?
 
 Your current class is less than ${AV.lateHours} hours away, so a late-change fee of $${b.fee} ($${fee} x ${b.size} guest${b.size>1?'s':''}) will be charged to the card you saved.`))return;
   $('mSave').disabled=true;
