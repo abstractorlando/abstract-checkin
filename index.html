@@ -1253,7 +1253,6 @@ function uncheckedDecide(i){
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:420px"><b style="font-size:20px">${esc(f.reservation)}</b>
     <p class="muted" style="margin:4px 0 14px">${niceDate(f.date)} · ${esc(f.time)} · party of ${f.size}<br>Nobody checked this party in.</p>
     <button class="btn main" onclick="ucNoShow(${i})">They didn't come: no-show</button>
-    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="ucCame(${i})">They came: check them in</button>
     <button class="tl" style="width:100%;margin-top:10px;padding:10px" onclick="$('ucModal').remove()">Go back</button></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
 }
