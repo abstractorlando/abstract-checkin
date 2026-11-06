@@ -788,8 +788,7 @@ async function saveStore(id){
   const notify=$('nt_'+id).checked,p=parties[id][0];
   if(notify&&!p.email&&!p.phone){toast('No phone or email on this party. Tap edit next to the contact.');return}
   try{const r=await call('storeParty',{partyId:id,items,notify});
-    toast(r.notifyAt?`Saved ✓ · the guest will be told ${exactTime(r.notifyAt).replace(/, (\d)/,' at $1')}`:notify?`Saved ✓ · text: ${r.text} · email: ${r.email}`:'Saved ✓',5000);refreshView();
-    if(confirm('Print a pickup ticket for these pieces?'))printTicket(id)}
+    toast(r.notifyAt?`Saved ✓ · the guest will be told ${exactTime(r.notifyAt).replace(/, (\d)/,' at $1')}`:notify?`Saved ✓ · text: ${r.text} · email: ${r.email}`:'Saved ✓',5000);refreshView()}
   catch(e){toast('Could not save: '+(e.message||e),5000)}
 }
 /* ---- pickup: all pieces, or only the ones they're taking today ---- */
