@@ -77,7 +77,7 @@
   .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
   .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff}
   .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#0b7a3e;font-size:10px;vertical-align:middle}
-  .dep{display:block;font-size:13px;font-weight:700;color:#0b7a3e}
+  .dep{display:inline-block;margin-top:4px;font-size:13px;font-weight:800;color:#fff;background:#0b7a3e;border-radius:8px;padding:3px 9px}
   .tools{display:flex;gap:6px;margin:4px 0 2px 4px;flex-wrap:wrap}.tl{border:0;background:none;color:var(--muted);font:600 13px Poppins;padding:4px 8px;border-radius:8px;cursor:pointer}.tl:hover{background:var(--soft);color:var(--ink)}
   .mv{display:flex;gap:8px;margin:6px 0 4px;flex-wrap:wrap}.mv input,.mv select{flex:1;min-width:140px;min-height:44px;padding:8px 10px;font-size:15px}
   .arrw{margin-bottom:8px}.arrw .arr{margin-bottom:0}.feebtn{margin:6px 0 4px;border-color:#c40056;color:#c40056}.feerow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0 4px 4px}.feerow .feebtn{margin:0}.feebtn.waive{border-color:var(--line);color:var(--muted)}.feeln{font-size:13px;color:#1a8a3a;font-weight:600;margin:4px 0 0 4px}
@@ -1080,7 +1080,7 @@ function renderArrivals(){
     const head='';
     const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FH</span>':b.source==='Staff'?' <span class="tag WEB">STAFF</span>':'';
     const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?' <span class="tag WINE">🍾 WINE PAID</span>':/refunded/.test(b.addons)?'':' <span class="tag WINE">🍾 WINE · collect $30</span>';
-    const dep=b.source==='FareHarbor'?`<span class="dep">${b.deposit?'$'+money(b.deposit)+' deposit paid · take off bill':'FareHarbor booking · check deposit'}</span>`:'';
+    const dep=b.deposit?`<span class="dep">CREDIT $${money(b.deposit)} · add as "Credit" discount in Toast</span>`:b.source==='FareHarbor'?`<span class="dep">FareHarbor booking · no deposit</span>`:'';
     const started=dateTime(b.date,b.time)+60*6e4<Date.now();
     const st=b.partyId?(part(b)?` <span class="tag NC">${b.checked} OF ${b.size} HERE</span>`:' <span class="tag OK">CHECKED IN</span>')+(b.nsGuests?` <span class="tag GN">${b.nsGuests} NO-SHOW</span>`:''):b.status==='Confirmed'?(started?' <span class="tag NC">NOT CHECKED IN</span>':searching?' <span class="tag BK">BOOKED</span>':''):b.status==='Needs card'?(cardLate(b)?' <span class="tag LATE">NO CARD · SPOT RELEASED</span>':' <span class="tag WINE">WAITING FOR CARD</span>'):b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
     const fee=FEE_PER_GUEST*b.size;
@@ -1292,7 +1292,7 @@ function viewBooking(row){
   const stCls=b.partyId?'ok':b.status==='Confirmed'?'bkd':needCard?'wait':'off';
   const [cxWho,cxAt]=(b.cancelBy||'').split('|');
   const cards=card('Booking',F('Cancelled',/cancel/i.test(b.status)?(cxWho?'By '+esc(cxWho==='Guest online'?'the guest online':cxWho)+(cxAt?' on '+exactTime(cxAt).replace(/, (\d)/,' at $1'):''):'Yes (before we tracked who and when)'):'')+F('Artists',b.guests?esc(b.guests):'')+F('Booked',`${src}${b.created&&exactTime(b.created)?' · '+exactTime(b.created):''}`)+F('Confirmation',b.bookingId?esc(b.bookingId):'')+F('Add-on',wine)
-      +F('Deposit',b.source==='FareHarbor'?(b.deposit?'$'+money(b.deposit)+' paid · take off the bill':'None'):''))
+      +F('Credit',b.deposit?`<b>$${money(b.deposit)}</b> · add it as a "Credit" discount on their Toast check${b.source==='FareHarbor'?' (FareHarbor deposit)':' (from a cancelled booking)'}`:b.source==='FareHarbor'?'No deposit':''))
     +card('Contact',F('Phone',ph)+F('Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'))
     +card('Notes for this booking',F('From the guest',b.note?`“${esc(b.note)}”`:'')+F('Team note',b.staffNote?'📝 '+esc(b.staffNote):''))
     +card('Payment',F('Card',b.card?'Saved for no-show protection':needCard?'Not saved yet':'')+F('Late change fees',b.guestFee?b.guestFee.split(' | ').map(f=>esc(f.replace(/ · pi_\w+/,''))).join('<br>'):''))
@@ -1385,7 +1385,7 @@ function pick(row){
   const b=bookingByRow(row);if(!b)return;
   if(b.date!==$('dt').value){$('dt').value=b.date;fillTimes($('tm'),b.date,b.time)}
   if(b.partyId){openParty(b.partyId,b.date);return}
-  if(b.source==='FareHarbor')toast(b.deposit?`FareHarbor booking · $${money(b.deposit)} deposit already paid`:'FareHarbor booking',4000);
+  if(b.deposit)toast(`CREDIT $${money(b.deposit)}: add it as a "Credit" discount on their Toast check`,6000);
   showForm(true);picked=b;$('pickBar').innerHTML=`<span>Checking in ${esc(b.reservation)} · ${esc(b.time)}</span><button class="tl" onclick="stopPick()">Not now ✕</button>`;$('pickBar').classList.remove('hide');$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
   if(![...$('tm').options].some(o=>o.value===b.time)){const o=document.createElement('option');o.textContent=b.time;$('tm').appendChild(o)}
   $('tm').value=b.time;
