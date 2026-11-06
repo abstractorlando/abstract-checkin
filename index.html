@@ -427,7 +427,20 @@ function call(fn,...args){
 /* ---------- staff PIN ---------- */
 let PIN='';try{PIN=localStorage.getItem('abs_pin')||''}catch(e){}
 let asking=false;
-function askPin(wrong){if(asking)return;asking=true;const v=prompt((wrong?'That PIN didn\'t match. ':'')+'Your staff PIN (same as your Toast code)');asking=false;if(v===null)return;PIN=v.trim();try{localStorage.setItem('abs_pin',PIN)}catch(e){};loadMe();loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()}
+/* PIN box: shows dots, not the numbers, so nobody nearby can read it */
+function askPin(wrong){if(asking)return;asking=true;
+  const m=document.createElement('div');m.className='modal';m.id='pinModal';
+  m.innerHTML=`<div class="mbox" style="max-width:340px"><div style="font-size:40px">🔒</div><h2 style="margin:6px 0 4px">Staff PIN</h2>
+    <p class="muted" style="margin:0 0 14px">${wrong?'<b style="color:#c40056">That PIN didn\'t match. Try again.</b><br>':''}Same as your Toast code</p>
+    <form id="pinForm" autocomplete="off"><input id="pinIn" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="8" style="text-align:center;font-size:28px;letter-spacing:10px">
+    <button class="btn main" style="margin-top:12px">Sign in</button></form>
+    <button class="btn ghost" style="width:100%;margin-top:10px" type="button" id="pinCancel">Cancel</button></div>`;
+  document.body.appendChild(m);setTimeout(()=>$('pinIn').focus(),50);
+  const close=()=>{m.remove();asking=false};
+  $('pinCancel').onclick=close;
+  $('pinForm').onsubmit=e=>{e.preventDefault();const v=$('pinIn').value.trim();if(!v){$('pinIn').focus();return}
+    close();PIN=v;try{localStorage.setItem('abs_pin',PIN)}catch(e){};loadMe();loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()};
+}
 /* who's signed in on this device: every change is saved under their name */
 let ME=null;
 async function loadMe(){if(!PIN)return;try{ME=await call('whoAmI')}catch(e){return}
