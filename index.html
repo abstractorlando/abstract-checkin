@@ -49,6 +49,9 @@
   label.l{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:0 0 6px}
   input,select{width:100%;font:500 17px Poppins;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);min-height:48px}
   input:focus,select:focus{outline:none;border-color:var(--teal)}
+  .dwrap{position:relative;display:block;flex:1;min-width:0}.dwrap input{color:transparent;-webkit-text-fill-color:transparent}
+  .dwrap .dlbl{position:absolute;left:16px;right:44px;top:50%;transform:translateY(-50%);pointer-events:none;font:600 17px Poppins;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dlbl .ds{display:none}
+  @media(max-width:600px){.dwrap .dlbl{left:0;right:0;text-align:center;font-size:15px}.dwrap input::-webkit-calendar-picker-indicator{opacity:0}.dlbl .dl{display:none}.dlbl .ds{display:inline}}
   .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   .gl{display:flex;flex-direction:column;gap:10px;margin-top:6px}
   .g{display:flex;gap:8px;align-items:center}
@@ -253,7 +256,7 @@
       </div>
       <div class="daynav">
         <button type="button" class="btn ghost small" onclick="shiftDay(-1)" aria-label="Previous day">‹</button>
-        <input id="arrDay" type="date" onchange="SLOT='';setArrDay(this.value)">
+        <span class="dwrap"><input id="arrDay" type="date" onchange="SLOT='';setArrDay(this.value)"><span class="dlbl" id="arrDayLbl"></span></span>
         <button type="button" class="btn ghost small" onclick="shiftDay(1)" aria-label="Next day">›</button>
         <button type="button" class="btn ghost small today" onclick="setArrDay(today())">Today</button>
       </div>
@@ -291,7 +294,7 @@
   <!-- TODAY -->
   <section id="vToday" class="hide">
     <div class="card" style="display:flex;gap:10px;align-items:end">
-      <div style="flex:1"><label class="l" for="dayPick">Date</label><input id="dayPick" type="date" onchange="$('ciQ').value='';loadDay()"></div>
+      <div style="flex:1"><label class="l" for="dayPick">Date</label><span class="dwrap"><input id="dayPick" type="date" onchange="$('ciQ').value='';syncDates();loadDay()"><span class="dlbl" id="dayPickLbl"></span></span></div>
       <button class="btn ghost small" onclick="loadDay()">Refresh</button>
     </div>
     <div class="card"><label class="l" for="ciQ">Find a checked-in party (any day)</label>
@@ -888,7 +891,10 @@ function renderPickup(list){
 
 /* ---------- Toast bookings: arriving today ---------- */
 let arrivals=[],picked=null;
-function setArrDay(d){if(!d)return;$('dt').value=d;$('arrDay').value=d;fillTimes($('tm'),d,$('tm').value);
+function dayLabel(d){if(!d)return '';const [y,m,dd]=d.split('-').map(Number);return new Date(y,m-1,dd).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric',year:'numeric'})}
+function dayShort(d){if(!d)return '';const [y,m,dd]=d.split('-').map(Number);return new Date(y,m-1,dd).toLocaleDateString('en-US',{weekday:'short'})+' '+String(m).padStart(2,'0')+'/'+String(dd).padStart(2,'0')+'/'+String(y).slice(2)}
+function syncDates(){['arrDay','dayPick'].forEach(id=>{const l=$(id+'Lbl'),v=$(id).value;if(l)l.innerHTML='<span class="dl">'+dayLabel(v)+'</span><span class="ds">'+dayShort(v)+'</span>'})}
+function setArrDay(d){if(!d)return;$('dt').value=d;$('arrDay').value=d;syncDates();fillTimes($('tm'),d,$('tm').value);
   $('arrTitle').textContent=d===today()?'Arriving today':'Arriving '+niceDate(d);picked=null;arrivals=[];loadArrivals()}
 function shiftDay(n){SLOT='';const [y,m,dd]=$('arrDay').value.split('-').map(Number);const x=new Date(y,m-1,dd+n);
   setArrDay(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'))}
@@ -1273,7 +1279,7 @@ async function chargeFee(id,kind,full,amt){
   catch(e){toast('Not charged: '+(e.message||e),6000)}
 }
 async function openParty(id,date){
-  $('dayPick').value=date;show('today');await loadDay();
+  $('dayPick').value=date;syncDates();show('today');await loadDay();
   const el=$('p_'+id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.boxShadow='0 0 0 4px var(--teal)';setTimeout(()=>el.style.boxShadow='',2500)}
 }
 function closeBk(){const m=$('bkModal');if(m)m.remove()}
@@ -1578,7 +1584,7 @@ async function setCap(time,n){
 }
 
 /* ---------- init ---------- */
-$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();
+$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();syncDates();
 
 /* ---------- 🔔 new bookings bell ---------- */
 let ACT=[],ACT_SEEN='',ACT_FIRST=true,AUDIO=null;
