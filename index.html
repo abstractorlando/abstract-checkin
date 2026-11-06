@@ -924,7 +924,7 @@ function renderPickup(list){
   ps.sort((a,b)=>rank(a)-rank(b)||String(b[0].date).localeCompare(String(a[0].date)));
   $('findList').innerHTML=ps.length?ps.map(p=>{const f=p[0],s=f.storage;
     return `<div class="party pkp"><div class="ph"><div><b style="font-size:20px">${esc(f.reservation)}</b><br><span>Class ${esc(niceDate(f.date))} · ${esc(f.time)} · ${p.length} guest${p.length>1?'s':''}</span></div></div>
-      ${s?storageLine(p):`<div class="st"><span class="muted">Not stored yet. Pieces from this class are still drying or haven't been shelved.</span></div>`}
+      ${s?storageLine(p):`<div class="st"><span class="muted">Not stored yet. Pieces from this class are still drying or haven't been stored.</span></div>`}
       ${otherPieces(p)}
       <div id="sf_${f.partyId}"></div></div>`}).join(''):'<p class="muted">No checked-in party found with that name.</p>';
 }
