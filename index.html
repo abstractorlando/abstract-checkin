@@ -645,7 +645,8 @@ function storageLine(p){
   const sent=[s.emailSent?'email':'',s.textSent?'text':''].filter(Boolean).join(' + '),items=s.items||[],left=items.filter(i=>!i.picked);
   return `<div class="st sto"><div style="flex:1"><div class="stt">${s.pickedUp?'<span class="done">✓ All picked up</span>':`<b>${left.length} piece${left.length===1?'':'s'} on the shelf</b>${left.length<items.length?` <span class="muted">(${items.length-left.length} already picked up)</span>`:''}`}</div>
       ${items.map((i,k)=>`<div class="pcs${i.picked?' gone':''}"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}${i.picked?` <span class="muted">· picked up ${exactTime(i.picked)}</span>`:''}</span></div>`).join('')}
-      <span class="muted" style="font-size:13px">${sent?'Guest notified by '+sent:s.notifyAt?'Guest will be notified '+exactTime(s.notifyAt).replace(/, (\d)/,' at $1'):'Guest not notified yet'}</span></div>
+      <span class="muted" style="font-size:13px">${sent?'Guest notified by '+sent:s.notifyAt?'Guest will be notified '+exactTime(s.notifyAt).replace(/, (\d)/,' at $1'):'Guest not notified yet'}${s.reminders?` · ${s.reminders} reminder${s.reminders>1?'s':''} sent`:''}</span>
+      ${s.pickupBy&&!s.pickedUp?`<div style="font-size:14px;margin-top:4px;color:${s.pickupBy<today()?'#c40056':'inherit'}"><b>Pick up by ${esc(niceDate(s.pickupBy))}</b>${s.pickupBy<today()?' · past the deadline':''}</div>`:''}</div>
     <div style="display:flex;gap:6px;flex-direction:column">${s.pickedUp?'':`<button class="btn main small" style="width:auto" onclick="pickedUp('${id}')">Mark picked up</button>`}
       ${s.pickedUp?'':`<button class="btn ghost small" onclick="printTicket('${id}')">🧾 Ticket</button>`}
       <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
