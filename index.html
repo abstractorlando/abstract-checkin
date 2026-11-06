@@ -263,7 +263,7 @@
         <button type="button" class="btn ghost small" onclick="shiftDay(1)" aria-label="Next day">›</button>
         <button type="button" class="btn ghost small today" onclick="setArrDay(today())">Today</button>
       </div>
-      <input id="bkFilter" placeholder="Search bookings: name, phone, email, confirmation # or a word from their notes" oninput="onSearch()" autocomplete="off" type="search">
+      <input id="bkFilter" placeholder="🔍 Search bookings" title="Name, phone, email, confirmation # or a word from their notes" oninput="onSearch()" autocomplete="off" type="search">
       <div class="slots" id="slotChips"></div>
       <div id="arrivals" style="margin-top:10px;max-height:330px;overflow:auto"></div>
       <div id="daySum"></div>
@@ -301,7 +301,7 @@
       <button class="btn ghost small" onclick="loadDay()">Refresh</button>
     </div>
     <div class="card"><label class="l" for="ciQ">Find a checked-in party (any day)</label>
-      <input id="ciQ" type="search" placeholder="Reservation or guest name, phone or email" oninput="debCi()" autocomplete="off"></div>
+      <input id="ciQ" type="search" placeholder="🔍 Search check-ins" title="Reservation or guest name, phone or email" oninput="debCi()" autocomplete="off"></div>
     <div id="newBar" class="card hide" style="border:2px solid var(--mag);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
       <b id="newCount" style="font-size:17px"></b>
       <button class="btn main" style="width:auto;font-size:16px" onclick="printNew()">Print new labels</button>
@@ -941,7 +941,7 @@ function openAddBooking(date,time){
     <label class="l" style="margin-top:10px">Time</label><input type="hidden" id="abTime" value="${time||''}"><div id="abSlots" class="abs"><p class="muted">Loading open spots…</p></div>
     <label class="chk" id="abWalkRow" style="margin-top:12px"><input type="checkbox" id="abWalk" checked onchange="abMode()"> They're here now (walk-in, no card needed)</label>
     <label class="l" style="margin-top:12px">Returning guest? <span class="muted">(optional)</span></label>
-    <input id="abFind" type="search" placeholder="Find them by name, phone or email" autocomplete="off" oninput="abSearch()">
+    <input id="abFind" type="search" placeholder="🔍 Name, phone or email" autocomplete="off" oninput="abSearch()">
     <div id="abFound"></div>
     <label class="l" style="margin-top:10px">Name</label><input id="abName" placeholder="First and last name" autocapitalize="words" oninput="abFirst()">
     <label class="l" style="margin-top:10px">Mobile</label>
