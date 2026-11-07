@@ -66,7 +66,7 @@
   #printArea{display:none}
   @media print{body>*:not(#printArea){display:none!important}html,body{margin:0!important;padding:0!important;background:#fff!important;min-height:0!important;height:auto!important;width:auto!important;max-width:none!important;display:block!important}
     #printArea{display:block!important}}
-  .dwrap{position:relative;display:block;flex:1;min-width:0}.dwrap input{color:transparent;-webkit-text-fill-color:transparent}
+  .dwrap{position:relative;display:block;flex:1;min-width:0}.dwrap input{color:transparent;-webkit-text-fill-color:transparent;display:block;width:100%;min-width:100%;-webkit-appearance:none;appearance:none;min-height:50px;margin:0}
   .dwrap .dlbl{position:absolute;left:16px;right:44px;top:50%;transform:translateY(-50%);pointer-events:none;font:600 17px Poppins;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dlbl .ds{display:none}
   @media(max-width:600px){.dwrap .dlbl{left:0;right:0;text-align:center;font-size:15px}.dwrap input::-webkit-calendar-picker-indicator{opacity:0}.dlbl .dl{display:none}.dlbl .ds{display:inline}}
   .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -370,14 +370,16 @@
 <div id="setModal" class="modal hide"><div class="mbox" style="text-align:left">
   <div id="teamBox"></div>
   <div id="projBox"></div>
+  <div id="ownerSet">
   <h2 style="margin:26px 0 6px">Booking notices</h2>
   <p class="muted" style="margin:0 0 8px">Every new booking, reschedule, cancellation and party request is emailed to:</p>
   <div id="notifyList"><p class="muted">Loading…</p></div>
   <div style="display:flex;gap:8px;margin-top:10px"><input id="notifyNew" type="email" placeholder="Add an email" autocapitalize="off" style="flex:1"><button class="btn main" style="width:auto;padding:0 18px" onclick="addNotify()">Add</button></div>
+  </div>
   <h2 style="margin:26px 0 6px">Guest booking link</h2>
   <p class="muted" style="margin:0 0 8px">Send this when a guest asks how to book.</p>
   <button class="btn ghost" style="width:100%" onclick="copyBookLink()">🔗 Copy booking link</button>
-  <details style="margin-top:22px"><summary class="muted" style="cursor:pointer">One-time: import FareHarbor bookings</summary>
+  <details id="ownerFH" style="margin-top:22px"><summary class="muted" style="cursor:pointer">One-time: import FareHarbor bookings</summary>
     <p class="muted" style="font-size:14px">Only needed on launch day, to bring over upcoming bookings made on FareHarbor.</p>
     <label class="btn ghost" style="width:100%;display:flex;align-items:center;justify-content:center">Choose FareHarbor file<input type="file" id="fhFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFH(this)"></label></details>
   <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('setModal').classList.add('hide')">Close</button>
@@ -465,7 +467,7 @@ function askPin(wrong){if(asking)return;asking=true;
 /* who's signed in on this device: every change is saved under their name */
 let ME=null;
 async function loadMe(){if(!PIN)return;try{ME=await call('whoAmI')}catch(e){return}
-  $('whoBtn').textContent=ME.device?'🏫 '+String(ME.name).replace(/^Classroom /,''):'👤 '+String(ME.name).split(' ')[0];$('whoBtn').classList.remove('hide');showMailLeft(ME.emailsLeft)}
+  $('whoBtn').textContent=ME.device?'🏫 '+String(ME.name).replace(/^Classroom /,''):'👤 '+String(ME.name).split(' ')[0];$('whoBtn').classList.remove('hide');showMailLeft(ME.owner?ME.emailsLeft:null)}
 function switchUser(){if(ME&&!confirm(ME.device?`This is ${ME.name}.\n\nSign it out? An owner will need to sign in and set it up again.`:`Signed in as ${ME.name}.\n\nSwitch to someone else? Their PIN will be asked next.`))return;
   PIN='';ME=null;try{localStorage.removeItem('abs_pin')}catch(e){};$('whoBtn').classList.add('hide');askPin()}
 function showMailLeft(n){const b=$('mailAlert');if(!b)return;const low=typeof n==='number'&&n<=20;b.classList.toggle('hide',!low);
@@ -595,11 +597,12 @@ async function quickPrint(copies){
   let area=$('printArea');if(!area){area=document.createElement('div');area.id='printArea';document.body.appendChild(area)}
   let ps=$('pageCss');if(!ps){ps=document.createElement('style');ps.id='pageCss';document.head.appendChild(ps)}
   const W=ROTATE?2:3,H=ROTATE?3:2;
-  ps.textContent=`@page{margin:0}#printArea{width:2in!important;margin:0!important;padding:0!important}#printArea img{display:block;width:2in;height:2in;object-fit:contain;margin:0;break-after:page;page-break-after:always;break-inside:avoid}#printArea img:last-child{break-after:auto;page-break-after:auto}`;
+  ps.textContent=`@page{margin:0}#printArea{width:2in!important;margin:0!important;padding:0!important}#printArea img{display:block;width:2in;height:2in;object-fit:contain;margin:0;break-after:page;page-break-after:always;break-inside:avoid}#printArea img.sq{width:1.6in;height:1.6in;margin:0 auto}#printArea img:last-child{break-after:auto;page-break-after:auto}`;
   area.innerHTML='';
-  const imgs=copies.map(g=>{const c=document.createElement('canvas');c.width=LW;c.height=LH;drawLabel(c.getContext('2d'),g);let out=c;
+  const imgs=copies.map(g=>{const c=document.createElement('canvas');c.width=LW;c.height=g.kind==='ship'?LW:LH;   // shipping sticker is square (2 x 2 paper)
+    drawLabel(c.getContext('2d'),g);let out=c;
     if(ROTATE){const r=document.createElement('canvas');r.width=LH;r.height=LW;const rc=r.getContext('2d');rc.translate(LH,0);rc.rotate(Math.PI/2);rc.drawImage(c,0,0);out=r}
-    const im=new Image();im.alt='';im.src=out.toDataURL('image/png');area.appendChild(im);return im});
+    const im=new Image();im.alt='';if(g.kind==='ship')im.className='sq';im.src=out.toDataURL('image/png');area.appendChild(im);return im});
   await Promise.race([Promise.all(imgs.map(im=>im.decode?im.decode().catch(()=>{}):Promise.resolve())),new Promise(r=>setTimeout(r,1500))]);
   window.print();
 }
@@ -631,10 +634,11 @@ async function sendToPrinter(){
   f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},300)};
   f.src=url;
 }
-function openSettings(){$('setModal').classList.remove('hide');loadNotify();loadTeam()}
+function openSettings(){const own=!!(ME&&ME.owner);$('ownerSet').classList.toggle('hide',!own);$('ownerFH').classList.toggle('hide',!own);if(!own){$('notifyList').innerHTML=''}
+  $('setModal').classList.remove('hide');if(own)loadNotify();loadTeam()}
 async function loadTeam(){const box=$('teamBox');box.innerHTML='';if(!PROJECTS)await loadProjects();setTimeout(renderProjBox,0);
   try{ME=await call('whoAmI')}catch(e){return}
-  const mail=typeof ME.emailsLeft==='number'?`<p class="muted" style="margin:6px 0 0;font-size:14px">Emails Google lets us send today: <b>${ME.emailsLeft}</b> left</p>`:'';
+  const mail=ME.owner&&typeof ME.emailsLeft==='number'?`<p class="muted" style="margin:6px 0 0;font-size:14px">Emails Google lets us send today: <b>${ME.emailsLeft}</b> left</p>`:'';
   if(!ME.owner){box.innerHTML=`<h2 style="margin:26px 0 6px">Signed in</h2><p style="margin:0">${esc(ME.name)}${ME.device?' <span class="muted" style="font-size:13px">(shared studio iPad)</span>':''} <button class="tl" onclick="$('setModal').classList.add('hide');switchUser()">${ME.device?'Sign out':'Switch'}</button></p>${mail}`;return}
   let D=[];try{D=await call('getDevices')}catch(e){}
   let T=[];try{T=await call('getTeam')}catch(e){}
@@ -983,7 +987,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611070109';
+const BUILD='202611070124';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1044,15 +1048,16 @@ const shipGet=row=>SHIPS.find(x=>x.row===row);
    so the resin team spots it right away and keeps shipping pieces apart */
 const PLANE=new Path2D('M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z');
 function drawShipLabel(ctx,g){
+  const LW=ctx.canvas.width,LH=ctx.canvas.height;
   ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.textBaseline='alphabetic';ctx.textAlign='center';
-  const m=24,ps=4.2;
+  const m=Math.round(LW*0.04),ps=LW/150;
   // airplane, top center
-  ctx.save();ctx.translate(LW/2,m+50);ctx.rotate(Math.PI/2);ctx.scale(ps,ps);ctx.translate(-12,-12);ctx.fill(PLANE);ctx.restore();
+  ctx.save();ctx.translate(LW/2,m+12*ps);ctx.rotate(Math.PI/2);ctx.scale(ps,ps);ctx.translate(-12,-12);ctx.fill(PLANE);ctx.restore();
   // QTY at the bottom
-  ctx.font=`700 ${pt(17)}px Poppins, Arial, sans-serif`;const qBase=LH-m-6,qTop=qBase-ctx.measureText('QTY: 0').actualBoundingBoxAscent;
+  ctx.font=`700 ${Math.round(LW*0.11)}px Poppins, Arial, sans-serif`;const qBase=LH-m-4,qTop=qBase-ctx.measureText('QTY: 0').actualBoundingBoxAscent;
   ctx.fillText(`QTY: ${g.count}`,LW/2,qBase);
   // name: the biggest size that fits between them (1 to 3 lines, never touching)
-  const maxW=LW-2*m,top=m+50+12*ps+14,bottom=qTop-18,availH=bottom-top;
+  const maxW=LW-2*m,top=m+24*ps+12,bottom=qTop-18,availH=bottom-top;
   const longWord=t=>{let o=[];t.split(' ').forEach(w=>{if(ctx.measureText(w).width<=maxW||!w.includes('-'))o.push(w);else{const p=w.split('-');p.forEach((x,i)=>o.push(x+(i<p.length-1?'-':'')))}});return o};
   let size=70,lines=[g.shipName],lh=0;
   for(;size>=8;size-=0.5){ctx.font=`800 ${pt(size)}px Poppins, Arial, sans-serif`;lh=pt(size)*1.08;
