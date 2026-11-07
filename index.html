@@ -64,7 +64,7 @@
   input,select{width:100%;font:500 17px Poppins;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);min-height:48px}
   input:focus,select:focus{outline:none;border-color:var(--teal)}
   #printArea{display:none}
-  @media print{body>*:not(#printArea){display:none!important}html,body{margin:0!important;padding:0!important;background:#fff!important;min-height:0!important;height:auto!important}
+  @media print{body>*:not(#printArea){display:none!important}html,body{margin:0!important;padding:0!important;background:#fff!important;min-height:0!important;height:auto!important;width:auto!important;max-width:none!important;display:block!important}
     #printArea{display:block!important}}
   .dwrap{position:relative;display:block;flex:1;min-width:0}.dwrap input{color:transparent;-webkit-text-fill-color:transparent}
   .dwrap .dlbl{position:absolute;left:16px;right:44px;top:50%;transform:translateY(-50%);pointer-events:none;font:600 17px Poppins;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dlbl .ds{display:none}
@@ -595,7 +595,7 @@ async function quickPrint(copies){
   let area=$('printArea');if(!area){area=document.createElement('div');area.id='printArea';document.body.appendChild(area)}
   let ps=$('pageCss');if(!ps){ps=document.createElement('style');ps.id='pageCss';document.head.appendChild(ps)}
   const W=ROTATE?2:3,H=ROTATE?3:2;
-  ps.textContent=`@page{size:${W}in ${H}in;margin:0}#printArea img{display:block;width:100%;height:auto;max-height:100vh;object-fit:contain;break-after:page;page-break-after:always}#printArea img:last-child{break-after:auto;page-break-after:auto}`;
+  ps.textContent=`@page{size:${W}in ${H}in;margin:0}#printArea{width:100vw!important;margin:0!important;padding:0!important}#printArea img{display:block;width:100vw;height:auto;margin:0;break-after:page;page-break-after:always}#printArea img:last-child{break-after:auto;page-break-after:auto}`;
   area.innerHTML='';
   const imgs=copies.map(g=>{const c=document.createElement('canvas');c.width=LW;c.height=LH;drawLabel(c.getContext('2d'),g);let out=c;
     if(ROTATE){const r=document.createElement('canvas');r.width=LH;r.height=LW;const rc=r.getContext('2d');rc.translate(LH,0);rc.rotate(Math.PI/2);rc.drawImage(c,0,0);out=r}
@@ -977,7 +977,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611070059';
+const BUILD='202611070100';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
