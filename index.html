@@ -29,7 +29,7 @@
   .shp .meta{font-size:13.5px;color:var(--muted);margin-top:3px}
   .shp .addr{background:var(--soft);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:15px;line-height:1.4}
   .shp .pcs2{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-  .shp .pc{border:1px solid var(--line);border-radius:12px;padding:6px;width:112px;text-align:center;font-size:13px;font-weight:600;background:#fff}
+  .shp .pc{text-transform:none;letter-spacing:0;border:1px solid var(--line);border-radius:12px;padding:6px;width:112px;text-align:center;font-size:13px;font-weight:600;background:#fff}
   .shp .pc .pim{width:98px;height:98px;border-radius:9px;background:var(--soft);display:grid;place-items:center;color:var(--muted);font-size:12px;overflow:hidden;margin:0 auto 5px}
   .shp .pc img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
   .shp .acts{display:flex;gap:6px;flex-wrap:wrap}
@@ -1003,12 +1003,16 @@ let SHIPPHQ=Promise.resolve();
 function shipLoadPhotos(list){
   list.filter(x=>x.photos).forEach(x=>{const key=x.row+'|'+x.ts;
     if(SHIPPH[key]){shipShowPhotos(x,SHIPPH[key]);return}
-    SHIPPHQ=SHIPPHQ.then(()=>call('shipPhotos',x.row).then(P=>{SHIPPH[key]=P;shipShowPhotos(x,P)}).catch(()=>{}));
+    SHIPPHQ=SHIPPHQ.then(()=>call('shipPhotos',x.row).then(P=>{SHIPPH[key]=P;shipShowPhotos(x,P)}).catch(e=>shipPhotoErr(x,e)));
   });
 }
 function shipShowPhotos(x,P){const box=$('sp_'+x.row);if(!box)return;
   box.querySelectorAll('.pc .pim').forEach((ph,i)=>{const p=P.find(f=>parseInt(f.name)===i+1)||P[i];
     ph.innerHTML=p?`<img src="${p.img}" alt="" onclick="window.open('${p.url}','_blank')">`:'no photo'})}
+function shipPhotoErr(x,e){const box=$('sp_'+x.row);if(!box)return;const m=String(e&&e.message||e);
+  const msg=/permission|authoriz|DriveApp/i.test(m)?'Photos need Drive permission':'Photo did not load';
+  box.querySelectorAll('.pc .pim').forEach(ph=>{ph.innerHTML=`<span style="font-size:11px;padding:4px;line-height:1.2">${esc(msg)}</span>`;ph.title=m});
+  if(x.photos)box.querySelector('.pc .pim').insertAdjacentHTML('beforeend',`<a href="${esc(x.photos)}" target="_blank" style="font-size:11px">Open folder</a>`)}
 const shipGet=row=>SHIPS.find(x=>x.row===row);
 
 /* shipping sticker: on purpose it looks nothing like the check-in sticker (airplane, centered, framed),
