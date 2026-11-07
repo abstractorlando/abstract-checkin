@@ -104,7 +104,7 @@
   .arr:disabled{cursor:default}.party.isnew{border:2px solid var(--mag)}
   .tag.FT{background:var(--teal)}.tag.RG{background:var(--mag)}
   .muted{color:var(--muted);font-size:14px}
-  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;display:none;z-index:5}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;display:none;z-index:60;max-width:90vw;text-align:center}
   .hide{display:none!important}
   .sday{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
   .sday.closed{background:#fff5f8}
@@ -440,7 +440,7 @@ function call(fn,...args){
         if(j.ok)return res(j.data);
         // only ask again if THIS sign-in is wrong (an answer to a request sent before signing in is ignored)
         if(/Wrong PIN/.test(j.error)&&sent===PIN)askPin(true);
-        rej(new Error(j.error));
+        rej(new Error(/Unknown action/.test(j.error)?'The Apps Script needs updating: paste the latest Code.gs and deploy a New version':j.error));
       }).catch(()=>rej(new Error('No connection — check Wi-Fi')));
   });
 }
@@ -595,7 +595,7 @@ async function quickPrint(copies){
   let area=$('printArea');if(!area){area=document.createElement('div');area.id='printArea';document.body.appendChild(area)}
   let ps=$('pageCss');if(!ps){ps=document.createElement('style');ps.id='pageCss';document.head.appendChild(ps)}
   const W=ROTATE?2:3,H=ROTATE?3:2;
-  ps.textContent=`@page{size:${W}in ${H}in;margin:0}#printArea{width:100vw!important;margin:0!important;padding:0!important}#printArea img{display:block;width:100vw;height:auto;margin:0;break-after:page;page-break-after:always}#printArea img:last-child{break-after:auto;page-break-after:auto}`;
+  ps.textContent=`@page{margin:0}#printArea{width:2in!important;margin:0!important;padding:0!important}#printArea img{display:block;width:2in;height:2in;object-fit:contain;margin:0;break-after:page;page-break-after:always;break-inside:avoid}#printArea img:last-child{break-after:auto;page-break-after:auto}`;
   area.innerHTML='';
   const imgs=copies.map(g=>{const c=document.createElement('canvas');c.width=LW;c.height=LH;drawLabel(c.getContext('2d'),g);let out=c;
     if(ROTATE){const r=document.createElement('canvas');r.width=LH;r.height=LW;const rc=r.getContext('2d');rc.translate(LH,0);rc.rotate(Math.PI/2);rc.drawImage(c,0,0);out=r}
@@ -646,10 +646,13 @@ async function loadTeam(){const box=$('teamBox');box.innerHTML='';if(!PROJECTS)a
     <h2 style="margin:26px 0 6px">Classroom iPads</h2><p class="muted" style="margin:0 0 8px">Shared iPads in the studio. They stay signed in with their own secret key (nobody needs a code), and changes made on them show as the iPad's name. Remove one here if it's lost or replaced.</p>
     <div>${D.map(d=>`<div class="ne"><span><b>${esc(d.name)}</b> <span class="muted" style="font-size:13px">set up by ${esc(d.by||'')} · ${esc(exactTime(d.created))}</span></span><button class="tl" onclick="removeDevice('${esc(d.name).replace(/'/g,"\\'")}')">Remove</button></div>`).join('')||'<p class="muted" style="margin:0">None yet.</p>'}</div>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="devName" placeholder="Classroom iPad ${D.length+1}" style="flex:2;min-width:160px">
-      <button class="btn main" style="width:auto;padding:0 18px" onclick="pairDevice()">Make THIS device a Classroom iPad</button></div>${mail}`}
-async function pairDevice(){const n=$('devName').value.trim()||$('devName').placeholder;
+      <button class="btn main" id="devGo" style="width:auto;padding:0 18px" onclick="pairDevice()">Make THIS device a Classroom iPad</button></div>
+    <p id="devMsg" style="color:#c40056;font-weight:600;margin:8px 0 0"></p>${mail}`}
+async function pairDevice(){const n=$('devName').value.trim()||$('devName').placeholder,btn=$('devGo'),msg=$('devMsg');
   if(!confirm(`Turn this device into "${n}"?\n\nYou'll be signed out here, and everything done on it will show as "${n}".`))return;
-  try{const r=await call('pairDevice',n);PIN=r.token;try{localStorage.setItem('abs_pin',PIN)}catch(e){};$('setModal').classList.add('hide');loadMe();loadArrivals();toast(`This is now ${r.name} ✓`,4000)}catch(e){toast(e.message||String(e),5000)}}
+  btn.disabled=true;btn.textContent='Setting up…';msg.textContent='';
+  try{const r=await call('pairDevice',n);PIN=r.token;try{localStorage.setItem('abs_pin',PIN)}catch(e){};$('setModal').classList.add('hide');loadMe();loadArrivals();toast(`This is now ${r.name} ✓`,4000)}
+  catch(e){msg.textContent=e.message||String(e);btn.disabled=false;btn.textContent='Make THIS device a Classroom iPad'}}
 async function removeDevice(n){if(!confirm(`Remove ${n}? It's signed out right away and will ask for a PIN.`))return;try{await call('removeDevice',n);toast('Removed ✓');loadTeam()}catch(e){toast(e.message||String(e),5000)}}
 function renderProjBox(){const box=$('projBox');if(!ME||!ME.owner||!PROJECTS){box.innerHTML='';return}
   const cats=[...new Set(PROJECTS.map(p=>p.cat))];
@@ -936,12 +939,15 @@ async function ciSearch(){const q=$('ciQ').value.trim();if(q.length<2){loadDay()
   catch(e){$('dayList').innerHTML='<p class="muted">Could not search.</p>'}}
 async function loadDay(quiet){
   if($('ciQ')&&$('ciQ').value.trim().length>=2){if(!quiet)ciSearch();return}
-  if(!quiet)$('dayList').innerHTML='<p class="muted">Loading…</p>';
+  const d0=$('dayPick').value;
+  if(!quiet){const c=cget('day_'+d0);if(c){dayData=c.list;DAYBK=c.bk;renderParties(c.list,$('dayList'),true)}else $('dayList').innerHTML='<p class="muted">Loading…</p>'}
   try{
-    const list=await call('getDay',$('dayPick').value);
-    if(quiet&&JSON.stringify(list)===JSON.stringify(dayData))return;
-    if(quiet&&document.querySelector('#dayList .sf'))return; // don't wipe a form being filled
-    dayData=list;try{DAYBK=await call('getBookings',$('dayPick').value)}catch(e){}renderParties(list,$('dayList'),true);
+    const [list,bk]=await Promise.all([call('getDay',d0),call('getBookings',d0).catch(()=>DAYBK)]);   // both at once
+    if(d0!==$('dayPick').value)return;
+    cset('day_'+d0,{list,bk});
+    if(JSON.stringify(list)===JSON.stringify(dayData)&&JSON.stringify(bk)===JSON.stringify(DAYBK)&&document.querySelector('#dayList .party'))return;
+    if(document.querySelector('#dayList .sf'))return; // don't wipe a form being filled
+    dayData=list;DAYBK=bk;renderParties(list,$('dayList'),true);
     const fresh=list.filter(g=>!g.printed);
     $('newBar').classList.toggle('hide',!fresh.length);
     $('newCount').textContent=fresh.length+' new label'+(fresh.length>1?'s':'')+' to print';
@@ -977,18 +983,21 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611070100';
+const BUILD='202611070109';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
     if(m&&m[1]!==BUILD&&!m[1].startsWith('__')){const b=$('updBar');b.classList.remove('hide');b.dataset.v=m[1]}}catch(e){}}
 function doUpdate(){location.replace(location.pathname+'?v='+($('updBar').dataset.v||Date.now()))}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
+/* saved copies so screens show instantly, then refresh in the background */
+const cget=k=>{try{const v=localStorage.getItem('c_'+k);return v?JSON.parse(v):null}catch(e){return null}};
+const cset=(k,v)=>{try{localStorage.setItem('c_'+k,JSON.stringify(v))}catch(e){}};
 let SHIPS=null,SHIPF='todo',SHIPPH={},SHIPN=-1,SHIPLATEST='';
 const shipNeeds=x=>x.isNew&&!x.printed;
 async function loadShip(quiet){
-  if(!quiet&&!SHIPS)$('shipList').innerHTML='<p class="muted">Loading…</p>';
-  try{SHIPS=await call('shipList',200);renderShip();shipBadge(SHIPS.filter(shipNeeds).length)}
+  if(!SHIPS){const c=cget('ship');if(c){SHIPS=c;renderShip()}else if(!quiet)$('shipList').innerHTML='<p class="muted">Loading…</p>'}
+  try{const fresh=await call('shipList',200);const same=JSON.stringify(fresh)===JSON.stringify(SHIPS);SHIPS=fresh;cset('ship',fresh);if(!same)renderShip();shipBadge(SHIPS.filter(shipNeeds).length)}
   catch(e){$('shipList').innerHTML=`<div class="card"><p class="muted" style="margin:0">${esc(e.message||e)}</p></div>`}
 }
 function shipFilter(f){SHIPF=f;['todo','all'].forEach(k=>$('shipF_'+k).classList.toggle('on',k===f));renderShip()}
@@ -1035,26 +1044,24 @@ const shipGet=row=>SHIPS.find(x=>x.row===row);
    so the resin team spots it right away and keeps shipping pieces apart */
 const PLANE=new Path2D('M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z');
 function drawShipLabel(ctx,g){
-  ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.strokeStyle='#000';ctx.textBaseline='alphabetic';ctx.textAlign='center';
-  // rounded frame
-  const m=40,r=46;ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(m+r,m);ctx.arcTo(LW-m,m,LW-m,LH-m,r);ctx.arcTo(LW-m,LH-m,m,LH-m,r);ctx.arcTo(m,LH-m,m,m,r);ctx.arcTo(m,m,LW-m,m,r);ctx.closePath();ctx.stroke();
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.textBaseline='alphabetic';ctx.textAlign='center';
+  const m=24,ps=4.2;
   // airplane, top center
-  const ps=4.6;ctx.save();ctx.translate(LW/2,m+70);ctx.rotate(Math.PI/2);ctx.scale(ps,ps);ctx.translate(-12,-12);ctx.fill(PLANE);ctx.restore();
-  // name on the package: the biggest size that fits the space between the airplane and QTY (1 to 3 lines, never overlapping)
-  ctx.font=`600 ${pt(15)}px Poppins, Arial, sans-serif`;const qTop=LH-m-36-ctx.measureText('QTY: 0').actualBoundingBoxAscent;
-  const maxW=LW-2*m-56,top=m+70+12*ps+20,bottom=qTop-22,availH=bottom-top;
+  ctx.save();ctx.translate(LW/2,m+50);ctx.rotate(Math.PI/2);ctx.scale(ps,ps);ctx.translate(-12,-12);ctx.fill(PLANE);ctx.restore();
+  // QTY at the bottom
+  ctx.font=`700 ${pt(17)}px Poppins, Arial, sans-serif`;const qBase=LH-m-6,qTop=qBase-ctx.measureText('QTY: 0').actualBoundingBoxAscent;
+  ctx.fillText(`QTY: ${g.count}`,LW/2,qBase);
+  // name: the biggest size that fits between them (1 to 3 lines, never touching)
+  const maxW=LW-2*m,top=m+50+12*ps+14,bottom=qTop-18,availH=bottom-top;
   const longWord=t=>{let o=[];t.split(' ').forEach(w=>{if(ctx.measureText(w).width<=maxW||!w.includes('-'))o.push(w);else{const p=w.split('-');p.forEach((x,i)=>o.push(x+(i<p.length-1?'-':'')))}});return o};
-  let size=60,lines=[g.shipName],lh=0;
-  for(;size>=8;size-=0.5){ctx.font=`700 ${pt(size)}px Poppins, Arial, sans-serif`;lh=pt(size)*1.1;
+  let size=70,lines=[g.shipName],lh=0;
+  for(;size>=8;size-=0.5){ctx.font=`800 ${pt(size)}px Poppins, Arial, sans-serif`;lh=pt(size)*1.08;
     const words=longWord(String(g.shipName||'').trim());lines=[];let cur='';
     words.forEach(w=>{const t=cur?(cur.endsWith('-')?cur+w:cur+' '+w):w;if(ctx.measureText(t).width<=maxW||!cur)cur=t;else{lines.push(cur);cur=w}});if(cur)lines.push(cur);
     const asc=ctx.measureText(lines[0]).actualBoundingBoxAscent,desc=ctx.measureText(lines[lines.length-1]).actualBoundingBoxDescent;
     if(lines.length<=3&&(lines.length-1)*lh+asc+desc<=availH&&lines.every(l=>ctx.measureText(l).width<=maxW))break}
-  // measured with the real letters (g, y, p tails included), then centered in the space
   const asc=ctx.measureText(lines[0]).actualBoundingBoxAscent,desc=ctx.measureText(lines[lines.length-1]).actualBoundingBoxDescent;
   let y=top+(availH-((lines.length-1)*lh+asc+desc))/2+asc;lines.forEach(l=>{ctx.fillText(l,LW/2,y);y+=lh});
-  // QTY
-  ctx.font=`600 ${pt(15)}px Poppins, Arial, sans-serif`;ctx.fillText(`QTY: ${g.count}`,LW/2,LH-m-36);
   ctx.textAlign='left';
 }
 function shipPrint(row){const x=shipGet(row);if(!x)return;
@@ -1290,8 +1297,10 @@ async function doSearch(){const q=$('bkFilter').value.trim();if(q.length<2)retur
   catch(e){$('arrivals').innerHTML=`<p class="muted">Could not search: ${esc(e.message||e)}</p>`}}
 async function loadArrivals(quiet){
   if($('bkFilter')&&$('bkFilter').value.trim().length>=2){doSearch();return}
-  if(!quiet&&!arrivals.length)$('arrivals').innerHTML='<p class="muted">Loading bookings…</p>';
-  try{arrivals=await call('getBookings',$('dt').value);renderArrivals();loadDaySum()}
+  const d0=$('dt').value;
+  if(!quiet&&!arrivals.length){const c=cget('bk_'+d0);if(c){arrivals=c;renderArrivals()}else $('arrivals').innerHTML='<p class="muted">Loading bookings…</p>'}
+  loadDaySum();
+  try{const fresh=await call('getBookings',d0);if(d0!==$('dt').value)return;const same=JSON.stringify(fresh)===JSON.stringify(arrivals);arrivals=fresh;cset('bk_'+d0,fresh);if(!same||!quiet)renderArrivals()}
   catch(e){$('arrivals').innerHTML=`<p class="muted">Could not load bookings: ${esc(e.message||e)} <a href="#" onclick="loadArrivals();return false" style="color:var(--teal)">Try again</a></p>`}
 }
 let DSUM=null;
