@@ -367,11 +367,6 @@
   <button class="btn ghost" style="width:100%;margin-top:10px" onclick="$('printModal').classList.add('hide')">Cancel</button>
 </div></div>
 <div id="setModal" class="modal hide"><div class="mbox" style="text-align:left">
-  <h2 style="margin:0 0 6px">Printer</h2>
-  <p class="muted" style="margin:0 0 16px">Saved on this device only.</p>
-  <label class="chk" style="font-size:16px"><input type="checkbox" id="rotChk"> Turn sticker 90° (use if it prints sideways)</label>
-  <label class="chk" style="font-size:16px;margin-top:8px"><input type="checkbox" id="oldPrintChk"> iPad: print the old way (through the share sheet)</label>
-  <div style="display:flex;gap:8px;margin-top:18px"><button class="btn ghost" style="flex:1" onclick="testPrint()">Test print</button><button class="btn main" style="flex:1" onclick="saveSettings()">Save</button></div>
   <div id="teamBox"></div>
   <div id="projBox"></div>
   <h2 style="margin:26px 0 6px">Booking notices</h2>
@@ -547,7 +542,7 @@ async function saveAndPrint(){
 function resSize(n){const L=n.length;return L<=10?34:L<=14?28:L<=18?24:L<=24?21:18}
 /* ---------- STICKERS: drawn as an exact 3" x 2" PDF so every device prints the same ---------- */
 const DPI=300,LW=900,LH=600,PAD=30,pt=n=>Math.round(n*DPI/72);
-let ROTATE=false;try{ROTATE=localStorage.getItem('abs_rot')==='1'}catch(e){}
+let ROTATE=false;
 const isTouch=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function wrap(ctx,text,maxW){const words=text.split(' ');const lines=[];let cur='';
   words.forEach(w=>{const t=cur?cur+' '+w:w;if(ctx.measureText(t).width<=maxW||!cur)cur=t;else{lines.push(cur);cur=w}});if(cur)lines.push(cur);return lines}
@@ -589,7 +584,7 @@ async function makePdf(copies){
 }
 let pendingPdf=null,pendingCopies=null;
 /* iPad: print the stickers straight from the page (tap Print, then Print in the iPad box). The old way went through the share sheet. */
-let OLDPRINT=false;try{OLDPRINT=localStorage.getItem('abs_oldprint')==='1'}catch(e){}
+let OLDPRINT=false;try{localStorage.removeItem('abs_oldprint');localStorage.removeItem('abs_rot')}catch(e){}
 const quickPrintOn=()=>isTouch&&!OLDPRINT;
 function stickerCopies(list){const copies=[];list.forEach(g=>{const n=g.projects||1;
     if(g.onlyProject)copies.push(Object.assign({},g,{pk:g.onlyProject,pn:n}));
@@ -635,7 +630,7 @@ async function sendToPrinter(){
   f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},300)};
   f.src=url;
 }
-function openSettings(){$('rotChk').checked=ROTATE;$('oldPrintChk').checked=OLDPRINT;$('setModal').classList.remove('hide');loadNotify();loadTeam()}
+function openSettings(){$('setModal').classList.remove('hide');loadNotify();loadTeam()}
 async function loadTeam(){const box=$('teamBox');box.innerHTML='';if(!PROJECTS)await loadProjects();setTimeout(renderProjBox,0);
   try{ME=await call('whoAmI')}catch(e){return}
   const mail=typeof ME.emailsLeft==='number'?`<p class="muted" style="margin:6px 0 0;font-size:14px">Emails Google lets us send today: <b>${ME.emailsLeft}</b> left</p>`:'';
@@ -671,8 +666,6 @@ function renderNotify(){$('notifyList').innerHTML=`<div class="ne"><span><b>${es
 async function saveNotify(list){try{NOTIFY=await call('setNotify',list);renderNotify();toast('Saved ✓')}catch(e){toast(e.message||String(e),5000)}}
 function addNotify(){const v=$('notifyNew').value.trim();if(!v)return;$('notifyNew').value='';saveNotify(NOTIFY.extra.concat(v))}
 function removeNotify(i){if(!confirm(`Stop sending booking notices to ${NOTIFY.extra[i]}?`))return;saveNotify(NOTIFY.extra.filter((x,j)=>j!==i))}
-function saveSettings(){ROTATE=$('rotChk').checked;OLDPRINT=$('oldPrintChk').checked;try{localStorage.setItem('abs_rot',ROTATE?'1':'0');localStorage.setItem('abs_oldprint',OLDPRINT?'1':'0')}catch(e){};$('setModal').classList.add('hide');toast('Saved for this device')}
-function testPrint(){saveSettings();printLabels([{reservation:'Beatriz Castro Silva',name:'Mike',type:'FT',date:today(),time:timesFor(today())[0],num:1,size:2,projects:1}],{direct:true})}
 
 /* ---------- lists ---------- */
 function groupParties(list){const m=new Map();list.forEach(g=>{if(!m.has(g.partyId))m.set(g.partyId,[]);m.get(g.partyId).push(g)});return [...m.values()].map(a=>a.sort((x,y)=>x.num-y.num))}
@@ -983,7 +976,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611070054';
+const BUILD='202611070058';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
