@@ -259,6 +259,7 @@
 </header>
 
 <main>
+  <div id="updBar" class="newbar hide" style="background:#0e7c86" onclick="doUpdate()">✨ A new version of the app is ready. Tap here to update.</div>
   <div id="todayAlert" class="newbar hide" onclick="openBell()"></div>
   <div id="feeAlert" class="newbar hide" style="background:#0093ad" onclick="openFees()"></div>
   <div id="mailAlert" class="newbar hide" style="background:#b26a00;cursor:default"></div>
@@ -436,11 +437,13 @@ const demo = {rows:[],st:{},
 function call(fn,...args){
   return new Promise((res,rej)=>{
     if(!hasGAS){try{res(demo[fn](...args))}catch(e){rej(e)}return}
+    const sent=PIN;if(!sent)return rej(new Error('Sign in first'));
     // text/plain body = no CORS preflight; no cookies = no Google sign-in problems
-    fetch(API_URL,{method:'POST',body:JSON.stringify({pin:PIN,fn,args}),redirect:'follow',credentials:'omit'})
+    fetch(API_URL,{method:'POST',body:JSON.stringify({pin:sent,fn,args}),redirect:'follow',credentials:'omit'})
       .then(r=>r.json()).then(j=>{
         if(j.ok)return res(j.data);
-        if(/Wrong PIN/.test(j.error))askPin(true);
+        // only ask again if THIS sign-in is wrong (an answer to a request sent before signing in is ignored)
+        if(/Wrong PIN/.test(j.error)&&sent===PIN)askPin(true);
         rej(new Error(j.error));
       }).catch(()=>rej(new Error('No connection — check Wi-Fi')));
   });
@@ -466,8 +469,8 @@ function askPin(wrong){if(asking)return;asking=true;
 /* who's signed in on this device: every change is saved under their name */
 let ME=null;
 async function loadMe(){if(!PIN)return;try{ME=await call('whoAmI')}catch(e){return}
-  $('whoBtn').textContent='👤 '+String(ME.name).split(' ')[0];$('whoBtn').classList.remove('hide');showMailLeft(ME.emailsLeft)}
-function switchUser(){if(ME&&!confirm(`Signed in as ${ME.name}.\n\nSwitch to someone else? Their PIN will be asked next.`))return;
+  $('whoBtn').textContent=ME.device?'🏫 '+String(ME.name).replace(/^Classroom /,''):'👤 '+String(ME.name).split(' ')[0];$('whoBtn').classList.remove('hide');showMailLeft(ME.emailsLeft)}
+function switchUser(){if(ME&&!confirm(ME.device?`This is ${ME.name}.\n\nSign it out? An owner will need to sign in and set it up again.`:`Signed in as ${ME.name}.\n\nSwitch to someone else? Their PIN will be asked next.`))return;
   PIN='';ME=null;try{localStorage.removeItem('abs_pin')}catch(e){};$('whoBtn').classList.add('hide');askPin()}
 function showMailLeft(n){const b=$('mailAlert');if(!b)return;const low=typeof n==='number'&&n<=20;b.classList.toggle('hide',!low);
   if(low)b.innerHTML=`<span>✉️ ${n?`Only ${n} email${n>1?'s':''} left today`:'No emails left today'} (Google's daily limit). Texts still go out.</span>`}
@@ -634,13 +637,22 @@ function openSettings(){$('rotChk').checked=ROTATE;$('oldPrintChk').checked=OLDP
 async function loadTeam(){const box=$('teamBox');box.innerHTML='';if(!PROJECTS)await loadProjects();setTimeout(renderProjBox,0);
   try{ME=await call('whoAmI')}catch(e){return}
   const mail=typeof ME.emailsLeft==='number'?`<p class="muted" style="margin:6px 0 0;font-size:14px">Emails Google lets us send today: <b>${ME.emailsLeft}</b> left</p>`:'';
-  if(!ME.owner){box.innerHTML=`<h2 style="margin:26px 0 6px">Signed in</h2><p style="margin:0">${esc(ME.name)} <button class="tl" onclick="$('setModal').classList.add('hide');switchUser()">Switch</button></p>${mail}`;return}
+  if(!ME.owner){box.innerHTML=`<h2 style="margin:26px 0 6px">Signed in</h2><p style="margin:0">${esc(ME.name)}${ME.device?' <span class="muted" style="font-size:13px">(shared studio iPad)</span>':''} <button class="tl" onclick="$('setModal').classList.add('hide');switchUser()">${ME.device?'Sign out':'Switch'}</button></p>${mail}`;return}
+  let D=[];try{D=await call('getDevices')}catch(e){}
   let T=[];try{T=await call('getTeam')}catch(e){}
   box.innerHTML=`<h2 style="margin:26px 0 6px">Team</h2><p class="muted" style="margin:0 0 8px">Everyone signs in with their own PIN, so the booking history shows who did what. Signed in here as <b>${esc(ME.name)}</b>.</p>
     ${ME.teamSet?'':'<p style="color:#c40056;margin:0 0 8px">Run setupTeam() once in Apps Script to load your team.</p>'}
     <div>${T.map(m=>`<div class="ne"><span><b>${esc(m.name)}</b>${m.owner?' <span class="muted" style="font-size:13px">owner</span>':''} <span class="muted" style="font-size:13px">PIN ${esc(m.pin)}</span></span>${m.name===ME.name?'':`<button class="tl" onclick="removeStaff('${esc(m.name).replace(/'/g,"\\'")}')">Remove</button>`}</div>`).join('')}</div>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="tmName" placeholder="Name" style="flex:2;min-width:140px"><input id="tmPin" placeholder="PIN" inputmode="numeric" maxlength="6" style="flex:1;min-width:90px">
-      <button class="btn main" style="width:auto;padding:0 18px" onclick="addStaff()">Add</button></div>${mail}`}
+      <button class="btn main" style="width:auto;padding:0 18px" onclick="addStaff()">Add</button></div>
+    <h2 style="margin:26px 0 6px">Classroom iPads</h2><p class="muted" style="margin:0 0 8px">Shared iPads in the studio. They stay signed in with their own secret key (nobody needs a code), and changes made on them show as the iPad's name. Remove one here if it's lost or replaced.</p>
+    <div>${D.map(d=>`<div class="ne"><span><b>${esc(d.name)}</b> <span class="muted" style="font-size:13px">set up by ${esc(d.by||'')} · ${esc(exactTime(d.created))}</span></span><button class="tl" onclick="removeDevice('${esc(d.name).replace(/'/g,"\\'")}')">Remove</button></div>`).join('')||'<p class="muted" style="margin:0">None yet.</p>'}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="devName" placeholder="Classroom iPad ${D.length+1}" style="flex:2;min-width:160px">
+      <button class="btn main" style="width:auto;padding:0 18px" onclick="pairDevice()">Make THIS device a Classroom iPad</button></div>${mail}`}
+async function pairDevice(){const n=$('devName').value.trim()||$('devName').placeholder;
+  if(!confirm(`Turn this device into "${n}"?\n\nYou'll be signed out here, and everything done on it will show as "${n}".`))return;
+  try{const r=await call('pairDevice',n);PIN=r.token;try{localStorage.setItem('abs_pin',PIN)}catch(e){};$('setModal').classList.add('hide');loadMe();loadArrivals();toast(`This is now ${r.name} ✓`,4000)}catch(e){toast(e.message||String(e),5000)}}
+async function removeDevice(n){if(!confirm(`Remove ${n}? It's signed out right away and will ask for a PIN.`))return;try{await call('removeDevice',n);toast('Removed ✓');loadTeam()}catch(e){toast(e.message||String(e),5000)}}
 function renderProjBox(){const box=$('projBox');if(!ME||!ME.owner||!PROJECTS){box.innerHTML='';return}
   const cats=[...new Set(PROJECTS.map(p=>p.cat))];
   box.innerHTML=`<h2 style="margin:26px 0 6px">Projects</h2><p class="muted" style="margin:0 0 8px">The list staff pick from. Tick <b>same day</b> for projects guests take home right away (they'll be set to "Took home" automatically).</p>
@@ -968,6 +980,14 @@ function renderPickup(list){
 }
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
+/* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
+const BUILD='202611070053';
+let UPD_AT=0;
+async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
+  try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
+    if(m&&m[1]!==BUILD&&!m[1].startsWith('__')){const b=$('updBar');b.classList.remove('hide');b.dataset.v=m[1]}}catch(e){}}
+function doUpdate(){location.replace(location.pathname+'?v='+($('updBar').dataset.v||Date.now()))}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
 let SHIPS=null,SHIPF='todo',SHIPPH={},SHIPN=-1,SHIPLATEST='';
 const shipNeeds=x=>x.isNew&&!x.printed;
 async function loadShip(quiet){
