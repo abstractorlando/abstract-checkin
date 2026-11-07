@@ -63,8 +63,8 @@
   input,select{width:100%;font:500 17px Poppins;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);min-height:48px}
   input:focus,select:focus{outline:none;border-color:var(--teal)}
   #printArea{display:none}
-  @media print{body>*:not(#printArea){display:none!important}html,body{margin:0!important;padding:0!important;background:#fff!important}
-    #printArea{display:block!important}#printArea canvas{display:block;break-after:page;page-break-after:always}#printArea canvas:last-child{break-after:auto;page-break-after:auto}}
+  @media print{body>*:not(#printArea){display:none!important}html,body{margin:0!important;padding:0!important;background:#fff!important;min-height:0!important;height:auto!important}
+    #printArea{display:block!important}}
   .dwrap{position:relative;display:block;flex:1;min-width:0}.dwrap input{color:transparent;-webkit-text-fill-color:transparent}
   .dwrap .dlbl{position:absolute;left:16px;right:44px;top:50%;transform:translateY(-50%);pointer-events:none;font:600 17px Poppins;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dlbl .ds{display:none}
   @media(max-width:600px){.dwrap .dlbl{left:0;right:0;text-align:center;font-size:15px}.dwrap input::-webkit-calendar-picker-indicator{opacity:0}.dlbl .dl{display:none}.dlbl .ds{display:inline}}
@@ -226,7 +226,7 @@
   @page{size:3in 2in;margin:0}
   @media print{
     body{background:#fff}
-    body>*:not(#print){display:none!important}
+    body>*:not(#print):not(#printArea){display:none!important}
     #print{display:block}
   }
   .lbl{width:3in;height:2in;padding:.09in .12in;display:flex;flex-direction:column;justify-content:space-between;page-break-after:always;break-after:page;overflow:hidden;color:#000;font-family:Poppins,Arial,sans-serif}
@@ -594,15 +594,17 @@ const quickPrintOn=()=>isTouch&&!OLDPRINT;
 function stickerCopies(list){const copies=[];list.forEach(g=>{const n=g.projects||1;
     if(g.onlyProject)copies.push(Object.assign({},g,{pk:g.onlyProject,pn:n}));
     else for(let k=1;k<=n;k++)copies.push(Object.assign({},g,{pk:k,pn:n}))});return copies}
-function quickPrint(copies){
+/* iPad: stickers go into the page as pictures (iPads print canvas drawings blank), then the print box opens */
+async function quickPrint(copies){
   let area=$('printArea');if(!area){area=document.createElement('div');area.id='printArea';document.body.appendChild(area)}
   let ps=$('pageCss');if(!ps){ps=document.createElement('style');ps.id='pageCss';document.head.appendChild(ps)}
   const W=ROTATE?2:3,H=ROTATE?3:2;
-  ps.textContent=`@page{size:${W}in ${H}in;margin:0}#printArea canvas{width:${W}in;height:${H}in}`;
+  ps.textContent=`@page{size:${W}in ${H}in;margin:0}#printArea img{display:block;width:100%;height:auto;max-height:100vh;object-fit:contain;break-after:page;page-break-after:always}#printArea img:last-child{break-after:auto;page-break-after:auto}`;
   area.innerHTML='';
-  copies.forEach(g=>{const c=document.createElement('canvas');c.width=LW;c.height=LH;drawLabel(c.getContext('2d'),g);
-    if(ROTATE){const r=document.createElement('canvas');r.width=LH;r.height=LW;const rc=r.getContext('2d');rc.translate(LH,0);rc.rotate(Math.PI/2);rc.drawImage(c,0,0);area.appendChild(r)}
-    else area.appendChild(c)});
+  const imgs=copies.map(g=>{const c=document.createElement('canvas');c.width=LW;c.height=LH;drawLabel(c.getContext('2d'),g);let out=c;
+    if(ROTATE){const r=document.createElement('canvas');r.width=LH;r.height=LW;const rc=r.getContext('2d');rc.translate(LH,0);rc.rotate(Math.PI/2);rc.drawImage(c,0,0);out=r}
+    const im=new Image();im.alt='';im.src=out.toDataURL('image/png');area.appendChild(im);return im});
+  await Promise.race([Promise.all(imgs.map(im=>im.decode?im.decode().catch(()=>{}):Promise.resolve())),new Promise(r=>setTimeout(r,1500))]);
   window.print();
 }
 /* direct = called right from a tap, so the iPad print box can open straight away */
@@ -981,7 +983,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611070053';
+const BUILD='202611070054';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
