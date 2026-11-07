@@ -23,6 +23,19 @@
   nav button{background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;padding:8px 14px;font:600 14px Poppins;cursor:pointer;min-height:40px}
   nav button.on{background:#fff;color:var(--purp);border-color:#fff}
   nav button i{display:none;font-style:normal}
+  .tbadge{display:inline-block;background:#ff009d;color:#fff;border-radius:999px;font-size:11px;line-height:1;padding:3px 6px;margin-left:5px;vertical-align:2px}
+  .shp .sh1{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+  .shp .nm{font-size:21px;font-weight:800;line-height:1.15}
+  .shp .meta{font-size:13.5px;color:var(--muted);margin-top:3px}
+  .shp .addr{background:var(--soft);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:15px;line-height:1.4}
+  .shp .pcs2{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .shp .pc{border:1px solid var(--line);border-radius:12px;padding:6px;width:112px;text-align:center;font-size:13px;font-weight:600;background:#fff}
+  .shp .pc .pim{width:98px;height:98px;border-radius:9px;background:var(--soft);display:grid;place-items:center;color:var(--muted);font-size:12px;overflow:hidden;margin:0 auto 5px}
+  .shp .pc img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+  .shp .acts{display:flex;gap:6px;flex-wrap:wrap}
+  .shp .acts .btn{width:auto}
+  .shp.done{opacity:.8}
+  .chips{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.chips button{border:2px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font:600 14px Poppins;cursor:pointer}.chips button.on{background:var(--purp);border-color:var(--purp);color:#fff}
   header{flex-wrap:nowrap}header h1{flex:1}header nav{order:3}
   .gear{order:4;background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;width:40px;height:40px;font-size:18px;cursor:pointer;flex:none}
   .imp{position:relative}.imp summary{list-style:none;cursor:pointer}.imp summary::-webkit-details-marker{display:none}
@@ -240,6 +253,7 @@
     <button id="tabNew" class="on" onclick="show('new')"><i>📋</i><span>Manifest</span></button>
     <button id="tabToday" onclick="show('today')"><i>🎨</i><span>Visits</span></button>
     <button id="tabFind" onclick="show('find')"><i>⌂</i><span>Pickup</span></button>
+    <button id="tabShip" onclick="show('ship')"><i>📦</i><span>Shipping<b id="shipBadge" class="tbadge hide"></b></span></button>
     <button id="tabSched" onclick="show('sched')"><i>▦</i><span>Schedule</span></button>
   </nav>
 </header>
@@ -310,6 +324,14 @@
   </section>
 
   <!-- SCHEDULE -->
+  <section id="vShip" class="hide">
+    <div class="card">
+      <label class="l" for="shipQ">Shipping requests from the guest form</label>
+      <input id="shipQ" placeholder="🔍 Name, city or artist" oninput="renderShip()">
+      <div class="chips"><button id="shipF_todo" class="on" onclick="shipFilter('todo')">Needs a label</button><button id="shipF_all" onclick="shipFilter('all')">All</button></div>
+    </div>
+    <div id="shipList"><p class="muted">Loading…</p></div>
+  </section>
   <section id="vSched" class="hide">
     <div class="vt"><button id="vtDay" class="on" onclick="setSchedView('day')">Day</button><button id="vtWeek" onclick="setSchedView('week')">Week</button></div>
     <div class="card">
@@ -469,9 +491,10 @@ function nearestTime(){
 
 /* ---------- tabs ---------- */
 function show(v){document.body.classList.toggle('wide',v==='sched'&&SVIEW==='week');
-  ['new','today','find','sched'].forEach(k=>{$('v'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==v);$('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on',k===v)});
+  ['new','today','find','ship','sched'].forEach(k=>{$('v'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==v);$('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on',k===v)});
   if(v==='sched')loadSched();
   if(v==='today')loadDay(); if(v==='new')loadArrivals(); if(v==='find')$('q').focus();
+  if(v==='ship')loadShip();
 }
 
 /* ---------- check-in form ---------- */
@@ -526,6 +549,7 @@ const isTouch=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform=
 function wrap(ctx,text,maxW){const words=text.split(' ');const lines=[];let cur='';
   words.forEach(w=>{const t=cur?cur+' '+w:w;if(ctx.measureText(t).width<=maxW||!cur)cur=t;else{lines.push(cur);cur=w}});if(cur)lines.push(cur);return lines}
 function drawLabel(ctx,g){
+  if(g.kind==='ship')return drawShipLabel(ctx,g);
   ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.textBaseline='alphabetic';ctx.textAlign='left';
   const P=34,maxW=LW-P*2;
   // FT / RG box: top-right corner
@@ -941,6 +965,145 @@ function renderPickup(list){
       ${s?storageLine(p):`<div class="st"><span class="muted">Not stored yet. Pieces from this class are still drying or haven't been stored.</span></div>`}
       ${otherPieces(p)}
       <div id="sf_${f.partyId}"></div></div>`}).join(''):'<p class="muted">No checked-in party found with that name.</p>';
+}
+
+/* ---------- Shipping requests (guest shipping form) ---------- */
+let SHIPS=null,SHIPF='todo',SHIPPH={},SHIPN=-1,SHIPLATEST='';
+const shipNeeds=x=>x.isNew&&!x.printed;
+async function loadShip(quiet){
+  if(!quiet&&!SHIPS)$('shipList').innerHTML='<p class="muted">Loading…</p>';
+  try{SHIPS=await call('shipList',200);renderShip();shipBadge(SHIPS.filter(shipNeeds).length)}
+  catch(e){$('shipList').innerHTML=`<div class="card"><p class="muted" style="margin:0">${esc(e.message||e)}</p></div>`}
+}
+function shipFilter(f){SHIPF=f;['todo','all'].forEach(k=>$('shipF_'+k).classList.toggle('on',k===f));renderShip()}
+function shipBadge(n){const b=$('shipBadge');if(!b)return;b.textContent=n;b.classList.toggle('hide',!n)}
+const shipAddr=x=>[x.street,x.street2,[x.city,[x.state,x.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ')].filter(Boolean).map(esc).join('<br>');
+function renderShip(){
+  if(!SHIPS)return;
+  const q=($('shipQ').value||'').trim().toLowerCase();
+  let L=SHIPS.filter(x=>SHIPF==='all'||shipNeeds(x));
+  if(q)L=SHIPS.filter(x=>[x.shipName,x.guest,x.city,x.email,x.phone,...x.owners].join(' ').toLowerCase().includes(q));
+  $('shipList').innerHTML=L.length?L.slice(0,80).map(x=>{const k=x.row;
+    return `<div class="party shp${shipNeeds(x)?'':' done'}" id="shp_${k}">
+      <div class="sh1"><div style="flex:1;min-width:220px">
+          <div class="nm">${esc(x.shipName)} ${shipNeeds(x)?'<span class="tag" style="background:#ff009d;vertical-align:4px">NEW</span>':''}</div>
+          <div class="meta"><b style="color:var(--ink)">${x.count} piece${x.count===1?'':'s'}</b> · sent ${esc(exactTime(x.ts)||x.ts)}${x.guest&&x.guest!==x.shipName?` · by ${esc(x.guest)}`:''}</div>
+        </div>
+        <div class="acts"><button class="btn main small" onclick="shipPrint(${k})">🏷️ Print label</button><button class="btn ghost small" onclick="shipEdit(${k})">Edit</button><button class="btn ghost small" onclick="shipRemove(${k})">Remove</button></div></div>
+      <div class="addr"><b>${esc(x.shipName)}</b><br>${shipAddr(x)}</div>
+      <div class="pcs2" id="sp_${k}">${x.owners.map((o,i)=>`<div class="pc"><div class="pim">${x.photos?'…':'no photo'}</div>${i+1}. ${esc(o)}</div>`).join('')}
+        <div class="pc" style="border-style:dashed;cursor:pointer;display:grid;place-items:center;color:var(--purp)" onclick="shipAddPiece(${k})">+ Add a piece</div></div>
+      <div class="meta">${[x.guest&&`${esc(x.guest)}`,x.phone&&`<a href="tel:${esc(x.phone)}">${esc(x.phone)}</a>`,x.email&&esc(x.email),x.date&&/^\d{4}-/.test(x.date)?'visited '+esc(niceDate(x.date)):''].filter(Boolean).join(' · ')}</div>
+      ${x.notes?`<div class="meta" style="color:var(--ink);margin-top:6px">📝 ${esc(x.notes)}</div>`:''}
+      <div class="meta" style="margin-top:6px">${x.status?`Status: <b>${esc(x.status)}</b>`:''}${x.tracking?` · Tracking ${esc(x.tracking)}`:''}${x.printed?` · 🏷️ Label printed by ${esc(x.printed)}`:''}${x.edited?` · Edited by ${esc(x.edited)}`:''}</div>
+    </div>`}).join(''):`<div class="card"><p class="muted" style="margin:0">${q?'No request matches that.':SHIPF==='todo'?'All caught up. Every new request has its label. 🎉':'No requests yet.'}</p></div>`;
+  shipLoadPhotos(L.slice(0,20));
+}
+let SHIPPHQ=Promise.resolve();
+function shipLoadPhotos(list){
+  list.filter(x=>x.photos).forEach(x=>{const key=x.row+'|'+x.ts;
+    if(SHIPPH[key]){shipShowPhotos(x,SHIPPH[key]);return}
+    SHIPPHQ=SHIPPHQ.then(()=>call('shipPhotos',x.row).then(P=>{SHIPPH[key]=P;shipShowPhotos(x,P)}).catch(()=>{}));
+  });
+}
+function shipShowPhotos(x,P){const box=$('sp_'+x.row);if(!box)return;
+  box.querySelectorAll('.pc .pim').forEach((ph,i)=>{const p=P.find(f=>parseInt(f.name)===i+1)||P[i];
+    ph.innerHTML=p?`<img src="${p.img}" alt="" onclick="window.open('${p.url}','_blank')">`:'no photo'})}
+const shipGet=row=>SHIPS.find(x=>x.row===row);
+
+/* shipping sticker: on purpose it looks nothing like the check-in sticker (airplane, centered, framed),
+   so the resin team spots it right away and keeps shipping pieces apart */
+const PLANE=new Path2D('M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z');
+function drawShipLabel(ctx,g){
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.strokeStyle='#000';ctx.textBaseline='alphabetic';ctx.textAlign='center';
+  // rounded frame
+  const m=40,r=46;ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(m+r,m);ctx.arcTo(LW-m,m,LW-m,LH-m,r);ctx.arcTo(LW-m,LH-m,m,LH-m,r);ctx.arcTo(m,LH-m,m,m,r);ctx.arcTo(m,m,LW-m,m,r);ctx.closePath();ctx.stroke();
+  // airplane, top center
+  const ps=4.6;ctx.save();ctx.translate(LW/2,m+70);ctx.rotate(Math.PI/2);ctx.scale(ps,ps);ctx.translate(-12,-12);ctx.fill(PLANE);ctx.restore();
+  // name on the package: the biggest size that fits the space between the airplane and QTY (1 to 3 lines, never overlapping)
+  ctx.font=`600 ${pt(15)}px Poppins, Arial, sans-serif`;const qTop=LH-m-36-ctx.measureText('QTY: 0').actualBoundingBoxAscent;
+  const maxW=LW-2*m-56,top=m+70+12*ps+20,bottom=qTop-22,availH=bottom-top;
+  const longWord=t=>{let o=[];t.split(' ').forEach(w=>{if(ctx.measureText(w).width<=maxW||!w.includes('-'))o.push(w);else{const p=w.split('-');p.forEach((x,i)=>o.push(x+(i<p.length-1?'-':'')))}});return o};
+  let size=60,lines=[g.shipName],lh=0;
+  for(;size>=8;size-=0.5){ctx.font=`700 ${pt(size)}px Poppins, Arial, sans-serif`;lh=pt(size)*1.1;
+    const words=longWord(String(g.shipName||'').trim());lines=[];let cur='';
+    words.forEach(w=>{const t=cur?(cur.endsWith('-')?cur+w:cur+' '+w):w;if(ctx.measureText(t).width<=maxW||!cur)cur=t;else{lines.push(cur);cur=w}});if(cur)lines.push(cur);
+    const asc=ctx.measureText(lines[0]).actualBoundingBoxAscent,desc=ctx.measureText(lines[lines.length-1]).actualBoundingBoxDescent;
+    if(lines.length<=3&&(lines.length-1)*lh+asc+desc<=availH&&lines.every(l=>ctx.measureText(l).width<=maxW))break}
+  // measured with the real letters (g, y, p tails included), then centered in the space
+  const asc=ctx.measureText(lines[0]).actualBoundingBoxAscent,desc=ctx.measureText(lines[lines.length-1]).actualBoundingBoxDescent;
+  let y=top+(availH-((lines.length-1)*lh+asc+desc))/2+asc;lines.forEach(l=>{ctx.fillText(l,LW/2,y);y+=lh});
+  // QTY
+  ctx.font=`600 ${pt(15)}px Poppins, Arial, sans-serif`;ctx.fillText(`QTY: ${g.count}`,LW/2,LH-m-36);
+  ctx.textAlign='left';
+}
+function shipPrint(row){const x=shipGet(row);if(!x)return;
+  const d=new Date(x.ts);
+  printLabels([{kind:'ship',shipName:x.shipName,count:x.count,owners:x.owners,city:x.city,state:x.state,projects:1,
+    sent:isNaN(d)?'':'Sent '+(d.getMonth()+1)+'/'+d.getDate()}],{direct:true,noMark:true});
+  call('shipPrinted',x.row,x.ts).then(w=>{x.printed=w;renderShip();shipBadge(SHIPS.filter(shipNeeds).length)}).catch(e=>toast('Printed, but could not save it: '+(e.message||e),4000));
+}
+function shipRemove(row){const x=shipGet(row);if(!x)return;
+  const m=document.createElement('div');m.className='modal';m.id='shipRm';
+  m.innerHTML=`<div class="mbox" style="max-width:400px"><h2 style="margin:0 0 6px">Remove this request?</h2>
+    <p class="muted" style="margin:0 0 12px"><b style="color:var(--ink)">${esc(x.shipName)}</b> · ${x.count} piece${x.count===1?'':'s'} · sent ${esc(exactTime(x.ts))}<br>It moves to the "Removed Requests" tab in the shipping sheet, so nothing is lost.</p>
+    <div class="chips" style="justify-content:center;margin-bottom:12px">${['Guest sent it again','Sent twice by mistake','Not shipping anymore'].map(w=>`<button onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')">${w}</button>`).join('')}</div>
+    <button class="btn main" id="shipRmGo" style="background:#c40056">Remove</button><button class="btn ghost" style="width:100%;margin-top:8px" onclick="$('shipRm').remove()">Keep it</button></div>`;
+  document.body.appendChild(m);
+  $('shipRmGo').onclick=async()=>{const why=(m.querySelector('.chips .on')||{}).textContent||'';$('shipRmGo').disabled=true;
+    try{await call('shipRemove',x.row,x.ts,why);m.remove();toast('Removed ✓');loadShip(true)}catch(e){$('shipRmGo').disabled=false;toast(e.message||String(e),4000)}};
+}
+function shipEdit(row){const x=shipGet(row);if(!x)return;
+  const f=(id,l,v,ph,t)=>`<label class="l" style="margin-top:8px">${l}</label><input id="se_${id}" value="${esc(v||'')}" placeholder="${ph||''}" ${t||''}>`;
+  const m=document.createElement('div');m.className='modal';m.id='shipEd';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:480px;max-height:90vh;overflow:auto"><b style="font-size:20px">Edit shipping request</b>
+    ${f('shipName','Name on the package',x.shipName)}
+    <label class="l" style="margin-top:12px">Pieces (whose piece)</label><div id="se_owners"></div>
+    <button type="button" class="btn ghost small" style="width:auto;margin-top:6px" onclick="shipOwnerRow('')">+ Add a name</button>
+    <p class="muted" style="font-size:13px;margin:4px 0 0">To add a piece with a photo, use "+ Add a piece" on the request.</p>
+    ${f('street','Street',x.street)}${f('street2','Apt / Suite',x.street2)}${f('city','City',x.city)}
+    <div style="display:flex;gap:8px"><div style="flex:1">${f('state','State',x.state,'FL','maxlength="2"')}</div><div style="flex:1">${f('zip','ZIP',x.zip,'','inputmode="numeric"')}</div></div>
+    ${f('guest','Filled out by',x.guest)}${f('phone','Phone',x.phone,'','type="tel"')}${f('email','Email',x.email,'','type="email"')}
+    <label class="l" style="margin-top:8px">Notes</label><textarea id="se_notes" rows="2">${esc(x.notes)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" onclick="$('shipEd').remove()">Cancel</button><button class="btn main" id="se_go">Save</button></div></div>`;
+  document.body.appendChild(m);x.owners.forEach(o=>shipOwnerRow(o));
+  $('se_go').onclick=async()=>{const v=k=>$('se_'+k).value;
+    const owners=[...$('se_owners').querySelectorAll('input')].map(i=>i.value.trim()).filter(Boolean);
+    if(!v('shipName').trim())return toast('Add the name on the package');if(!owners.length)return toast('Add at least one piece');
+    $('se_go').disabled=true;
+    try{const nx=await call('shipSave',x.row,x.ts,{shipName:v('shipName'),owners,street:v('street'),street2:v('street2'),city:v('city'),state:v('state'),zip:v('zip'),guest:v('guest'),phone:v('phone'),email:v('email'),notes:v('notes')});
+      Object.assign(x,nx);m.remove();renderShip();toast('Saved ✓')}catch(e){$('se_go').disabled=false;toast(e.message||String(e),4000)}};
+}
+function shipOwnerRow(v){const d=document.createElement('div');d.style.cssText='display:flex;gap:6px;margin-top:6px';
+  d.innerHTML=`<input value="${esc(v)}" placeholder="Artist's name" style="flex:1"><button type="button" class="btn ghost small" style="width:auto" onclick="this.parentNode.remove()">✕</button>`;$('se_owners').appendChild(d)}
+function shipAddPiece(row){const x=shipGet(row);if(!x)return;let photo='';
+  const m=document.createElement('div');m.className='modal';m.id='shipAdd';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:420px"><b style="font-size:20px">Add a piece</b><p class="muted" style="margin:4px 0 10px">${esc(x.shipName)} · now ${x.count} piece${x.count===1?'':'s'}</p>
+    <label class="l">Whose piece is it?</label><input id="sa_owner" placeholder="Artist's name">
+    <label class="l" style="margin-top:10px">Photo</label>
+    <div style="display:flex;gap:8px"><label class="btn ghost" style="flex:1;text-align:center" for="sa_cam">📷 Take photo</label><label class="btn ghost" style="flex:1;text-align:center" for="sa_pic">🖼️ Choose photo</label></div>
+    <input type="file" id="sa_cam" accept="image/*" capture="environment" hidden><input type="file" id="sa_pic" accept="image/*" hidden>
+    <div id="sa_prev" style="margin-top:8px"></div>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" onclick="$('shipAdd').remove()">Cancel</button><button class="btn main" id="sa_go">Add piece</button></div></div>`;
+  document.body.appendChild(m);setTimeout(()=>{const e=$('sa_owner');if(e)e.focus()},50);
+  const onPick=inp=>inp.onchange=()=>{const fl=inp.files&&inp.files[0];if(!fl)return;$('sa_prev').innerHTML='<p class="muted">Processing photo…</p>';
+    shrinkPhoto(fl).then(d=>{photo=d;$('sa_prev').innerHTML=`<img src="${d}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px">`}).catch(()=>{$('sa_prev').innerHTML='<p class="muted">Could not read that photo</p>'})};
+  onPick($('sa_cam'));onPick($('sa_pic'));
+  $('sa_go').onclick=async()=>{const o=$('sa_owner').value.trim();if(!o){$('sa_owner').focus();return toast('Whose piece is it?')}
+    if(!photo&&!confirm('Add it without a photo?'))return;
+    $('sa_go').disabled=true;$('sa_go').textContent='Adding…';
+    try{const nx=await call('shipAddPiece',x.row,x.ts,o,photo);Object.assign(x,nx);delete SHIPPH[x.row+'|'+x.ts];m.remove();renderShip();toast('Piece added ✓ Print a new label if you already printed one',4500)}
+    catch(e){$('sa_go').disabled=false;$('sa_go').textContent='Add piece';toast(e.message||String(e),4000)}};
+}
+function shrinkPhoto(file){return new Promise((ok,no)=>{const r=new FileReader();r.onerror=no;r.onload=e=>{const img=new Image();img.onerror=no;img.onload=()=>{
+  const max=1100;let w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max}else if(h>max){w=Math.round(w*max/h);h=max}
+  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);ok(c.toDataURL('image/jpeg',0.6))};img.src=e.target.result};r.readAsDataURL(file)})}
+/* every minute: new requests show a pink count on the Shipping tab (the team email still goes out as a backup) */
+async function pollShip(){
+  try{const r=await call('shipCount');shipBadge(r.count);
+    if(SHIPN>=0&&r.latest&&r.latest!==SHIPLATEST&&r.count>0){toast('📦 New shipping request: '+r.latest.split('|')[1],5000);if(!$('vShip').classList.contains('hide'))loadShip(true);else SHIPS=null}
+    SHIPN=r.count;SHIPLATEST=r.latest;setTimeout(pollShip,60000)}
+  catch(e){if(!/not connected/i.test(e.message||''))setTimeout(pollShip,120000)}
 }
 
 /* ---------- Toast bookings: arriving today ---------- */
@@ -1657,7 +1820,7 @@ async function setCap(time,n){
 }
 
 /* ---------- init ---------- */
-$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();syncDates();setTimeout(()=>loadGuestIndex().catch(()=>{}),4000);try{['800','700','500'].forEach(w=>document.fonts.load(`${w} 40px Poppins`))}catch(e){}
+$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();syncDates();setTimeout(()=>loadGuestIndex().catch(()=>{}),4000);setTimeout(pollShip,2500);try{['800','700','500'].forEach(w=>document.fonts.load(`${w} 40px Poppins`))}catch(e){}
 
 /* ---------- 🔔 new bookings bell ---------- */
 let ACT=[],ACT_SEEN='',ACT_FIRST=true,AUDIO=null;
