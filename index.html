@@ -597,12 +597,12 @@ async function quickPrint(copies){
   let area=$('printArea');if(!area){area=document.createElement('div');area.id='printArea';document.body.appendChild(area)}
   let ps=$('pageCss');if(!ps){ps=document.createElement('style');ps.id='pageCss';document.head.appendChild(ps)}
   const W=ROTATE?2:3,H=ROTATE?3:2;
-  ps.textContent=`@page{margin:0}#printArea{width:2in!important;margin:0!important;padding:0!important}#printArea img{display:block;width:2in;height:2in;object-fit:contain;margin:0;break-after:page;page-break-after:always;break-inside:avoid}#printArea img.sq{width:1.6in;height:1.6in;margin:0 auto}#printArea img:last-child{break-after:auto;page-break-after:auto}`;
+  ps.textContent=`@page{margin:0}#printArea{width:2in!important;margin:0!important;padding:0!important}#printArea img{display:block;width:2in;height:2in;object-fit:contain;margin:0;break-after:page;page-break-after:always;break-inside:avoid}#printArea img:last-child{break-after:auto;page-break-after:auto}`;
   area.innerHTML='';
-  const imgs=copies.map(g=>{const c=document.createElement('canvas');c.width=LW;c.height=g.kind==='ship'?LW:LH;   // shipping sticker is square (2 x 2 paper)
+  const imgs=copies.map(g=>{const c=document.createElement('canvas');c.width=LW;c.height=LH;   // every sticker is 3 x 2, printed exactly like the check-in stickers
     drawLabel(c.getContext('2d'),g);let out=c;
     if(ROTATE){const r=document.createElement('canvas');r.width=LH;r.height=LW;const rc=r.getContext('2d');rc.translate(LH,0);rc.rotate(Math.PI/2);rc.drawImage(c,0,0);out=r}
-    const im=new Image();im.alt='';if(g.kind==='ship')im.className='sq';im.src=out.toDataURL('image/png');area.appendChild(im);return im});
+    const im=new Image();im.alt='';im.src=out.toDataURL('image/png');area.appendChild(im);return im});
   await Promise.race([Promise.all(imgs.map(im=>im.decode?im.decode().catch(()=>{}):Promise.resolve())),new Promise(r=>setTimeout(r,1500))]);
   window.print();
 }
@@ -987,7 +987,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611070124';
+const BUILD='202611070128';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
