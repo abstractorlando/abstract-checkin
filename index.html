@@ -588,7 +588,7 @@ async function makePdf(copies){
 let pendingPdf=null,pendingCopies=null;
 /* iPad: print the stickers straight from the page (tap Print, then Print in the iPad box). The old way went through the share sheet. */
 let OLDPRINT=false;try{localStorage.removeItem('abs_oldprint');localStorage.removeItem('abs_rot')}catch(e){}
-const quickPrintOn=()=>isTouch&&!OLDPRINT;
+const quickPrintOn=()=>false;   // iPads print a 3 x 2 PDF (the way check-in stickers always printed right on the Rollo)
 function stickerCopies(list){const copies=[];list.forEach(g=>{const n=g.projects||1;
     if(g.onlyProject)copies.push(Object.assign({},g,{pk:g.onlyProject,pn:n}));
     else for(let k=1;k<=n;k++)copies.push(Object.assign({},g,{pk:k,pn:n}))});return copies}
@@ -617,7 +617,12 @@ async function printLabels(list,opts){
   }else{
     let blob;try{blob=await makePdf(copies)}catch(e){toast('Could not make stickers: '+(e.message||e),5000);return}
     pendingPdf={blob,count:copies.length};
-    if(isTouch){$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
+    if(isTouch){
+      // straight to the iPad's share sheet when the tap still counts; otherwise one "Print" tap first
+      const file=new File([blob],'abstract-stickers.pdf',{type:'application/pdf'});let shown=false;
+      if(opts.direct&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});shown=true}catch(e){if(e.name==='AbortError')shown=true}}
+      if(!shown){$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
+    }
     else sendToPrinter();
   }
   if(!opts.noMark&&list[0].row){list.forEach(g=>g.printed=(g.printed||0)+1);call('markPrinted',list.map(g=>g.row)).then(()=>{if(!$('vToday').classList.contains('hide'))loadDay(true)}).catch(()=>{})}
@@ -988,7 +993,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611070133';
+const BUILD='202611071447';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
