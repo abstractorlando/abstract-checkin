@@ -353,6 +353,7 @@
       <label class="l" for="q">Pickup: ask for the reservation name</label>
       <input id="q" placeholder="Type a name…" oninput="debFind()">
       <datalist id="pieceTypes"></datalist>
+      <button class="btn ghost small" style="width:auto;margin-top:10px" onclick="openFhStore()">+ Add pieces already on the shelf from FareHarbor</button>
     </div>
     <div id="findList"></div>
   </section>
@@ -993,7 +994,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611071447';
+const BUILD='202611081853';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1048,6 +1049,43 @@ function shipPhotoErr(x,e){const box=$('sp_'+x.row);if(!box)return;const m=Strin
   const msg=/permission|authoriz|DriveApp/i.test(m)?'Photos need Drive permission':'Photo did not load';
   box.querySelectorAll('.pc .pim').forEach(ph=>{ph.innerHTML=`<span style="font-size:11px;padding:4px;line-height:1.2">${esc(msg)}</span>`;ph.title=m});
   if(x.photos)box.querySelector('.pc .pim').insertAdjacentHTML('beforeend',`<a href="${esc(x.photos)}" target="_blank" style="font-size:11px">Open folder</a>`)}
+/* ---------- FareHarbor-era pieces already on the shelf: add them here once, no "ready" message goes out ---------- */
+function openFhStore(){
+  const m=document.createElement('div');m.className='modal';m.id='fhModal';
+  const t=today(),wk=new Date(Date.now()-7*864e5),d7=wk.getFullYear()+'-'+String(wk.getMonth()+1).padStart(2,'0')+'-'+String(wk.getDate()).padStart(2,'0');
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:520px;max-height:92vh;overflow:auto">
+    <b style="font-size:20px">Add pieces from FareHarbor storage</b>
+    <p class="muted" style="margin:4px 0 10px;font-size:14px">For guests who booked on FareHarbor and already got their "art is ready" message. No new message is sent: the pickup reminders just continue from the day they were told.</p>
+    <label class="l">Reservation name</label><input id="fh_name" placeholder="First and last name">
+    <div style="display:flex;gap:8px"><div style="flex:1"><label class="l" style="margin-top:8px">Phone</label><input id="fh_phone" type="tel" placeholder="(407) 555-1234"></div>
+      <div style="flex:1"><label class="l" style="margin-top:8px">Email</label><input id="fh_email" type="email" placeholder="name@email.com"></div></div>
+    <div style="display:flex;gap:8px"><div style="flex:1"><label class="l" style="margin-top:8px">Class date</label><input id="fh_date" type="date" value="${d7}"></div>
+      <div style="flex:1"><label class="l" style="margin-top:8px">Class time</label><input id="fh_time" list="fh_times" placeholder="2:00 PM"><datalist id="fh_times"></datalist></div></div>
+    <label class="l" style="margin-top:8px">Told their art was ready on</label><input id="fh_ready" type="date" value="${t}">
+    <p class="muted" style="margin:2px 0 0;font-size:13px">The day FareHarbor's pickup message went out. Reminders and the pickup deadline count from this day.</p>
+    <label class="l" style="margin-top:12px">Pieces on the shelf</label><div id="fh_items"></div>
+    <button type="button" class="btn ghost small" style="width:auto;margin-top:6px" onclick="fhRow()">+ Another piece</button>
+    <datalist id="fh_pt">${PT_ALL().map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+    <p id="fh_err" style="color:#c40056;margin:8px 0 0;font-size:14px"></p>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn ghost" onclick="$('fhModal').remove()">Cancel</button><button class="btn main" id="fh_go">Save to storage</button></div></div>`;
+  document.body.appendChild(m);fhRow();
+  const fillTimes=()=>{$('fh_times').innerHTML=timesFor($('fh_date').value||t).map(x=>`<option value="${x}">`).join('')};fillTimes();$('fh_date').onchange=fillTimes;
+  $('fh_name').oninput=()=>{const f=$('fh_items').querySelector('.fh_who');if(f&&!f.dataset.touched)f.value=cap(($('fh_name').value.trim().split(/\s+/)[0])||'')};
+  $('fh_go').onclick=async()=>{const v=id=>$(id).value.trim();
+    const items=[...$('fh_items').children].map(r=>({project:r.querySelector('.fh_p').value.trim(),who:r.querySelector('.fh_who').value.trim(),shelf:r.querySelector('.fh_s').value.trim()})).filter(i=>i.project||i.shelf);
+    if(!v('fh_name'))return $('fh_err').textContent='Add the reservation name';
+    if(!v('fh_phone')&&!v('fh_email'))return $('fh_err').textContent='Add a phone or email so the reminders can reach them';
+    if(!items.length)return $('fh_err').textContent='Add at least one piece';
+    if(items.some(i=>!i.project||!i.shelf))return $('fh_err').textContent='Every piece needs a project and a shelf (like B1)';
+    $('fh_go').disabled=true;$('fh_go').textContent='Saving…';$('fh_err').textContent='';
+    try{const r=await call('importStorage',{reservation:titleCase(v('fh_name')),phone:v('fh_phone'),email:v('fh_email'),date:v('fh_date'),time:v('fh_time'),readyOn:v('fh_ready'),items});
+      const nm=titleCase(v('fh_name'));m.remove();toast(`Saved ✓ ${r.pieces} piece${r.pieces>1?'s':''} · pick up by ${niceDate(r.deadline)}`,5000);$('q').value=nm;debFind()}
+    catch(e){$('fh_go').disabled=false;$('fh_go').textContent='Save to storage';$('fh_err').textContent=e.message||String(e)}};
+}
+function fhRow(){const d=document.createElement('div');d.style.cssText='display:flex;gap:6px;margin-top:6px;flex-wrap:wrap';
+  const first=cap((($('fh_name')&&$('fh_name').value.trim().split(/\s+/)[0])||''));
+  d.innerHTML=`<input class="fh_p" list="fh_pt" placeholder="Project" style="flex:2;min-width:130px"><input class="fh_who" placeholder="Whose" value="${esc($('fh_items').children.length?'':first)}" style="flex:1;min-width:90px" oninput="this.dataset.touched=1"><input class="fh_s" placeholder="Shelf" style="width:80px" autocapitalize="characters"><button type="button" class="btn ghost small" style="width:auto" onclick="this.parentNode.remove()">✕</button>`;
+  $('fh_items').appendChild(d)}
 const shipGet=row=>SHIPS.find(x=>x.row===row);
 
 /* shipping sticker: on purpose it looks nothing like the check-in sticker (airplane, centered, framed),
