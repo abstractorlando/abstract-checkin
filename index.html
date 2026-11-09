@@ -165,7 +165,7 @@
   .wc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#efeaff;border:1px solid #d8cff7;border-radius:10px;padding:8px;font:500 13px Poppins;color:var(--ink);cursor:pointer;position:relative}
   .wc b{font-size:14px;color:var(--purp)}.wc.full{background:#e3dcfb}.wc.closed{background:#f3f3f5;color:var(--muted);border-color:var(--line);cursor:default}.wc.pv{background:#f7f4ff;border-color:var(--purp)}
   .wc .fl{position:absolute;top:8px;right:8px;background:#4a4a55;color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:1px 6px}
-  .wnum{font-size:12px;color:var(--muted)}.wbar{display:block;width:100%;height:5px;background:#fff;border-radius:9px;overflow:hidden;margin-top:3px}.wbar span{display:block;height:100%;background:var(--purp)}
+  .wnum{font-size:12px;color:var(--muted)}.wnum .hold{font-style:normal;color:#9a8fb0}.wbar{display:block;width:100%;height:5px;background:#fff;border-radius:9px;overflow:hidden;margin-top:3px}.wbar span{display:block;height:100%;background:var(--purp)}
   .priv{border-color:var(--purp);background:#f7f4ff;display:grid;gap:10px}.prow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
   @media (max-width:640px){.scls{grid-template-columns:1fr auto;}.sbar{grid-column:1/-1;order:3}.scount{order:4}}
   .daynav{display:flex;gap:8px;align-items:center;margin:0 0 10px}.daynav input{flex:1;min-width:0}.daynav .btn{min-width:44px;font-size:18px}
@@ -994,7 +994,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611091247';
+const BUILD='202611091521';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1810,16 +1810,16 @@ function weekStart(d){const [y,m,dd]=d.split('-').map(Number);const x=new Date(y
 async function loadWeek(){
   const st=weekStart($('schedDay').value);$('schedBox').innerHTML='<p class="muted">Loading the week…</p>';
   let W;try{W=await call('getWeek',st)}catch(e){$('schedBox').innerHTML=`<p class="muted">Could not load: ${esc(e.message||e)}</p>`;return}
-  const tot=W.reduce((s,d)=>s+d.classes.reduce((a,c)=>a+c.booked,0),0),cap=W.reduce((s,d)=>s+d.classes.reduce((a,c)=>a+c.cap,0),0);
+  const tot=W.reduce((s,d)=>s+d.classes.reduce((a,c)=>a+c.booked-(c.held||0),0),0),cap=W.reduce((s,d)=>s+d.classes.reduce((a,c)=>a+c.cap,0),0);
   $('schedBox').innerHTML=`<p class="muted" style="margin:0 0 8px">${tot} booked of ${cap} spots this week · tap a class to see who's coming</p><div class="wk">`+W.map(d=>{
     const [y,m,dd]=d.date.split('-').map(Number),dt=new Date(y,m-1,dd);
     const head=`<div class="wh${d.date===today()?' today':''}" onclick="$('schedDay').value='${d.date}';setSchedView('day')"><b>${dt.toLocaleDateString('en-US',{weekday:'short'})}</b> ${m}/${dd}</div>`;
     const note=d.dayNote?`<div class="wn">📝 ${esc(d.dayNote)}</div>`:'';
     if(!d.open)return `<div class="wd">${head}${note}<div class="wc closed">${d.regular?'Closed':'—'}</div></div>`;
-    return `<div class="wd">${head}${note}`+d.classes.map(c=>{const full=c.cap>0&&c.booked>=c.cap,closed=c.cap===0,pct=c.cap?Math.min(100,c.booked/c.cap*100):0;
+    return `<div class="wd">${head}${note}`+d.classes.map(c=>{const full=c.cap>0&&c.booked>=c.cap,closed=c.cap===0,pct=c.cap?Math.min(100,(c.booked-(c.held||0))/c.cap*100):0;
       return `<button class="wc${full?' full':''}${closed?' closed':''}${c.private?' pv':''}" onclick="SLOT='${c.time}';setArrDay('${d.date}');show('new');window.scrollTo(0,0)">
         <b>${c.private?'🔒 ':''}${esc(c.time)}</b>${full?'<span class="fl">Full</span>':''}
-        <span class="wnum">${closed?'Closed':`${c.booked} booked · ${Math.max(0,c.cap-c.booked)} open`}</span>
+        <span class="wnum">${closed?'Closed':`${c.booked-(c.held||0)} booked${c.held?` · <i class="hold">${c.held} on hold</i>`:''} · ${Math.max(0,c.cap-c.booked)} open`}</span>
         ${c.private?`<span class="wnum">${esc(c.private)}</span>`:''}${c.note?`<span class="wnum">📝 ${esc(c.note)}</span>`:''}
         <span class="wbar"><span style="width:${pct}%"></span></span></button>`}).join('')+'</div>'}).join('')+'</div>';
 }
