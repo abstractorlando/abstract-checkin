@@ -964,13 +964,13 @@ async function confirmPickup(id){
   catch(e){toast('Could not update: '+(e.message||e),5000)}
 }
 async function editContact(id){
-  const f=parties[id][0];const ph=prompt('Phone',f.phone);if(ph===null)return;const em=prompt('Email',f.email);if(em===null)return;
+  const f=parties[id][0];const ph=await askText('Phone',f.phone);if(ph===null)return;const em=await askText('Email',f.email);if(em===null)return;
   try{await call('updateContact',id,ph.trim(),em.trim());toast('Updated');refreshView()}catch(e){toast('Could not update')}
 }
 async function editGuest(row){
-  const g=cache[row];const n=prompt('Guest first name',g.name);if(n===null)return;
+  const g=cache[row];const n=await askText('Guest first name',g.name);if(n===null)return;
   const ft=confirm('Is '+(n||g.name)+' a first timer?\nOK = FT (first timer), Cancel = RG (returning guest)');
-  const pj=prompt('How many projects (labels)?',g.projects||1);if(pj===null)return;
+  const pj=await askText('How many projects (labels)?',g.projects||1);if(pj===null)return;
   try{await call('updateGuest',row,cap(n||g.name),ft?'FT':'RG',parseInt(pj)||1);toast('Updated');refreshView()}catch(e){toast('Could not update')}
 }
 function refreshView(){if(!$('vToday').classList.contains('hide'))loadDay();else if(!$('vFind').classList.contains('hide'))find()}
@@ -1027,7 +1027,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611092322';
+const BUILD='202611092326';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1227,6 +1227,19 @@ function setArrDay(d){if(!d)return;$('dt').value=d;$('arrDay').value=d;syncDates
 function shiftDay(n){SLOT='';const [y,m,dd]=$('arrDay').value.split('-').map(Number);const x=new Date(y,m-1,dd+n);
   setArrDay(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'))}
 let SLOT='';
+/* In-app text box (instead of the browser's small pop-up). Resolves to the text, or null if cancelled. */
+function askText(msg,val,o){o=o||{};return new Promise(res=>{
+  const [title,...rest]=String(msg).split('\n'),m=document.createElement('div');m.className='modal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:520px"><b style="font-size:20px">${esc(title)}</b>${rest.length?`<p class="muted" style="margin:4px 0 0">${esc(rest.join(' '))}</p>`:''}
+    ${o.multi?`<textarea id="askV" rows="6" style="width:100%;margin-top:12px;font:500 17px/1.45 Poppins;padding:12px 14px;border:2px solid var(--line);border-radius:12px;resize:vertical"></textarea>`
+      :`<input id="askV" style="margin-top:12px" ${/\$/.test(title)?'inputmode="decimal"':''}>`}
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" style="flex:1" id="askNo">Cancel</button><button class="btn main" style="flex:1" id="askOk">Save</button></div></div>`;
+  document.body.appendChild(m);const inp=m.querySelector('#askV');inp.value=val==null?'':String(val);inp.focus();
+  const done=v=>{m.remove();res(v)};
+  m.querySelector('#askNo').onclick=()=>done(null);m.querySelector('#askOk').onclick=()=>done(inp.value);
+  m.onclick=e=>{if(e.target===m&&(inp.value===String(val==null?'':val)||confirm('Close this? What you typed will be lost.')))done(null)};
+  inp.onkeydown=e=>{if(e.key==='Enter'&&(!o.multi||e.metaKey||e.ctrlKey)){e.preventDefault();done(inp.value)}if(e.key==='Escape')done(null)};
+})}
 /* tapping outside a box closes it, but asks first if something was typed in it */
 document.addEventListener('input',e=>{const t=e.target,m=t.closest&&t.closest('.modal');if(m&&t.type!=='search')m.dataset.dirty='1'},true);
 function softClose(m){if(m.dataset.dirty&&!confirm('Close this? What you typed will be lost.'))return;m.remove()}
@@ -1510,7 +1523,7 @@ function bookingByRow(row){return arrivals.find(x=>x.row===row)||SR.find(x=>x.ro
 /* ---------- staff notes + guest profiles (never shown to guests) ---------- */
 async function editNote(k){
   const b=bookingByKey(k);if(!b)return;
-  const v=prompt(`Private staff note for ${b.reservation}\n(only your team sees this)`,b.staffNote||'');if(v===null)return;
+  const v=await askText(`Team note for ${b.reservation}\nOnly your team sees this.`,b.staffNote||'',{multi:true});if(v===null)return;
   try{await call('setBookingNote',b.key,v);b.staffNote=v.trim();toast(v.trim()?'Note saved ✓':'Note removed');loadArrivals();if($('bkModal'))viewBooking(b.row)}catch(e){toast('Could not save: '+(e.message||e),5000)}
 }
 let GUEST=null,GUESTB=null;
@@ -1621,7 +1634,7 @@ function feeDecision(f,marking){
 }
 async function feeGo(fj,amt){
   const f=JSON.parse(fj),full=FEE_PER_GUEST*f.size;
-  if(amt===-1){const v=prompt(`How much should we charge ${f.reservation}? (up to $${full})`,'');if(v===null)return;
+  if(amt===-1){const v=await askText(`How much should we charge ${f.reservation}? (up to $${full})`,'');if(v===null)return;
     amt=parseFloat(String(v).replace(/[^\d.]/g,''));if(!(amt>0&&amt<=full)){toast(`Enter an amount between $1 and $${full}`,4000);return}}
   const m=$('feeModal');if(m)m.querySelectorAll('button').forEach(x=>x.disabled=true);
   try{const r=await call('chargeFee',f.bookingId,f.kind,amt,f.removed?f.size:0);if(m)m.remove();
@@ -1662,7 +1675,7 @@ async function ucCame(i){const f=FEES[i];$('ucModal').remove();if($('feesModal')
 async function chargeFee(id,kind,full,amt){
   const bk=arrivals.find(x=>x.bookingId===id),name=bk?bk.reservation:'this guest';
   const why=kind==='noshow'?'not showing up':'cancelling late';
-  if(amt===-1){const v=prompt(`How much should we charge ${name} for ${why}? (up to $${full})`,'');if(v===null)return;
+  if(amt===-1){const v=await askText(`How much should we charge ${name} for ${why}? (up to $${full})`,'');if(v===null)return;
     amt=parseFloat(String(v).replace(/[^\d.]/g,''));if(!(amt>0&&amt<=full)){toast(`Enter an amount between $1 and $${full}`,4000);return}}
   if(amt===0){if(!confirm(`Waive the fee for ${name}? Nothing will be charged.`))return}
   else if(!confirm(`Charge ${name} $${amt===null?full:amt} for ${why}?\nThis charges the card they saved when booking.`))return;
@@ -1924,7 +1937,7 @@ function privHtml(d){
 function dayNote(d){const n=(d.notes||{})['*'];return `<div style="margin-top:6px">${n?`<span class="snote">📝 ${esc(n)}</span> `:''}<button class="tl" style="padding-left:0" onclick="classNote('*')">${n?'Edit day note':'Add day note'}</button></div>`}
 async function classNote(time){
   const cur=(SCH.notes||{})[time]||'';
-  const v=prompt(time==='*'?`Note for the whole day (only staff see it), e.g. Thanksgiving`:`Note for ${time} (only staff see it)`,cur);if(v===null)return;
+  const v=await askText(time==='*'?`Note for the whole day\nOnly staff see it, e.g. Thanksgiving`:`Note for ${time}\nOnly staff see it.`,cur,{multi:true});if(v===null)return;
   try{SCH=await call('setClassNote',SCH.date,time,v);renderSched()}catch(e){toast(e.message||String(e),5000)}
 }
 async function privCall(fn,...a){try{SCH=await call(fn,...a,SCH.date);renderSched()}catch(e){toast(e.message||String(e),5000)}}
