@@ -76,7 +76,6 @@
   .timer{background:#fff0f8;color:#b8006f;border-radius:12px;padding:10px 14px;font-weight:700;font-size:15px;margin:0 0 12px;text-align:center}
   .timer.out{background:#fff5e6;color:#8a5a00}
   .closed{padding:14px;border-radius:14px;background:#fff5e6;font-size:14px}
-  input.bad{border-color:#c40056!important;background:#fff0f5}
 </style>
 </head>
 <body>
@@ -154,7 +153,7 @@
       <p id="cWhen" style="font-size:18px;font-weight:700;margin:4px 0"></p>
       <p class="muted" id="cParty"></p>
       <p style="margin:18px 0 0" id="cText"></p>
-      <p style="margin:12px 0 0">Please arrive about 10 minutes early to settle in and pick your project and colors.</p>
+      <p style="margin:12px 0 0">Please arrive 10 minutes early to pick your project and colors.</p>
       <p class="hide" id="cWine" style="margin:12px 0 0">🥂 Your sparkling wine will be chilled and waiting ($30, paid at the studio).</p>
     </div>
     <div class="card">
@@ -171,18 +170,7 @@
       <div class="days" id="mDays"></div>
       <div class="times" id="mTimes" style="margin-top:12px"></div>
       <p class="err" id="mErr"></p>
-      <button class="go" id="mSave" disabled>Confirm new time</button>
-    </div>
-    <div class="card hide" id="mSizeCard">
-      <div class="step"><div class="num">👥</div><h2>How many guests?</h2></div>
-      <div class="stepper" style="justify-content:center;margin:6px 0 4px">
-        <button type="button" id="sMinus" aria-label="Fewer guests">−</button>
-        <div class="v" id="sNum">1</div>
-        <button type="button" id="sPlus" aria-label="More guests">+</button>
-      </div>
-      <p class="muted" id="sNote" style="text-align:center;margin:8px 0 0"></p>
-      <p class="err" id="sErr"></p>
-      <button class="go" id="sSave" disabled>Update party size</button>
+      <button class="go" id="mSave" disabled>Move my booking</button>
     </div>
   </section>
 </main>
@@ -207,22 +195,20 @@ function track(name,d){
     if(EMBEDDED){parent.postMessage({ao:'track',name,d},'*');return}
     const v={currency:'USD',value:d.value,party_size:d.size};
     if(name==='checkout'){gtag('event','begin_checkout',v);fbq('track','InitiateCheckout',{currency:'USD',value:d.value})}
-    if(name==='booked'){gtag('event','book_class',Object.assign({transaction_id:d.id},v));
+    if(name==='booked'){gtag('event','purchase',Object.assign({transaction_id:d.id},v));
       fbq('track','Schedule',{currency:'USD',value:d.value},{eventID:d.id});fbq('track','Purchase',{currency:'USD',value:d.value,num_items:d.size},{eventID:d.id+'-p'})}
   }catch(e){}
 }
 /* keep the website's frame exactly as tall as this page */
-if(EMBEDDED){let last=0;const M=document.querySelector('main');
-  /* measure the form itself, not the window: the window grows with the frame, which made the frame grow forever */
-  const tell=()=>{const hh=Math.ceil(M.getBoundingClientRect().bottom+window.scrollY+(parseFloat(getComputedStyle(M).marginBottom)||0));if(Math.abs(hh-last)>1){last=hh;parent.postMessage({ao:'height',h:hh},'*')}};
-  new ResizeObserver(tell).observe(M);setInterval(tell,700);}
+if(EMBEDDED){let last=0;const tell=()=>{const hh=document.documentElement.scrollHeight;if(hh!==last){last=hh;parent.postMessage({ao:'height',h:hh},'*')}};
+  new ResizeObserver(tell).observe(document.body);setInterval(tell,700);}
 
 const $=id=>document.getElementById(id);
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function call(fn,...args){
   return fetch(API_URL,{method:'POST',body:JSON.stringify({public:true,fn,args}),redirect:'follow',credentials:'omit'})
     .then(r=>r.json(),()=>{throw new Error('Connection problem. Please try again.')})
-    .then(j=>{if(!j.ok){if(j.error==='LATE_FEE_REQUIRED'){if(mine){mine.late=true;renderMine()}throw new Error('Your class is now less than 24 hours away, so a late-change fee applies. Please try again to see the amount.')}throw new Error(j.error)}return j.data});
+    .then(j=>{if(!j.ok)throw new Error(j.error);return j.data});
 }
 function dObj(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
 function niceDate(s){return dObj(s).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
@@ -284,11 +270,11 @@ function dayButtons(el,days,current,onPick,need){
     <div class="dw">${o.toLocaleDateString('en-US',{weekday:'short'})}</div><div class="dn">${o.getDate()}</div><div class="dm">${o.toLocaleDateString('en-US',{month:'short'})}</div></button>`}).join('');
   el.querySelectorAll('.day').forEach(b=>b.onclick=()=>onPick(b.dataset.d));
 }
-function timeButtons(el,day,current,onPick,need,hideFull){
+function timeButtons(el,day,current,onPick,need){
   if(!day){el.innerHTML='<p class="muted">Pick a day first.</p>';return}
-  el.innerHTML=day.times.filter(t=>!hideFull||t.left>=need).map(t=>{const can=t.left>=need;return `<button type="button" class="time${current===t.time?' on':''}${can&&t.left<=3?' low':''}" data-t="${t.time}" ${can?'':'disabled'}>
+  el.innerHTML=day.times.map(t=>{const can=t.left>=need;return `<button type="button" class="time${current===t.time?' on':''}${can&&t.left<=3?' low':''}" data-t="${t.time}" ${can?'':'disabled'}>
     <b>${t.time}</b><span>${!can?(t.left?'Only '+t.left+' left':'Full'):t.left<=3?'Only '+t.left+' left':t.left+' spots open'}</span></button>`}).join('')+
-    (!hideFull&&day.times.some(t=>t.left>0&&t.left<need)?`<p class="hint" style="grid-column:1/-1">Need a few more spots than you see? Text us at <a href="sms:+16893488239">(689) 348-8239</a> and we'll do our best to fit your whole group.</p>`:'');
+    (day.times.some(t=>t.left>0&&t.left<need)?`<p class="hint" style="grid-column:1/-1">Need a few more spots than you see? Text us at <a href="sms:+16893488239">(689) 348-8239</a> and we'll do our best to fit your whole group.</p>`:'');
   el.querySelectorAll('.time').forEach(b=>b.onclick=()=>onPick(b.dataset.t));
 }
 function backToDetails(){if(!$('payCard').classList.contains('hide')){clearInterval(holdTimer);booking=null;$('payCard').classList.add('hide');$('detailsCard').classList.remove('hide')}}
@@ -305,8 +291,8 @@ function renderDays(){
 function renderNames(){
   const box=$('guestNames');const have=[...box.querySelectorAll('input')].map(i=>i.value);
   if(size<2){box.innerHTML='';return}
-  box.innerHTML=`<label class="l">Who's creating with you? <span class="muted">(first names)</span></label>
-    <div class="row">${Array.from({length:size-1},(_,i)=>`<input placeholder="Guest ${i+2} first name" value="${esc(have[i]||'')}" autocapitalize="words" required oninput="this.classList.remove('bad')">`).join('')}</div>`;
+  box.innerHTML=`<label class="l">Who's creating with you? <span class="muted">(optional, first names)</span></label>
+    <div class="row">${Array.from({length:size-1},(_,i)=>`<input placeholder="Guest ${i+2}" value="${esc(have[i]||'')}" autocapitalize="words">`).join('')}</div>`;
 }
 $('toPay').onclick=async()=>{
   $('err1').textContent='';
@@ -315,8 +301,6 @@ $('toPay').onclick=async()=>{
   if(!first||!last)return $('err1').textContent='Please add your first and last name.';
   if(!phone)return $('err1').textContent='Please check your mobile number. Your confirmation is texted there.';
   if(!/^\S+@\S+\.\S+$/.test(email))return $('err1').textContent='Please check your email.';
-  const missing=[...$('guestNames').querySelectorAll('input')].filter(i=>!i.value.trim());
-  if(missing.length){missing.forEach(i=>i.classList.add('bad'));missing[0].focus();return $('err1').textContent=`Please add the first name of everyone creating with you (${missing.length} missing).`}
   const fee=AV.feePerGuest,h=AV.lateHours;
   $('summary').innerHTML=`<div class="sum"><span>Day</span><b>${esc(niceDate(sel.date))}</b></div>
     <div class="sum"><span>Time</span><b>${esc(sel.time)}</b></div><div class="sum"><span>Party</span><b>${size} guest${size>1?'s':''}</b></div>
@@ -406,10 +390,8 @@ async function loadMine(){
   try{mine=await call('getMyBooking',q.get('b'),q.get('t'));renderMine()}
   catch(e){$('mCard').innerHTML=`<p>${esc(e.message)}</p><p class="muted">Text us at (689) 348-8239 and we'll help.</p>`}
 }
-const FEE_TZ={timeZone:'America/New_York'};
-function deadlineText(b){const d=new Date(b.deadline);return d.toLocaleDateString('en-US',{...FEE_TZ,weekday:'long',month:'long',day:'numeric'})+' at '+d.toLocaleTimeString('en-US',{...FEE_TZ,hour:'numeric',minute:'2-digit'})}
 function renderMine(){
-  const b=mine,q=new URLSearchParams(location.search),fee=b.feePerGuest||AV.feePerGuest,h=AV.lateHours;
+  const b=mine,q=new URLSearchParams(location.search);
   if(b.status==='Needs card')return renderNeedCard();
   $('heroTitle').textContent='Your booking';$('heroSub').textContent='Confirmation '+b.id;$('heroPills').innerHTML='';
   const active=b.status==='Confirmed'&&!b.past;
@@ -417,43 +399,17 @@ function renderMine(){
     <div class="sum"><span>Day</span><b>${esc(niceDate(b.date))}</b></div><div class="sum"><span>Time</span><b>${esc(b.time)}</b></div>
     <div class="sum"><span>Party</span><b>${b.size} guest${b.size>1?'s':''}</b></div>
     <div class="sum"><span>Status</span><b>${b.status==='Confirmed'?(b.past?'Done':'Confirmed ✓'):esc(b.status==='Late cancel'?'Cancelled':b.status)}</b></div>
-    ${b.deposit?`<div class="sum"><span>${b.fareharbor?'Deposit paid':'Credit'}</span><b>$${b.deposit} · comes off your bill</b></div>`:''}
-    ${active&&b.depositOnly?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> If you cancel or reschedule now, your $${b.deposit} deposit can't be carried over. Nothing else is charged.</div>`
-      :`<div class="policy"><b>Free changes anytime before ${esc(deadlineText(b))}.</b> Reschedule and your $${b.deposit} deposit moves with you. Cancel before then and we'll save it as credit for your next visit. After that, cancelling or not showing up means the deposit can't be carried over.</div>`)
-      +`<button class="go" id="mMove">Reschedule</button>
-       <button class="ghost" id="mSize">Change party size</button>
-       <button class="ghost" id="mCancel">Cancel my booking</button>`:''}
-    ${active&&!b.depositOnly?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> You can still reschedule, change your party size or cancel here. A late-change fee of $${fee} per guest applies and goes on the card you saved. We'll show you the exact amount before anything is final.</div>`
-      :`<div class="policy"><b>Free changes anytime before ${esc(deadlineText(b))}.</b> After that, rescheduling, removing guests, cancelling or not showing up is $${fee} per guest.</div>`)
-      +`<button class="go" id="mMove">Reschedule</button>
-       <button class="ghost" id="mSize">Change party size</button>
-       <button class="ghost" id="mCancel">Cancel my booking</button>`:''}`;
+    ${active?(b.late?`<div class="policy">Your class is less than ${AV.lateHours} hours away, so changes can't be made online. Please text us at <a href="sms:+16893488239">(689) 348-8239</a>. If you can't make it, cancelling here applies the $${AV.feePerGuest} per guest fee ($${b.fee}).</div>`
+      :`<div class="policy">You can move or cancel at no charge until ${AV.lateHours} hours before your class.</div>
+       <button class="go" id="mMove">Change day or time</button>`)
+      +`<button class="ghost" id="mCancel">Cancel my booking</button>`:''}`;
   if(!active)return;
-  const open=id=>{['moveCard','mSizeCard'].forEach(c=>$(c).classList.toggle('hide',c!==id));$(id).scrollIntoView({behavior:'smooth'})};
-  $('mMove').onclick=()=>{move={date:null,time:null};renderMove();open('moveCard')};
-  $('mSize').onclick=()=>{newSize=b.size;renderSize();open('mSizeCard')};
+  if($('mMove'))$('mMove').onclick=()=>{$('moveCard').classList.remove('hide');renderMove();$('moveCard').scrollIntoView({behavior:'smooth'})};
   $('mCancel').onclick=async()=>{
-    if(b.depositOnly){if(!confirm(b.late?`Cancel your booking?\n\nYour class is less than ${h} hours away, so your $${b.deposit} deposit can't be carried over. Nothing else is charged.`:`Cancel your booking?\n\nYour $${b.deposit} deposit will be saved as credit for your next visit.`))return}
-    else if(!confirm(b.late?`Cancel your booking?\n\nYour class is less than ${h} hours away, so a late-cancel fee of $${b.fee} ($${fee} x ${b.size} guest${b.size>1?'s':''}) will be charged to the card you saved.`:'Cancel your booking? Nothing will be charged.'))return;
-    try{mine=await call('cancelMyBooking',q.get('b'),q.get('t'),!!b.late);['moveCard','mSizeCard'].forEach(c=>$(c).classList.add('hide'));renderMine()}catch(e){alert(e.message)}
+    if(!confirm(b.late?`Cancel your booking? Because it's within ${AV.lateHours} hours, a $${b.fee} fee applies.`:'Cancel your booking? Nothing will be charged.'))return;
+    try{mine=await call('cancelMyBooking',q.get('b'),q.get('t'));$('moveCard').classList.add('hide');renderMine()}catch(e){alert(e.message)}
   };
 }
-let newSize=1;
-function renderSize(){
-  const b=mine,fee=b.feePerGuest||AV.feePerGuest,less=b.size-newSize;
-  $('sNum').textContent=newSize;$('sMinus').disabled=newSize<=1;$('sPlus').disabled=newSize>=20;
-  $('sNote').textContent=newSize===b.size?'Your party is '+b.size+' now.':less>0&&b.late&&!b.depositOnly?`Removing ${less} guest${less>1?'s':''}: late-change fee of $${less*fee}.`:less>0?`Removing ${less} guest${less>1?'s':''}. No charge.`:`Adding ${-less} guest${-less>1?'s':''}, if there's room. No charge.`;
-  $('sSave').disabled=newSize===b.size;$('sErr').textContent='';
-}
-$('sMinus').onclick=()=>{if(newSize>1){newSize--;renderSize()}};
-$('sPlus').onclick=()=>{if(newSize<20){newSize++;renderSize()}};
-$('sSave').onclick=async()=>{
-  const b=mine,q=new URLSearchParams(location.search),fee=b.feePerGuest||AV.feePerGuest,less=b.size-newSize,late=b.late&&less>0;
-  if(late&&!b.depositOnly&&!confirm(`Change your party to ${newSize}?\n\nYour class is less than ${AV.lateHours} hours away, so a late-change fee of $${less*fee} ($${fee} x ${less} guest${less>1?'s':''}) will be charged to the card you saved.`))return;
-  $('sSave').disabled=true;
-  try{mine=await call('changeMySize',q.get('b'),q.get('t'),newSize,late);$('mSizeCard').classList.add('hide');renderMine();window.scrollTo(0,0);loadAvailability()}
-  catch(e){$('sErr').textContent=e.message;$('sSave').disabled=false}
-};
 /* the team booked this for them: save a card to lock it in */
 function renderNeedCard(){
   const b=mine,q=new URLSearchParams(location.search),fee=AV.feePerGuest,h=AV.lateHours;
@@ -508,17 +464,12 @@ function cardDone(){
 function renderMove(){
   const need=mine.size;
   dayButtons($('mDays'),AV.days,move.date,d=>{move.date=d;move.time=null;renderMove()},need);
-  timeButtons($('mTimes'),AV.days.find(d=>d.date===move.date),move.time,t=>{move.time=t;renderMove()},need,true);
+  timeButtons($('mTimes'),AV.days.find(d=>d.date===move.date),move.time,t=>{move.time=t;renderMove()},need);
   $('mSave').disabled=!(move.date&&move.time);
 }
 $('mSave').onclick=async()=>{
-  const q=new URLSearchParams(location.search),b=mine,fee=b.feePerGuest||AV.feePerGuest;$('mErr').textContent='';
-  if(b.late&&b.depositOnly&&!confirm(`Reschedule to ${niceDate(move.date)} at ${move.time}?\n\nYour current class is less than ${AV.lateHours} hours away, so your $${b.deposit} deposit can't be carried over to the new time.`))return;
-  if(b.late&&!b.depositOnly&&!confirm(`Reschedule to ${niceDate(move.date)} at ${move.time}?
-
-Your current class is less than ${AV.lateHours} hours away, so a late-change fee of $${b.fee} ($${fee} x ${b.size} guest${b.size>1?'s':''}) will be charged to the card you saved.`))return;
-  $('mSave').disabled=true;
-  try{mine=await call('rescheduleMyBooking',q.get('b'),q.get('t'),move.date,move.time,!!b.late);$('moveCard').classList.add('hide');renderMine();window.scrollTo(0,0);loadAvailability()}
+  const q=new URLSearchParams(location.search);$('mErr').textContent='';$('mSave').disabled=true;
+  try{mine=await call('rescheduleMyBooking',q.get('b'),q.get('t'),move.date,move.time);$('moveCard').classList.add('hide');renderMine();window.scrollTo(0,0);loadAvailability()}
   catch(e){$('mErr').textContent=e.message;$('mSave').disabled=false}
 };
 
