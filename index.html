@@ -96,8 +96,8 @@
   .ph span{color:var(--muted);font-size:14px}
   .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
   .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff}
-  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#0b7a3e;font-size:10px;vertical-align:middle}
-  .dep{display:inline-block;margin-top:4px;font-size:13px;font-weight:800;color:#fff;background:#0b7a3e;border-radius:8px;padding:3px 9px}
+  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#e8590c;letter-spacing:.04em;font-size:10px;vertical-align:middle}
+  .dep{display:inline-block;margin-top:4px;font-size:13px;font-weight:800;color:#fff;background:#0b7a3e;border-radius:8px;padding:3px 9px}.dep.fh{background:#fff4e6;color:#c2410c;border:2px solid #e8590c}
   .tools{display:flex;gap:6px;margin:4px 0 2px 4px;flex-wrap:wrap}.tl{border:0;background:none;color:var(--muted);font:600 13px Poppins;padding:4px 8px;border-radius:8px;cursor:pointer}.tl:hover{background:var(--soft);color:var(--ink)}
   .mv{display:flex;gap:8px;margin:6px 0 4px;flex-wrap:wrap}.mv input,.mv select{flex:1;min-width:140px;min-height:44px;padding:8px 10px;font-size:15px}
   .arrw{margin-bottom:8px}.arrw .arr{margin-bottom:0}.feebtn{margin:6px 0 4px;border-color:#c40056;color:#c40056}.feerow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0 4px 4px}.feerow .feebtn{margin:0}.feebtn.waive{border-color:var(--line);color:var(--muted)}.feeln{font-size:13px;color:#1a8a3a;font-weight:600;margin:4px 0 0 4px}
@@ -1004,7 +1004,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611092141';
+const BUILD='202611092144';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1432,9 +1432,9 @@ function renderArrivals(){
   const _rows=list.map(b=>{
     const off=!live(b);
     const head='';
-    const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FH</span>':b.source==='Staff'?' <span class="tag WEB">STAFF</span>':'';
+    const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FAREHARBOR</span>':b.source==='Staff'?' <span class="tag WEB">STAFF</span>':'';
     const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?' <span class="tag WINE">🍾 WINE PAID</span>':/refunded/.test(b.addons)?'':' <span class="tag WINE">🍾 WINE · collect $30</span>';
-    const dep=depText(b)?`<span class="dep">💵 ${esc(depText(b))}</span>`:'';
+    const dep=depText(b)?`<span class="dep${b.source==='FareHarbor'?' fh':''}">💵 ${esc(depText(b))}</span>`:'';
     const started=dateTime(b.date,b.time)+60*6e4<Date.now();
     const st=b.partyId?(part(b)?` <span class="tag NC">${b.checked} OF ${b.size} HERE</span>`:' <span class="tag OK">CHECKED IN</span>')+(b.nsGuests?` <span class="tag GN">${b.nsGuests} NO-SHOW</span>`:''):b.status==='Confirmed'?(started?' <span class="tag NC">NOT CHECKED IN</span>':searching?' <span class="tag BK">BOOKED</span>':''):b.status==='Needs card'?(cardLate(b)?' <span class="tag LATE">NO CARD · SPOT RELEASED</span>':' <span class="tag WINE">WAITING FOR CARD</span>'):b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
     const fee=FEE_PER_GUEST*b.size;
