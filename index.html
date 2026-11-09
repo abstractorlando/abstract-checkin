@@ -119,7 +119,7 @@
   .scap input:focus{outline:none}.scap:focus-within{border-color:var(--teal)}.seatl{font-size:13px;color:var(--muted);font-weight:600}
   .scap input.saving{color:var(--muted)}
   .gcom{display:block;font-size:13px;font-weight:500;color:#4a4257;background:#f1eefb;border-radius:8px;padding:3px 8px;margin-top:4px}
-  .arr .t .szp{display:block;margin-top:6px;background:var(--purp);color:#fff;border-radius:999px;padding:4px 10px;font-size:14px;font-weight:800;text-align:center;white-space:nowrap}
+  .arr .t .szp{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:4px auto 0;width:64px;height:58px;background:var(--purp);color:#fff;border-radius:12px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;line-height:1}.arr .t .szp b{font-size:24px;letter-spacing:0;margin-bottom:3px}
   .snote{display:block;font-size:13px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:3px 8px;margin-top:4px;font-style:normal}
   .gbar{border:2px solid;border-radius:12px;padding:10px 14px;margin:0 0 10px;font-size:15px;line-height:1.4}.gbar b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--purp);margin-bottom:2px}.gbar span{white-space:pre-wrap}
   .bkw{font-size:17px;font-weight:600;margin:4px 0 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -188,7 +188,7 @@
     #bkFilter{min-height:42px;padding:8px 12px;font-size:16px}
     .slh{padding:9px 12px;gap:4px 8px;border-radius:12px}.slh .slt{font-size:15px}.cp{font-size:11px;padding:1px 7px}
     .slb{padding-left:4px}
-    .arr .szp{font-size:12px}
+    .arr .t .szp{width:56px;height:50px}.arr .t .szp b{font-size:20px}
     .dsbar{font-size:13px;padding:9px 12px}
     .wk{grid-template-columns:1fr;overflow:visible;gap:12px}
     .wd{min-width:0;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -1026,7 +1026,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611092234';
+const BUILD='202611092238';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1480,7 +1480,7 @@ function renderArrivals(){
     const gnote='';   // colors and notes live in the guest profile, not on the list
         const tools='';
     return `${head}<div class="arrw"><button class="arr${(b.partyId&&!part(b))||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
-    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>${esc(b.time)}`:''}<span class="szp">${b.size} ${b.size===1?'guest':'guests'}</span></span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<span class="gcom">💬 <b>Guest wrote:</b> “${esc(b.note)}”</span>`:''}</span></button>${tools}${act}</div>`});
+    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>${esc(b.time)}`:''}<span class="szp"><b>${b.size}</b>${b.size===1?'guest':'guests'}</span></span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<span class="gcom">💬 <b>Guest wrote:</b> “${esc(b.note)}”</span>`:''}</span></button>${tools}${act}</div>`});
   $('arrivals').innerHTML=(searching?_rows.join(''):classBlocks(list,_rows,cnt,ckd))+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
