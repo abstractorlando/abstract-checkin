@@ -171,11 +171,30 @@
   .wk{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:8px;overflow-x:auto;padding-bottom:6px}
   .wd{display:flex;flex-direction:column;gap:6px;min-width:130px}
   .wh{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;font-size:14px;cursor:pointer}.wh.today{background:#fff5d6;border-color:#f0c000}
+  .wcl{display:none;color:var(--muted);font-size:13px}@media(max-width:640px){.wcl{display:inline}}
   .wn{font-size:12px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:4px 6px}
   .wc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#efeaff;border:1px solid #d8cff7;border-radius:10px;padding:8px;font:500 13px Poppins;color:var(--ink);cursor:pointer;position:relative}
   .wc b{font-size:14px;color:var(--purp)}.wc.full{background:#e3dcfb}.wc.closed{background:#f3f3f5;color:var(--muted);border-color:var(--line);cursor:default}.wc.pv{background:#f7f4ff;border-color:var(--purp)}
   .wc .fl{position:absolute;top:8px;right:8px;background:#4a4a55;color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:1px 6px}
   .wnum{font-size:12px;color:var(--muted)}.wnum .hold{font-style:normal;color:#9a8fb0}.wbar{display:block;width:100%;height:5px;background:#fff;border-radius:9px;overflow:hidden;margin-top:3px}.wbar span{display:block;height:100%;background:var(--purp)}
+  /* phones: tighter, so a whole day fits on screen */
+  @media (max-width:640px){
+    header{flex-wrap:nowrap;padding:calc(8px + env(safe-area-inset-top)) 12px 8px}
+    header h1{font-size:17px;white-space:nowrap}header h1 .hb{display:none}
+    .gear{width:36px;height:36px;font-size:16px}.gear.who{font-size:13px;padding:0 10px;height:36px}
+    .card{padding:12px}
+    .daynav .btn{min-width:38px;min-height:40px}.daynav .today{font-size:14px;padding:6px 10px}
+    #bkFilter{min-height:42px;padding:8px 12px;font-size:16px}
+    .slh{padding:9px 12px;gap:4px 8px;border-radius:12px}.slh .slt{font-size:15px}.cp{font-size:11px;padding:1px 7px}
+    .slb{padding-left:4px}
+    .arr .szp{font-size:12px}
+    .dsbar{font-size:13px;padding:9px 12px}
+    .wk{grid-template-columns:1fr;overflow:visible;gap:12px}
+    .wd{min-width:0;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+    .wd>.wh,.wd>.wn,.wd>p,.wd>div{grid-column:1/-1}
+    .wh{text-align:left;padding:7px 10px}
+    .wd>div.wc.closed{display:none}.wc{padding:6px 8px;font-size:11px}.wc b{font-size:13px}.wnum{font-size:11px}
+  }
   .priv{border-color:var(--purp);background:#f7f4ff;display:grid;gap:10px}.prow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
   @media (max-width:640px){.scls{grid-template-columns:1fr auto;}.sbar{grid-column:1/-1;order:3}.scount{order:4}}
   .daynav{display:flex;gap:8px;align-items:center;margin:0 0 10px}.daynav input{flex:1;min-width:0}.daynav .btn{min-width:44px;font-size:18px}
@@ -254,7 +273,7 @@
 </head>
 <body>
 <header>
-  <h1>Abstract Check-In</h1>
+  <h1><span class="hb">Abstract </span>Check-In</h1>
   <button class="gear" onclick="goSearch()" aria-label="Search bookings" title="Search bookings">🔍</button>
   <button class="gear bell" id="bellBtn" onclick="openBell()" aria-label="New bookings" title="New bookings">🔔<span id="bellN" class="bn hide"></span></button>
   <button class="gear" onclick="openGift()" aria-label="Gift cards" title="FareHarbor gift cards">🎁</button>
@@ -390,9 +409,6 @@
   <h2 style="margin:26px 0 6px">Guest booking link</h2>
   <p class="muted" style="margin:0 0 8px">Send this when a guest asks how to book.</p>
   <button class="btn ghost" style="width:100%" onclick="copyBookLink()">🔗 Copy booking link</button>
-  <details id="ownerFH" style="margin-top:22px"><summary class="muted" style="cursor:pointer">One-time: import FareHarbor bookings</summary>
-    <p class="muted" style="font-size:14px">Only needed on launch day, to bring over upcoming bookings made on FareHarbor.</p>
-    <label class="btn ghost" style="width:100%;display:flex;align-items:center;justify-content:center">Choose FareHarbor file<input type="file" id="fhFile" accept=".csv,.xlsx,.xls" class="hide" onchange="importFH(this)"></label></details>
   <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('setModal').classList.add('hide')">Close</button>
 </div></div>
 <div id="toast" class="toast"></div>
@@ -651,7 +667,7 @@ async function sendToPrinter(){
   f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},300)};
   f.src=url;
 }
-function openSettings(){const own=!!(ME&&ME.owner);$('ownerSet').classList.toggle('hide',!own);$('ownerFH').classList.toggle('hide',!own);if(!own){$('notifyList').innerHTML=''}
+function openSettings(){const own=!!(ME&&ME.owner);$('ownerSet').classList.toggle('hide',!own);if(!own){$('notifyList').innerHTML=''}
   $('setModal').classList.remove('hide');if(own)loadNotify();loadTeam()}
 async function loadTeam(){const box=$('teamBox');box.innerHTML='';if(!PROJECTS)await loadProjects();setTimeout(renderProjBox,0);
   try{ME=await call('whoAmI')}catch(e){return}
@@ -1004,7 +1020,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611092149';
+const BUILD='202611092159';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1536,7 +1552,7 @@ async function loadMoveWeek(){
   const b=MV.b,need=b.size,now=Date.now();
   const days=W.filter(d=>d.date>=today()).map(d=>{
     const [y,m,dd]=d.date.split('-').map(Number),dt=new Date(y,m-1,dd);
-    const head=`<div class="mvd"><b>${dt.toLocaleDateString('en-US',{weekday:'short'})}</b> ${m}/${dd}</div>`;
+    const head=`<div class="mvd"><b>${dt.toLocaleDateString('en-US',{weekday:'long'})}</b> ${m}/${dd}</div>`;
     if(!d.open||!d.classes.length)return `<div class="mvc">${head}<div class="mvs off">Closed</div></div>`;
     return `<div class="mvc">${head}`+d.classes.map(c=>{
       const cur=d.date===b.date&&c.time===b.time,past=dateTime(d.date,c.time)<now;
@@ -1845,7 +1861,7 @@ async function loadWeek(){
   const tot=W.reduce((s,d)=>s+d.classes.reduce((a,c)=>a+c.booked-(c.held||0),0),0),cap=W.reduce((s,d)=>s+d.classes.reduce((a,c)=>a+c.cap,0),0);
   $('schedBox').innerHTML=`<p class="muted" style="margin:0 0 8px">${tot} booked of ${cap} spots this week · tap a class to see who's coming</p><div class="wk">`+W.map(d=>{
     const [y,m,dd]=d.date.split('-').map(Number),dt=new Date(y,m-1,dd);
-    const head=`<div class="wh${d.date===today()?' today':''}" onclick="$('schedDay').value='${d.date}';setSchedView('day')"><b>${dt.toLocaleDateString('en-US',{weekday:'short'})}</b> ${m}/${dd}</div>`;
+    const head=`<div class="wh${d.date===today()?' today':''}" onclick="$('schedDay').value='${d.date}';setSchedView('day')"><b>${dt.toLocaleDateString('en-US',{weekday:'long'})}</b> ${m}/${dd}${d.open?'':' <span class="wcl">· Closed</span>'}</div>`;
     const note=d.dayNote?`<div class="wn">📝 ${esc(d.dayNote)}</div>`:'';
     if(!d.open)return `<div class="wd">${head}${note}<div class="wc closed">${d.regular?'Closed':'—'}</div></div>`;
     return `<div class="wd">${head}${note}`+d.classes.map(c=>{const full=c.cap>0&&c.booked>=c.cap,closed=c.cap===0,pct=c.cap?Math.min(100,(c.booked-(c.held||0))/c.cap*100):0;
