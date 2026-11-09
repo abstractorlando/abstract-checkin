@@ -1027,7 +1027,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611092241';
+const BUILD='202611092316';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1236,6 +1236,7 @@ function openAddBooking(date,time){
     <label class="l">Day</label><input type="date" id="abDate" value="${date}" min="${today()}" onchange="AB_T='';abMode();abSlots()">
     <label class="l" style="margin-top:10px">Time</label><input type="hidden" id="abTime" value="${time||''}"><div id="abSlots" class="abs"><p class="muted">Loading open spots…</p></div>
     <label class="chk" id="abWalkRow" style="margin-top:12px"><input type="checkbox" id="abWalk" checked onchange="abMode()"> They're here now (walk-in, no card needed)</label>
+    <label class="chk hide" id="abPaidRow" style="margin-top:10px"><input type="checkbox" id="abPaid" onchange="abMode()"> 🔒 Event / already paid (invoice or Toast). No card needed. <span class="muted" style="font-size:12px">Owners only</span></label>
     <label class="l" style="margin-top:12px">Returning guest? <span class="muted">(optional)</span></label>
     <input id="abFind" type="search" placeholder="🔍 Name, phone or email" autocomplete="off" oninput="abSearch()">
     <div id="abFound"></div>
@@ -1246,7 +1247,10 @@ function openAddBooking(date,time){
     <p class="muted" style="font-size:13px;margin:4px 0 0">Double-check the number. Their texts go here.</p>
     <label class="l" style="margin-top:12px">Number of guests</label>
     <div class="stp"><button type="button" onclick="abStep(-1)" aria-label="Fewer guests">−</button><b id="abSizeV">2</b><button type="button" onclick="abStep(1)" aria-label="More guests">+</button><input type="hidden" id="abSize" value="2"></div>
-    <label class="l" style="margin-top:10px">Artist names <span class="muted">(first names)</span></label><div id="abNames" class="abn"></div>
+    <label class="l" style="margin-top:10px">Artist names <span class="muted">(first names)</span> · <a href="#" style="color:var(--teal);font-weight:600" onclick="$('abPasteBox').classList.toggle('hide');$('abPaste').focus();return false">Paste a list</a></label>
+    <div id="abPasteBox" class="hide" style="margin-bottom:8px"><textarea id="abPaste" rows="5" placeholder="Paste names, one per line" style="width:100%;font:500 15px Poppins;padding:10px 12px;border:2px solid var(--line);border-radius:12px" oninput="abPasteNames()"></textarea>
+      <p class="muted" style="font-size:13px;margin:4px 0 0">The guest count updates to match the list.</p></div>
+    <div id="abNames" class="abn"></div>
     <label class="l" style="margin-top:10px">Email</label><input id="abEmail" type="email" autocapitalize="off" placeholder="name@email.com">
     <label class="l" style="margin-top:10px">Note <span class="muted">(optional, only staff see this)</span></label><input id="abNote" placeholder="e.g. Booked their next visit at checkout">
     <div id="abCardRow" class="hide" style="margin-top:12px"></div>
@@ -1256,12 +1260,15 @@ function openAddBooking(date,time){
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);AB_T=time||'';abNames();abMode();abSlots();loadGuestIndex().catch(()=>{});
 }
 /* guest count stepper + one optional name box per artist (names carry over to check-in) */
-function abStep(n){const v=Math.min(40,Math.max(1,(+$('abSize').value||1)+n));$('abSize').value=v;$('abSizeV').textContent=v;abNames();abSlots(true)}
+function abStep(n){const v=Math.min(60,Math.max(1,(+$('abSize').value||1)+n));$('abSize').value=v;$('abSizeV').textContent=v;abNames();abSlots(true)}
 function abNames(){
   const box=$('abNames'),n=+$('abSize').value||1,old=[...box.querySelectorAll('input')].map(i=>i.value);
   box.innerHTML=Array.from({length:n},(_,i)=>`<input placeholder="Artist ${i+1}" autocapitalize="words" value="${esc(old[i]||'')}"${i===0?' oninput="this.dataset.typed=1"':''}>`).join('');
   abFirst();
 }
+function abPasteNames(){const L=$('abPaste').value.split(/\n|;|\t/).map(x=>x.replace(/^\s*\d+[.)]\s*/,'').trim()).filter(Boolean);if(!L.length)return;
+  const n=Math.min(60,L.length);$('abSize').value=n;$('abSizeV').textContent=n;abNames();
+  [...$('abNames').querySelectorAll('input')].forEach((i,k)=>{i.value=L[k]||'';i.dataset.typed=1});abSlots(true)}
 function abFirst(){const f=$('abNames')&&$('abNames').querySelector('input');if(f&&!f.dataset.typed)f.value=($('abName').value.trim().split(/\s+/)[0]||'')}
 /* walk-in today = no card; booking ahead = guest gets a link to save a card (spot held 15 minutes) */
 let AB_G=null,abT,AB_T='',AB_W={};
@@ -1307,17 +1314,19 @@ async function abPick(i){const g=window.AB_L[i];AB_G=g;g.cards=[];$('abFind').va
   if(g.hasCard){try{g.cards=await call('guestCards',g.phone,g.email)}catch(e){g.cards=[]}if(AB_G===g){$('abCardRow').dataset.k='';abMode()}}}
 function abMode(){
   const isToday=$('abDate').value===today();$('abWalkRow').classList.toggle('hide',!isToday);
-  const walk=isToday&&$('abWalk').checked,cards=(!walk&&AB_G&&AB_G.cards)||[];
+  const own=!!(ME&&ME.owner);$('abPaidRow').classList.toggle('hide',!own);
+  const walk=isToday&&$('abWalk').checked,paid=own&&!walk&&$('abPaid').checked,cards=(!walk&&!paid&&AB_G&&AB_G.cards)||[];
   $('abCardRow').classList.toggle('hide',!cards.length);
   if(cards.length&&$('abCardRow').dataset.k!==AB_G.key){$('abCardRow').dataset.k=AB_G.key;
     $('abCardRow').innerHTML=`<label class="l">Card to hold their spot</label>`+cards.map((c,i)=>`<label class="chk" style="margin:6px 0"><input type="radio" name="abCard" value="${c.pm}"${i?'':' checked'} onchange="abMode()"> 💳 ${esc(c.label)} (on file)</label>`).join('')+
       `<label class="chk" style="margin:6px 0"><input type="radio" name="abCard" value="" onchange="abMode()"> Send them a link to add a new card</label>
       <p class="muted" style="font-size:13px;margin:4px 0 0">Let them know the same cancellation policy applies ($${FEE_PER_GUEST} per guest within 24 hours or no-show).</p>`}
   const pm=cards.length?(document.querySelector('input[name=abCard]:checked')||{}).value||'':'';
-  $('abNotifyRow').classList.toggle('hide',!(walk||pm));
+  $('abNotifyRow').classList.toggle('hide',!(walk||pm||paid));
   $('abSub').textContent=walk?'Walk-in for today. No card needed. Next you\'ll pick FT or RG for each guest and print stickers.':'We\'ll send them a secure link to save a card (nothing is charged). Their spot is held for 15 minutes, so ask them to do it right away.';
   if(pm)$('abSub').textContent='Returning guest. Their card on file holds the spot, so they\'re confirmed right away.';
-  $('abSave').textContent=walk?'Add & check in':pm?'Book with card on file':'Hold spot & send card link';
+  if(paid)$('abSub').textContent='Event or prepaid group. Confirmed right away, no card needed. Add what they paid for in the note so the team knows.';
+  $('abSave').textContent=walk?'Add & check in':paid?'Book event (prepaid)':pm?'Book with card on file':'Hold spot & send card link';
 }
 /* country codes: same list as the booking page */
 const CC=[['US','🇺🇸','+1'],['CA','🇨🇦','+1'],['PR','🇵🇷','+1'],['GB','🇬🇧','+44'],['MX','🇲🇽','+52'],['BR','🇧🇷','+55'],['CO','🇨🇴','+57'],
@@ -1334,7 +1343,8 @@ async function saveAddBooking(force){
     size:$('abSize').value,staffNote:$('abNote').value,walkIn:walk,force:!!force,
     guests:[...$('abNames').querySelectorAll('input')].map(i=>titleCase(i.value)).filter(Boolean).join(', ')};
   d.pm=!walk&&AB_G&&document.querySelector('input[name=abCard]:checked')?document.querySelector('input[name=abCard]:checked').value:'';
-  d.notify=(walk||!!d.pm)&&$('abNotify').checked;
+  d.prepaid=!walk&&!!(ME&&ME.owner)&&$('abPaid').checked;if(d.prepaid)d.pm='';
+  d.notify=(walk||!!d.pm||d.prepaid)&&$('abNotify').checked;
   if(d.name.split(/\s+/).length<2)return toast('Add their first and last name');
   if(!d.phone)return toast('Check their mobile number');
   if(!/^\S+@\S+\.\S+$/.test(d.email))return toast('Add their email');
@@ -1349,6 +1359,7 @@ async function saveAddBooking(force){
       if(confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for ${d.size}. Add them anyway?`))return saveAddBooking(true);return}
     $('addModal').remove();setArrDay(d.date);if(SVIEW==='week'&&!$('vSched').classList.contains('hide'))loadSched();
     if(r.onFile){toast(`Booked ${titleCase(d.name)} · ${niceDate(d.date)} ${d.time} with their card on file ✓`,5000);return}
+    if(r.prepaid){toast(`Event booked: ${titleCase(d.name)} · ${niceDate(d.date)} ${d.time} · ${d.size} guests ✓`,5000);return}
     if(!r.needsCard){
       // walk-in: go straight to check-in with their party filled in
       show('new');$('bkFilter').value='';SR=[];SLOT='';
@@ -1429,6 +1440,7 @@ function artistList(g){const a=artistNames(g);if(!a.length)return '';if(a.length
   return `<ol class="alist">${a.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`}
 function depText(b){
   const d=+b.deposit||0, n=b.size||1;
+  if(/(^|,|\|)prepaid/.test(b.addons||'')) return 'Event · already paid (invoice / Toast)';
   if(b.source!=='FareHarbor') return d?`$${money(d)} credit from a cancelled booking`:'';
   if(!d) return 'No deposit paid on FareHarbor';
   if(d>n*25+1) return `Paid in full on FareHarbor · $${money(d)}`;
