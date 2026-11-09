@@ -327,7 +327,7 @@ $('toPay').onclick=async()=>{
     <ul class="pol"><li><b>Free changes</b> up to ${h} hours before your experience.</li>
     <li><b>Within ${h} hours or no-show: $${fee} per guest.</b> This includes cancelling, rescheduling and changing your party size.</li>
     <li>You'll pick your project at the studio (from $50 per guest). <a href="https://www.abstractorlando.com/#Radio-2" target="_blank" rel="noopener">See project options</a></li></ul>
-    <p class="walkin"><b>Not sure about your plans yet?</b> You can change your day or time for free from your confirmation text, up to ${h} hours before. And walk-ins are always welcome when we have open spots. Booking just makes sure yours is saved.</p>`;
+    <p class="walkin"><b>Not sure about your plans yet?</b> You can change your day or time for free from your confirmation text, up to ${h} hours before. And walk-ins are always welcome when we have open spots. Booking guarantees your spot.</p>`;
   $('book').textContent=extra?`Confirm & pay $${extra}`:'Confirm my reservation';
   $('agreeText').textContent=`I understand and agree to the cancellation policy. I authorize Abstract Orlando to charge my card $${fee} per guest if I cancel or reschedule within ${h} hours of my experience, or if I don't show up.`;
   const btn=$('toPay');btn.disabled=true;btn.textContent='Holding your spot…';
