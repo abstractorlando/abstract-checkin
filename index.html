@@ -119,7 +119,7 @@
   .scap input:focus{outline:none}.scap:focus-within{border-color:var(--teal)}.seatl{font-size:13px;color:var(--muted);font-weight:600}
   .scap input.saving{color:var(--muted)}
   .gcom{display:block;font-size:13px;font-weight:500;color:#4a4257;background:#f1eefb;border-radius:8px;padding:3px 8px;margin-top:4px}
-  .arr .t .szp{display:block;margin-top:6px;background:var(--pink,#ff1d8e);color:#fff;border-radius:999px;padding:4px 10px;font-size:14px;font-weight:800;text-align:center;white-space:nowrap}
+  .arr .t .szp{display:block;margin-top:6px;background:var(--purp);color:#fff;border-radius:999px;padding:4px 10px;font-size:14px;font-weight:800;text-align:center;white-space:nowrap}
   .snote{display:block;font-size:13px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:3px 8px;margin-top:4px;font-style:normal}
   .gbar{border:2px solid;border-radius:12px;padding:10px 14px;margin:0 0 10px;font-size:15px;line-height:1.4}.gbar b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--purp);margin-bottom:2px}.gbar span{white-space:pre-wrap}
   .bkw{font-size:17px;font-weight:600;margin:4px 0 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -161,7 +161,7 @@
   .gcard{border:2px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}.gcard.empty{opacity:.75}
   .gtop{display:flex;justify-content:space-between;gap:10px}.gbal{font-size:24px;color:#1a8f5a}.gcard.empty .gbal{color:#c40056}
   .gtoast{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#f6f3fe;border-radius:12px;padding:10px 14px;margin:10px 0}.gtoast span{font-weight:600;color:var(--purp)}.gtoast b{font-size:30px;letter-spacing:3px;color:var(--purp)}
-  .guse{margin-top:6px}.gbf{background:#111;color:#fff;border-radius:12px;padding:10px 14px;margin:10px 0 0;font:900 20px Poppins;letter-spacing:1px;text-align:center}.gbf span{display:block;font:700 14px Poppins;letter-spacing:0;color:#ffd84d;margin-top:2px}
+  .guse{margin-top:6px}.gbf{background:#111;color:#fff;border-radius:12px;padding:10px 14px;margin:10px 0 0;font:900 20px Poppins;letter-spacing:1px;text-align:center}.gok{background:#e8f7ef;color:#0b7a3e;border:2px solid #0b7a3e;border-radius:12px;padding:10px 14px;font:900 18px Poppins;letter-spacing:1px;text-align:center}.gok span{display:block;font:600 14px Poppins;letter-spacing:0;color:#14532d;margin-top:2px}.gbf span{display:block;font:700 14px Poppins;letter-spacing:0;color:#ffd84d;margin-top:2px}
   .tag.GT{background:var(--purp);font-size:10px;vertical-align:middle}.tag.GT.bad{background:#c40056}.tag.GV{background:#6b6878;font-size:10px;vertical-align:middle}
   .tag.GN{background:#fff;color:#c40056;border:1.5px solid #f3b6cf;font-size:10px;vertical-align:middle}.tag.OK{background:#1a8a3a;font-size:10px;vertical-align:middle}
   .tag.NC{background:#e08a00;font-size:10px;vertical-align:middle}.tag.BK{background:#0093ad;font-size:10px;vertical-align:middle}
@@ -277,7 +277,7 @@
   <h1><span class="hb">Abstract </span>Check-In</h1>
   <button class="gear" onclick="goSearch()" aria-label="Search bookings" title="Search bookings">🔍</button>
   <button class="gear bell" id="bellBtn" onclick="openBell()" aria-label="New bookings" title="New bookings">🔔<span id="bellN" class="bn hide"></span></button>
-  <button class="gear" onclick="openGift()" aria-label="Gift cards" title="FareHarbor gift cards">🎁</button>
+  <button class="gear" onclick="openGift()" aria-label="Gift cards" title="Check a gift card">🎁</button>
   <button class="gear who hide" id="whoBtn" onclick="switchUser()" title="Signed in on this device. Tap to switch."></button>
   <button class="gear" onclick="openSettings()" aria-label="Settings" title="Settings">⚙︎</button>
   <nav>
@@ -915,9 +915,9 @@ let GIFT={cards:[],zero:[]},giftT;
 function openGift(){
   const m=document.createElement('div');m.className='modal';m.id='giftModal';
   m.innerHTML=`<div class="mbox bk" style="max-width:560px"><button class="bkx" onclick="$('giftModal').remove()" aria-label="Close">×</button>
-    <b style="font-size:21px">FareHarbor gift card</b>
-    <p class="muted" style="margin:4px 0 12px;font-size:14px">Type the code from the guest's old FareHarbor gift card (any part works, dashes optional). You'll get the Toast code to redeem with.</p>
-    <input id="giftQ" type="search" placeholder="e.g. 2237A or 2237A-BTT4X" autocomplete="off" autocapitalize="characters" oninput="clearTimeout(giftT);giftT=setTimeout(giftFind,350)" style="font-size:20px;letter-spacing:1px">
+    <b style="font-size:21px">Check a gift card</b>
+    <p class="muted" style="margin:4px 0 12px;font-size:14px">Check <b>every</b> gift card here before redeeming: old FareHarbor codes and Toast gift cards. Black Friday cards are 50% off already, so no other promos.</p>
+    <input id="giftQ" type="search" placeholder="Gift card code or number" autocomplete="off" autocapitalize="characters" oninput="clearTimeout(giftT);giftT=setTimeout(giftFind,350)" style="font-size:20px;letter-spacing:1px">
     <div id="giftRes" style="margin-top:12px"></div></div>`;
   m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);$('giftQ').focus();
 }
@@ -926,11 +926,16 @@ async function giftFind(){const q=$('giftQ').value.trim();if(q.replace(/[^a-z0-9
   try{const r=await call('giftSearch',q);if($('giftQ').value.trim()!==q)return;GIFT=r;renderGift()}catch(e){$('giftRes').innerHTML=`<p class="muted">Could not search: ${esc(e.message||e)}</p>`}}
 const usd=n=>'$'+Number(n||0).toFixed(2);
 function renderGift(){
-  const {cards,zero}=GIFT;
-  $('giftRes').innerHTML=(cards.length?cards.map((c,i)=>`<div class="gcard${c.left<=0?' empty':''}">
+  const {cards,zero}=GIFT,bf=GIFT.bf||[];
+  const bfBox=c=>`<div class="gcard"><div class="gbf">BLACK FRIDAY GIFT CARD<span>Already 50% off. Do NOT combine with any other discount or promo code.</span></div>
+      <div style="margin-top:10px;background:#f6f3fe;border-radius:12px;padding:10px 14px"><span class="muted" style="font-size:12px;font-weight:700">TOAST GIFT CARD</span><br><b style="font-size:18px;color:var(--purp);letter-spacing:1px;overflow-wrap:anywhere">${esc(c.card)}</b></div>
+      <p class="muted" style="font-size:13px;margin:8px 0 0">${c.amount?'Value '+usd(c.amount):''}${c.bought?' · bought '+esc(c.bought):''}${c.buyer?' · '+esc(c.buyer):''}${c.note?' · '+esc(c.note):''}</p>
+      <p class="muted" style="font-size:13px;margin:6px 0 0">Redeem it in Toast as usual. The balance lives in Toast.</p></div>`;
+  const okToast=!cards.length&&!zero.length&&!bf.length&&GIFT.numeric;
+  $('giftRes').innerHTML=bf.map(bfBox).join('')+(okToast?`<div class="gcard"><div class="gok">NOT A BLACK FRIDAY CARD<span>Regular Toast gift card. Promos are OK. Redeem it in Toast as usual.</span></div><p class="muted" style="font-size:13px;margin:8px 0 0">Double-check the number with the guest. If it was bought during a Black Friday sale and isn't on the list yet, ask a manager.</p></div>`:'')+(cards.length?cards.map((c,i)=>`<div class="gcard${c.left<=0?' empty':''}">
       <div class="gtop"><div><span class="muted" style="font-size:12px;font-weight:700">OLD FAREHARBOR CODE</span><br><b style="font-size:16px;letter-spacing:.5px">${esc(c.old)}</b></div>
         <div style="text-align:right"><span class="muted" style="font-size:12px;font-weight:700">BALANCE LEFT</span><br><b class="gbal">${usd(c.left)}</b></div></div>
-      ${c.blackFriday?`<div class="gbf">BLACK FRIDAY GIFT CARD<span>Not combinable with any other discounts or promotions</span></div>`:''}
+      ${c.blackFriday?`<div class="gbf">BLACK FRIDAY GIFT CARD<span>Already 50% off. Do NOT combine with any other discount or promo code.</span></div>`:''}
       <div class="gtoast"><span>Redeem in Toast with code</span><b>${esc(c.toast)}</b></div>
       ${c.left>0?`<div class="guse"><label class="l" style="margin:0">Amount used in Toast</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="gAmt${i}" inputmode="decimal" placeholder="0.00" style="flex:1;min-width:110px;font-size:18px">
@@ -943,7 +948,7 @@ function renderGift(){
         ${ME&&ME.owner?`<button class="tl" style="margin-top:6px" onclick="giftUndo(${i})">Undo the last use</button>`:''}</details>`:''}
     </div>`).join(''):'')+
     (zero.length?zero.map(z=>`<div class="gcard empty"><b>${esc(z.old)}</b><p style="margin:6px 0 0;color:#c40056;font-weight:700">This card was already at $0 before we moved to Toast.</p></div>`).join(''):'')+
-    (!cards.length&&!zero.length?'<p class="muted">No card found. Check the code with the guest, or ask a manager.</p>':'');
+    (!cards.length&&!zero.length&&!bf.length&&!okToast?'<p class="muted">No card found. Check the code with the guest, or ask a manager.</p>':'');
 }
 async function giftUse(i){const c=GIFT.cards[i],amt=parseFloat(String($('gAmt'+i).value).replace(/[^\d.]/g,''));
   if(!(amt>0))return toast('Enter the amount used in Toast');if(amt>c.left+0.001)return toast(`Only ${usd(c.left)} is left on this card`,4000);
@@ -1021,7 +1026,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611092214';
+const BUILD='202611092226';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
