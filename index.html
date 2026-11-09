@@ -1026,7 +1026,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611092226';
+const BUILD='202611092234';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1433,8 +1433,8 @@ function depText(b){
   if(d>n*25+1) return `Paid in full on FareHarbor · $${money(d)}`;
   if(Math.abs(d/25-Math.round(d/25))>0.01) return `$${money(d)} deposit paid on FareHarbor`;
   const k=Math.min(n,Math.round(d/25)), rest=n-k;
-  const plus=/plus\s?1/i.test((b.staffNote||'')+' '+(b.note||''));
-  return `${k} × $25 deposit paid`+(k>1?` ($${money(k*25)})`:'')+(rest>0?(plus?` · ${rest} paint${rest>1?'':'s'} the FREE 12×16 canvas (PLUS1)`:` · ${rest} with no deposit`):'');
+  const notes=(b.staffNote||'')+' '+(b.note||''),plus=/plus\s?1/i.test(notes),gold=/golden ticket/i.test(notes);
+  return `${k} × $25 deposit paid`+(k>1?` ($${money(k*25)})`:'')+(rest>0?(plus?` · ${rest} paint${rest>1?'':'s'} the FREE 12×16 canvas (PLUS1)`:gold?` · ${rest} using a Golden Ticket`:` · ${rest} with no deposit`):'');
 }
 function renderArrivals(){
   const q=$('bkFilter').value.trim().toLowerCase(),searching=q.length>=2;
