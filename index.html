@@ -1004,7 +1004,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611092138';
+const BUILD='202611092141';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1645,7 +1645,7 @@ function viewBooking(row){
   const stCls=b.partyId?'ok':b.status==='Confirmed'?'bkd':needCard?'wait':'off';
   const [cxWho,cxAt]=(b.cancelBy||'').split('|');
   const cards=card('Booking',F('Cancelled',/cancel/i.test(b.status)?(cxWho?'By '+esc(cxWho==='Guest online'?'the guest online':cxWho)+(cxAt?' on '+exactTime(cxAt).replace(/, (\d)/,' at $1'):''):'Yes (before we tracked who and when)'):'')+F('Artists',b.guests?esc(b.guests):'')+F('Booked',`${src}${b.created&&exactTime(b.created)?' · '+exactTime(b.created):''}`)+F('Confirmation',b.bookingId?esc(b.bookingId):'')+F('Add-on',wine)
-      +F('Already paid',depText(b)?`<b>${esc(depText(b))}</b>${b.deposit?' · take it off their Toast check as a "Credit" discount':''}`:''))
+      +F('Already paid',depText(b)?`<b>${esc(depText(b))}</b>`:''))
     +card('Contact',F('Phone',ph)+F('Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'))
     +card('Notes for this booking',F('From the guest',b.note?`“${esc(b.note)}”`:'')+F('Team note',b.staffNote?'📝 '+esc(b.staffNote):''))
     +card('Payment',F('Card',b.card?'Saved for no-show protection':needCard?'Not saved yet':'')+F('Late change fees',b.guestFee?b.guestFee.split(' | ').map(f=>esc(f.replace(/ · pi_\w+/,''))).join('<br>'):''))
@@ -1738,7 +1738,7 @@ function pick(row){
   const b=bookingByRow(row);if(!b)return;
   if(b.date!==$('dt').value){$('dt').value=b.date;fillTimes($('tm'),b.date,b.time)}
   if(b.partyId){openParty(b.partyId,b.date);return}
-  if(b.deposit)toast(`${depText(b)}. Take $${money(b.deposit)} off their Toast check as a "Credit" discount`,7000);
+  if(b.deposit)toast(depText(b),6000);
   showForm(true);picked=b;$('pickBar').innerHTML=`<span>Checking in ${esc(b.reservation)} · ${esc(b.time)}</span><button class="tl" onclick="stopPick()">Not now ✕</button>`;$('pickBar').classList.remove('hide');$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
   if(![...$('tm').options].some(o=>o.value===b.time)){const o=document.createElement('option');o.textContent=b.time;$('tm').appendChild(o)}
   $('tm').value=b.time;
