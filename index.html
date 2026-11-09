@@ -118,6 +118,8 @@
   .scap{padding:0 12px 0 0}.scap input{width:74px;border:0;text-align:center;font:800 22px Poppins;min-height:48px;padding:0;background:transparent}
   .scap input:focus{outline:none}.scap:focus-within{border-color:var(--teal)}.seatl{font-size:13px;color:var(--muted);font-weight:600}
   .scap input.saving{color:var(--muted)}
+  .gcom{display:block;font-size:13px;font-weight:500;color:#4a4257;background:#f1eefb;border-radius:8px;padding:3px 8px;margin-top:4px}
+  .arr .t .szp{display:block;margin-top:6px;background:var(--pink,#ff1d8e);color:#fff;border-radius:999px;padding:4px 10px;font-size:14px;font-weight:800;text-align:center;white-space:nowrap}
   .snote{display:block;font-size:13px;font-weight:600;color:#8a5a00;background:#fff5e0;border-radius:8px;padding:3px 8px;margin-top:4px;font-style:normal}
   .gbar{border:2px solid;border-radius:12px;padding:10px 14px;margin:0 0 10px;font-size:15px;line-height:1.4}.gbar b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--purp);margin-bottom:2px}.gbar span{white-space:pre-wrap}
   .bkw{font-size:17px;font-weight:600;margin:4px 0 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -994,7 +996,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611091521';
+const BUILD='202611092125';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1377,6 +1379,18 @@ function classBlocks(list,rows,cnt,ckd){
 }
 function tMin(t){const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(t||'');if(!m)return 9999;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2]}
 let showDone=false;
+/* What the guest already paid, in plain words for the team. FareHarbor deposits were $25 per person;
+   PLUS1 guests paint a free 12x16 canvas instead. */
+function depText(b){
+  const d=+b.deposit||0, n=b.size||1;
+  if(b.source!=='FareHarbor') return d?`$${money(d)} credit from a cancelled booking`:'';
+  if(!d) return 'No deposit paid on FareHarbor';
+  if(d>n*25+1) return `Paid in full on FareHarbor · $${money(d)}`;
+  if(Math.abs(d/25-Math.round(d/25))>0.01) return `$${money(d)} deposit paid on FareHarbor`;
+  const k=Math.min(n,Math.round(d/25)), rest=n-k;
+  const plus=/plus\s?1/i.test((b.staffNote||'')+' '+(b.note||''));
+  return `${k} × $25 deposit paid`+(k>1?` ($${money(k*25)})`:'')+(rest>0?(plus?` · ${rest} paint${rest>1?'':'s'} the FREE 12×16 canvas (PLUS1)`:` · ${rest} with no deposit`):'');
+}
 function renderArrivals(){
   const q=$('bkFilter').value.trim().toLowerCase(),searching=q.length>=2;
   const isToday=$('dt').value===today(),now=new Date(),nowM=now.getHours()*60+now.getMinutes();
@@ -1402,7 +1416,7 @@ function renderArrivals(){
     const head='';
     const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FH</span>':b.source==='Staff'?' <span class="tag WEB">STAFF</span>':'';
     const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?' <span class="tag WINE">🍾 WINE PAID</span>':/refunded/.test(b.addons)?'':' <span class="tag WINE">🍾 WINE · collect $30</span>';
-    const dep=b.deposit?`<span class="dep">CREDIT $${money(b.deposit)} · add as "Credit" discount in Toast</span>`:b.source==='FareHarbor'?`<span class="dep">FareHarbor booking · no deposit</span>`:'';
+    const dep=depText(b)?`<span class="dep">💵 ${esc(depText(b))}</span>`:'';
     const started=dateTime(b.date,b.time)+60*6e4<Date.now();
     const st=b.partyId?(part(b)?` <span class="tag NC">${b.checked} OF ${b.size} HERE</span>`:' <span class="tag OK">CHECKED IN</span>')+(b.nsGuests?` <span class="tag GN">${b.nsGuests} NO-SHOW</span>`:''):b.status==='Confirmed'?(started?' <span class="tag NC">NOT CHECKED IN</span>':searching?' <span class="tag BK">BOOKED</span>':''):b.status==='Needs card'?(cardLate(b)?' <span class="tag LATE">NO CARD · SPOT RELEASED</span>':' <span class="tag WINE">WAITING FOR CARD</span>'):b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
     const fee=FEE_PER_GUEST*b.size;
@@ -1417,11 +1431,11 @@ function renderArrivals(){
     const g=b.guest||{},gt='';
     const hist=g.visits?` <span class="tag GV" title="Times they've come before this booking">${g.visits} past visit${g.visits>1?'s':''}</span>`:(/cancel/i.test(b.status)?'':` <span class="tag GV" style="background:var(--teal)" title="No visits before this booking">1st visit</span>`);
     const nsN=(g.noShows||0)-(b.status==='No-show'?1:0);const ns=nsN>0?` <span class="tag GN" title="This guest's history, not this booking">no-showed ${nsN===1?'once':nsN+'×'} before</span>`:'';
-    const snote=b.staffNote?`<span class="snote">📝 ${esc(b.staffNote)}</span>`:'';
+    const snote=b.staffNote?`<span class="snote">📝 <b>Team note:</b> ${esc(b.staffNote)}</span>`:'';
     const gnote='';   // colors and notes live in the guest profile, not on the list
         const tools='';
     return `${head}<div class="arrw"><button class="arr${(b.partyId&&!part(b))||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
-    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}</span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<br><span class="muted" style="font-weight:500;font-style:italic">“${esc(b.note)}”</span>`:''}</span><span class="sz"><b>${b.size}</b>${b.size===1?'guest':'guests'}</span></button>${tools}${act}</div>`});
+    <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>`:''}${esc(b.time)}<span class="szp">${b.size} ${b.size===1?'guest':'guests'}</span></span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<span class="gcom">💬 <b>Guest wrote:</b> “${esc(b.note)}”</span>`:''}</span></button>${tools}${act}</div>`});
   $('arrivals').innerHTML=(searching?_rows.join(''):classBlocks(list,_rows,cnt,ckd))+
     (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
     ||'<p class="muted">No match.</p>';
@@ -1613,7 +1627,7 @@ function viewBooking(row){
   const stCls=b.partyId?'ok':b.status==='Confirmed'?'bkd':needCard?'wait':'off';
   const [cxWho,cxAt]=(b.cancelBy||'').split('|');
   const cards=card('Booking',F('Cancelled',/cancel/i.test(b.status)?(cxWho?'By '+esc(cxWho==='Guest online'?'the guest online':cxWho)+(cxAt?' on '+exactTime(cxAt).replace(/, (\d)/,' at $1'):''):'Yes (before we tracked who and when)'):'')+F('Artists',b.guests?esc(b.guests):'')+F('Booked',`${src}${b.created&&exactTime(b.created)?' · '+exactTime(b.created):''}`)+F('Confirmation',b.bookingId?esc(b.bookingId):'')+F('Add-on',wine)
-      +F('Credit',b.deposit?`<b>$${money(b.deposit)}</b> · add it as a "Credit" discount on their Toast check${b.source==='FareHarbor'?' (FareHarbor deposit)':' (from a cancelled booking)'}`:b.source==='FareHarbor'?'No deposit':''))
+      +F('Already paid',depText(b)?`<b>${esc(depText(b))}</b>${b.deposit?' · take it off their Toast check as a "Credit" discount':''}`:''))
     +card('Contact',F('Phone',ph)+F('Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'))
     +card('Notes for this booking',F('From the guest',b.note?`“${esc(b.note)}”`:'')+F('Team note',b.staffNote?'📝 '+esc(b.staffNote):''))
     +card('Payment',F('Card',b.card?'Saved for no-show protection':needCard?'Not saved yet':'')+F('Late change fees',b.guestFee?b.guestFee.split(' | ').map(f=>esc(f.replace(/ · pi_\w+/,''))).join('<br>'):''))
@@ -1706,7 +1720,7 @@ function pick(row){
   const b=bookingByRow(row);if(!b)return;
   if(b.date!==$('dt').value){$('dt').value=b.date;fillTimes($('tm'),b.date,b.time)}
   if(b.partyId){openParty(b.partyId,b.date);return}
-  if(b.deposit)toast(`CREDIT $${money(b.deposit)}: add it as a "Credit" discount on their Toast check`,6000);
+  if(b.deposit)toast(`${depText(b)}. Take $${money(b.deposit)} off their Toast check as a "Credit" discount`,7000);
   showForm(true);picked=b;$('pickBar').innerHTML=`<span>Checking in ${esc(b.reservation)} · ${esc(b.time)}</span><button class="tl" onclick="stopPick()">Not now ✕</button>`;$('pickBar').classList.remove('hide');$('res').value=b.reservation;$('ph').value=b.phone;$('em').value=b.email;
   if(![...$('tm').options].some(o=>o.value===b.time)){const o=document.createElement('option');o.textContent=b.time;$('tm').appendChild(o)}
   $('tm').value=b.time;
