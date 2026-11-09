@@ -195,7 +195,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwvba_1OZKz5alSsEVV8pXW
 /* ====== TRACKING ======
  * Inside the website (iframe): tells abstractorlando.com, whose own GA4 / Google Ads / Meta tags record it.
  * Opened on its own (direct link): loads GA4 + Meta Pixel here. */
-const GA4_ID='G-HWWX6TQXWG', META_PIXEL='917533327429371', AVG_SPEND_PER_GUEST=100;
+const GA4_ID='G-HWWX6TQXWG', META_PIXEL='917533327429371', AVG_SPEND_PER_GUEST=125;
 const EMBEDDED=window.parent!==window;
 if(!EMBEDDED){
   const s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+GA4_ID;document.head.appendChild(s);
