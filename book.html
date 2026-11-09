@@ -212,8 +212,10 @@ function track(name,d){
   }catch(e){}
 }
 /* keep the website's frame exactly as tall as this page */
-if(EMBEDDED){let last=0;const tell=()=>{const hh=document.documentElement.scrollHeight;if(hh!==last){last=hh;parent.postMessage({ao:'height',h:hh},'*')}};
-  new ResizeObserver(tell).observe(document.body);setInterval(tell,700);}
+if(EMBEDDED){let last=0;const M=document.querySelector('main');
+  /* measure the form itself, not the window: the window grows with the frame, which made the frame grow forever */
+  const tell=()=>{const hh=Math.ceil(M.getBoundingClientRect().bottom+window.scrollY+(parseFloat(getComputedStyle(M).marginBottom)||0));if(Math.abs(hh-last)>1){last=hh;parent.postMessage({ao:'height',h:hh},'*')}};
+  new ResizeObserver(tell).observe(M);setInterval(tell,700);}
 
 const $=id=>document.getElementById(id);
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
