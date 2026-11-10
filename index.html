@@ -592,9 +592,13 @@ function drawLabel(ctx,g){
   for(;size>=14;size--){ctx.font=`800 ${pt(size)}px Poppins, Arial, sans-serif`;lines=wrap(ctx,g.reservation,resW);if(lines.length<=2&&lines.every(l=>ctx.measureText(l).width<=resW))break}
   let y=P-pt(size)*0.12;lines.slice(0,2).forEach(l=>{y+=pt(size)*0.98;ctx.fillText(l,P,y)});
   // bottom line: day + time left, QTY right
-  const by=LH-P-4;ctx.font=`700 ${pt(12)}px Poppins, Arial, sans-serif`;
-  ctx.fillText(`${niceDate(g.date)} · ${g.time}`,P,by);
-  ctx.font=`800 ${pt(12)}px Poppins, Arial, sans-serif`;ctx.textAlign='right';ctx.fillText(`QTY: ${g.size}`,LW-P,by);ctx.textAlign='left';
+  const by=LH-P-4,qty=`QTY: ${g.size}`;
+  ctx.font=`800 ${pt(12)}px Poppins, Arial, sans-serif`;const qW=ctx.measureText(qty).width;
+  ctx.textAlign='right';ctx.fillText(qty,LW-P,by);ctx.textAlign='left';
+  // short day ("Wed, Nov 4 · 2:00 PM"), shrunk if needed so it never runs into QTY
+  const dd=new Date(g.date+'T12:00:00'),dayTxt=`${dd.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})} · ${g.time}`;
+  let ds=12;for(;ds>8;ds-=.5){ctx.font=`700 ${pt(ds)}px Poppins, Arial, sans-serif`;if(ctx.measureText(dayTxt).width<=LW-2*P-qW-pt(4))break}
+  ctx.fillText(dayTxt,P,by);
   // guest first name
   ctx.font=`700 ${pt(19)}px Poppins, Arial, sans-serif`;
   let nm=g.name;while(ctx.measureText(nm).width>maxW&&nm.length>2)nm=nm.slice(0,-2)+'…';
@@ -1027,7 +1031,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611092326';
+const BUILD='202611102010';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
