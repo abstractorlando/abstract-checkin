@@ -210,11 +210,6 @@ function track(name,d){
     if(name==='checkout'){gtag('event','begin_checkout',v);fbq('track','InitiateCheckout',{currency:'USD',value:d.value})}
     if(name==='booked'){gtag('event','purchase',Object.assign({transaction_id:d.id},v));
       fbq('track','Schedule',{currency:'USD',value:d.value},{eventID:d.id});fbq('track','Purchase',{currency:'USD',value:d.value,num_items:d.size},{eventID:d.id+'-p'})}
-    /* card-stage funnel steps (GA4 only) */
-    if(name==='cardcomplete')gtag('event','payment_card_complete',{party_size:d.size});
-    if(name==='payinfo')gtag('event','add_payment_info',v);
-    if(name==='payerror')gtag('event','payment_error',{party_size:d.size,reason:String(d.reason||'other').slice(0,40)});
-    if(name==='holdexpired')gtag('event','hold_expired',{party_size:d.size});
   }catch(e){}
 }
 /* keep the website's frame exactly as tall as this page */
@@ -263,7 +258,6 @@ function startHold(until){
   const tick=()=>{const s=Math.max(0,Math.round((until-Date.now())/1000));
     if(s>0){t.textContent=`⏳ We're holding your spots for ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;return}
     clearInterval(holdTimer);booking=null;t.classList.add('out');$('book').disabled=true;
-    track('holdexpired',{size});
     t.innerHTML='Your hold ended. <a href="#" id="rehold">Hold my spots again</a>';
     $('rehold').onclick=e=>{e.preventDefault();$('payCard').classList.add('hide');$('detailsCard').classList.remove('hide');$('toPay').click()};
   };tick();holdTimer=setInterval(tick,1000);
@@ -309,12 +303,19 @@ function renderDays(){
 }
 
 /* ---------- step 4: details ---------- */
+// Every artist gets a name box, including #1. Artist 1 starts as the booker's first name but can be changed
+// (a parent booking for their child, or someone booking for a friend).
 function renderNames(){
-  const box=$('guestNames');const have=[...box.querySelectorAll('input')].map(i=>i.value);
-  if(size<2){box.innerHTML='';return}
-  box.innerHTML=`<label class="l">Who's creating with you? <span class="muted">(first names)</span></label>
-    <div class="row">${Array.from({length:size-1},(_,i)=>`<input placeholder="Guest ${i+2} first name" value="${esc(have[i]||'')}" autocapitalize="words" required oninput="this.classList.remove('bad')">`).join('')}</div>`;
+  const box=$('guestNames'),old=[...box.querySelectorAll('input')];
+  const have=old.map(i=>i.value),edited=old.map(i=>i.dataset.edited==='1');
+  const first=$('first').value.trim();
+  box.innerHTML=`<label class="l">Who is creating? <span class="muted">(first names)</span></label>
+    <p class="muted" style="margin:-2px 0 8px;font-size:13px">Booking for someone else, like your child? Just change the name.</p>
+    <div class="row">${Array.from({length:size},(_,i)=>{const v=i===0?(edited[0]?have[0]:first):(have[i]||'');
+      return `<input placeholder="Artist ${i+1}" value="${esc(v)}" autocapitalize="words" required data-edited="${i===0&&edited[0]?1:0}" oninput="this.classList.remove('bad');this.dataset.edited='1'">`}).join('')}</div>`;
 }
+// keep artist 1 in step with the booker's first name until someone changes it by hand
+document.addEventListener('input',e=>{if(e.target.id!=='first')return;const a=$('guestNames').querySelector('input');if(a&&a.dataset.edited!=='1')a.value=e.target.value.trim()});
 $('toPay').onclick=async()=>{
   $('err1').textContent='';
   const first=$('first').value.trim(),last=$('last').value.trim(),phone=fullPhone(),email=$('email').value.trim();
@@ -323,7 +324,7 @@ $('toPay').onclick=async()=>{
   if(!phone)return $('err1').textContent='Please check your mobile number. Your confirmation is texted there.';
   if(!/^\S+@\S+\.\S+$/.test(email))return $('err1').textContent='Please check your email.';
   const missing=[...$('guestNames').querySelectorAll('input')].filter(i=>!i.value.trim());
-  if(missing.length){missing.forEach(i=>i.classList.add('bad'));missing[0].focus();return $('err1').textContent=`Please add the first name of everyone creating with you (${missing.length} missing).`}
+  if(missing.length){missing.forEach(i=>i.classList.add('bad'));missing[0].focus();return $('err1').textContent=`Please add the first name of everyone creating (${missing.length} missing).`}
   const fee=AV.feePerGuest,h=AV.lateHours;
   $('summary').innerHTML=`<div class="sum"><span>Day</span><b>${esc(niceDate(sel.date))}</b></div>
     <div class="sum"><span>Time</span><b>${esc(sel.time)}</b></div><div class="sum"><span>Party</span><b>${size} guest${size>1?'s':''}</b></div>
@@ -340,7 +341,7 @@ $('toPay').onclick=async()=>{
   try{
     if(booking&&booking.key!==JSON.stringify([sel,size,phone,addons()]))booking=null;
     if(!booking){
-      const guests=[first,...[...$('guestNames').querySelectorAll('input')].map(i=>i.value.trim())];
+      const guests=[...$('guestNames').querySelectorAll('input')].map(i=>i.value.trim());
       const r=await call('startBooking',{date:sel.date,time:sel.time,size,name:first+' '+last,phone,email,guests,note:$('note').value,addons:addons(),code:(AV.private&&AV.private.code)||'',policy:true});
       booking={id:r.bookingId,secret:r.clientSecret,key:JSON.stringify([sel,size,phone,addons()])};
       startHold(Date.now()+(AV.holdMinutes||10)*60000);
@@ -356,13 +357,8 @@ function mountCard(){
   if(!stripe)stripe=Stripe(AV.publishable);
   elements=stripe.elements({clientSecret:booking.secret,appearance:{theme:'stripe',variables:{colorPrimary:'#4e3aa2',fontFamily:'Poppins, system-ui, sans-serif',borderRadius:'12px'}},
     fonts:[{cssSrc:'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap'}]});
-  $('pay').innerHTML='';
-  const pe=elements.create('payment',{layout:'tabs'});
-  /* tell analytics once per booking when the card fields are filled in (no card data is read) */
-  pe.on('change',ev=>{if(ev.complete&&booking&&ccSent!==booking.id){ccSent=booking.id;track('cardcomplete',{size})}});
-  pe.mount('#pay');
+  $('pay').innerHTML='';elements.create('payment',{layout:'tabs'}).mount('#pay');
 }
-let ccSent='';
 $('back').onclick=()=>{$('payCard').classList.add('hide');$('detailsCard').classList.remove('hide')};
 
 /* ---------- step 5: save card + confirm ---------- */
@@ -370,18 +366,13 @@ $('book').onclick=async()=>{
   $('err2').textContent='';
   if(!$('agree').checked)return $('err2').textContent='Please check the box to agree to the cancellation policy.';
   const btn=$('book');btn.disabled=true;btn.textContent='Booking…';
-  track('payinfo',{size,value:size*AVG_SPEND_PER_GUEST});
   try{
     const {error,setupIntent}=await stripe.confirmSetup({elements,redirect:'if_required',
       confirmParams:{return_url:location.origin+location.pathname+'?done='+booking.id}});
-    if(error){const x=new Error(error.message);x.stripeType=error.type;x.stripeCode=error.code;throw x}
+    if(error)throw new Error(error.message);
     await finish(booking.id,setupIntent.id);
   }catch(e){
     btn.disabled=false;btn.textContent=addonTotal()?`Confirm & pay $${addonTotal()}`:'Confirm my reservation';
-    /* why did it fail? sent to analytics as a short reason */
-    const why=/ADDON_DECLINED/.test(e.message)?'wine_declined':/PREPAID/.test(e.message)?'prepaid_card':/HOLD_EXPIRED/.test(e.message)?'hold_expired':
-      e.stripeType==='validation_error'?'incomplete_card':e.stripeType==='card_error'?(e.stripeCode||'card_error'):'other';
-    track('payerror',{size,reason:why});
     if(/ADDON_DECLINED/.test(e.message))return showDecline();
     if(/PREPAID/.test(e.message)){startHold(Date.now()+(AV.holdMinutes||10)*60000);
       $('err2').textContent='This card can\'t be used to hold a reservation. Please try a different credit or debit card.';
