@@ -384,10 +384,9 @@
   <!-- FIND -->
   <section id="vFind" class="hide">
     <div class="card">
-      <label class="l" for="q">Pickup: ask for the reservation name</label>
+      <label class="l" for="q">Pickup: search by name, phone or email</label>
       <input id="q" placeholder="Name, phone or email…" oninput="debFind()">
       <datalist id="pieceTypes"></datalist>
-      <button class="btn ghost small" style="width:auto;margin-top:10px" onclick="openFhStore()">+ Add pieces already on the shelf from FareHarbor</button>
     </div>
     <div id="findList"></div>
   </section>
@@ -1037,7 +1036,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611111754';
+const BUILD='202611111820';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
