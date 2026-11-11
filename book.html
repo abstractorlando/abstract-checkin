@@ -210,6 +210,11 @@ function track(name,d){
     if(name==='checkout'){gtag('event','begin_checkout',v);fbq('track','InitiateCheckout',{currency:'USD',value:d.value})}
     if(name==='booked'){gtag('event','purchase',Object.assign({transaction_id:d.id},v));
       fbq('track','Schedule',{currency:'USD',value:d.value},{eventID:d.id});fbq('track','Purchase',{currency:'USD',value:d.value,num_items:d.size},{eventID:d.id+'-p'})}
+    /* card-stage funnel steps (GA4 only) */
+    if(name==='cardcomplete')gtag('event','payment_card_complete',{party_size:d.size});
+    if(name==='payinfo')gtag('event','add_payment_info',v);
+    if(name==='payerror')gtag('event','payment_error',{party_size:d.size,reason:String(d.reason||'other').slice(0,40)});
+    if(name==='holdexpired')gtag('event','hold_expired',{party_size:d.size});
   }catch(e){}
 }
 /* keep the website's frame exactly as tall as this page */
@@ -258,6 +263,7 @@ function startHold(until){
   const tick=()=>{const s=Math.max(0,Math.round((until-Date.now())/1000));
     if(s>0){t.textContent=`⏳ We're holding your spots for ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;return}
     clearInterval(holdTimer);booking=null;t.classList.add('out');$('book').disabled=true;
+    track('holdexpired',{size});
     t.innerHTML='Your hold ended. <a href="#" id="rehold">Hold my spots again</a>';
     $('rehold').onclick=e=>{e.preventDefault();$('payCard').classList.add('hide');$('detailsCard').classList.remove('hide');$('toPay').click()};
   };tick();holdTimer=setInterval(tick,1000);
@@ -350,8 +356,13 @@ function mountCard(){
   if(!stripe)stripe=Stripe(AV.publishable);
   elements=stripe.elements({clientSecret:booking.secret,appearance:{theme:'stripe',variables:{colorPrimary:'#4e3aa2',fontFamily:'Poppins, system-ui, sans-serif',borderRadius:'12px'}},
     fonts:[{cssSrc:'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap'}]});
-  $('pay').innerHTML='';elements.create('payment',{layout:'tabs'}).mount('#pay');
+  $('pay').innerHTML='';
+  const pe=elements.create('payment',{layout:'tabs'});
+  /* tell analytics once per booking when the card fields are filled in (no card data is read) */
+  pe.on('change',ev=>{if(ev.complete&&booking&&ccSent!==booking.id){ccSent=booking.id;track('cardcomplete',{size})}});
+  pe.mount('#pay');
 }
+let ccSent='';
 $('back').onclick=()=>{$('payCard').classList.add('hide');$('detailsCard').classList.remove('hide')};
 
 /* ---------- step 5: save card + confirm ---------- */
@@ -359,13 +370,18 @@ $('book').onclick=async()=>{
   $('err2').textContent='';
   if(!$('agree').checked)return $('err2').textContent='Please check the box to agree to the cancellation policy.';
   const btn=$('book');btn.disabled=true;btn.textContent='Booking…';
+  track('payinfo',{size,value:size*AVG_SPEND_PER_GUEST});
   try{
     const {error,setupIntent}=await stripe.confirmSetup({elements,redirect:'if_required',
       confirmParams:{return_url:location.origin+location.pathname+'?done='+booking.id}});
-    if(error)throw new Error(error.message);
+    if(error){const x=new Error(error.message);x.stripeType=error.type;x.stripeCode=error.code;throw x}
     await finish(booking.id,setupIntent.id);
   }catch(e){
     btn.disabled=false;btn.textContent=addonTotal()?`Confirm & pay $${addonTotal()}`:'Confirm my reservation';
+    /* why did it fail? sent to analytics as a short reason */
+    const why=/ADDON_DECLINED/.test(e.message)?'wine_declined':/PREPAID/.test(e.message)?'prepaid_card':/HOLD_EXPIRED/.test(e.message)?'hold_expired':
+      e.stripeType==='validation_error'?'incomplete_card':e.stripeType==='card_error'?(e.stripeCode||'card_error'):'other';
+    track('payerror',{size,reason:why});
     if(/ADDON_DECLINED/.test(e.message))return showDecline();
     if(/PREPAID/.test(e.message)){startHold(Date.now()+(AV.holdMinutes||10)*60000);
       $('err2').textContent='This card can\'t be used to hold a reservation. Please try a different credit or debit card.';
