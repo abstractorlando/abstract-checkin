@@ -932,7 +932,7 @@ async function giftFind(){const q=$('giftQ').value.trim();if(q.replace(/[^a-z0-9
 const usd=n=>'$'+Number(n||0).toFixed(2);
 function renderGift(){
   const {cards,zero}=GIFT,bf=GIFT.bf||[];
-  const bfBox=c=>`<div class="gcard"><div class="gbf">BLACK FRIDAY GIFT CARD<span>Already 50% off. Do NOT combine with any other discount or promo code.</span></div>
+  const bfBox=c=>`<div class="gcard"><div class="gbf">BLACK FRIDAY GIFT CARD<span>This gift card already gives 50% OFF. CAN NOT be combined with any other discounts or promotions.</span></div>
       <div style="margin-top:10px;background:#f6f3fe;border-radius:12px;padding:10px 14px"><span class="muted" style="font-size:12px;font-weight:700">TOAST GIFT CARD</span><br><b style="font-size:18px;color:var(--purp);letter-spacing:1px;overflow-wrap:anywhere">${esc(c.card)}</b></div>
       <p class="muted" style="font-size:13px;margin:8px 0 0">${c.amount?'Value '+usd(c.amount):''}${c.bought?' · bought '+esc(c.bought):''}${c.buyer?' · '+esc(c.buyer):''}${c.note?' · '+esc(c.note):''}</p>
       <p class="muted" style="font-size:13px;margin:6px 0 0">Redeem it in Toast as usual. The balance lives in Toast.</p></div>`;
@@ -940,7 +940,7 @@ function renderGift(){
   $('giftRes').innerHTML=bf.map(bfBox).join('')+(okToast?`<div class="gcard"><div class="gok">NOT A BLACK FRIDAY CARD<span>Regular Toast gift card. Promos are OK. Redeem it in Toast as usual.</span></div><p class="muted" style="font-size:13px;margin:8px 0 0">Double-check the number with the guest. If it was bought during a Black Friday sale and isn't on the list yet, ask a manager.</p></div>`:'')+(cards.length?cards.map((c,i)=>`<div class="gcard${c.left<=0?' empty':''}">
       <div class="gtop"><div><span class="muted" style="font-size:12px;font-weight:700">OLD FAREHARBOR CODE</span><br><b style="font-size:16px;letter-spacing:.5px">${esc(c.old)}</b></div>
         <div style="text-align:right"><span class="muted" style="font-size:12px;font-weight:700">BALANCE LEFT</span><br><b class="gbal">${usd(c.left)}</b></div></div>
-      ${c.blackFriday?`<div class="gbf">BLACK FRIDAY GIFT CARD<span>Already 50% off. Do NOT combine with any other discount or promo code.</span></div>`:''}
+      ${c.blackFriday?`<div class="gbf">BLACK FRIDAY GIFT CARD<span>This gift card already gives 50% OFF. CAN NOT be combined with any other discounts or promotions.</span></div>`:''}
       <div class="gtoast"><span>Redeem in Toast with code</span><b>${esc(c.toast)}</b></div>
       ${c.left>0?`<div class="guse"><label class="l" style="margin:0">Amount used in Toast</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="gAmt${i}" inputmode="decimal" placeholder="0.00" style="flex:1;min-width:110px;font-size:18px">
@@ -1031,7 +1031,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611102010';
+const BUILD='202611111710';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
