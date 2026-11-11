@@ -1036,7 +1036,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611111846';
+const BUILD='202611111853';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1547,7 +1547,7 @@ function renderArrivals(){
   const _rows=list.map(b=>{
     const off=!live(b);
     const head='';
-    const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FAREHARBOR</span>':b.source==='Staff'?' <span class="tag WEB">STAFF</span>':'';
+    const tag=b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FAREHARBOR</span>':b.source==='Staff'?` <span class="tag WEB">${/walkin/.test(b.addons||'')?'WALK-IN':/prepaid/.test(b.addons||'')?'EVENT':'BOOKED BY TEAM'}</span>`:'';
     const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?' <span class="tag WINE">🍾 WINE PAID</span>':/refunded/.test(b.addons)?'':' <span class="tag WINE">🍾 WINE · collect $30</span>';
     const dep=depText(b)?`<span class="dep${b.source==='FareHarbor'?' fh':''}">💵 ${esc(depText(b))}</span>`:'';
     const started=dateTime(b.date,b.time)+60*6e4<Date.now();
@@ -1750,7 +1750,7 @@ function fmtWhen(iso){const d=new Date(iso);return isNaN(d)?'':d.toLocaleString(
 function viewBooking(row){
   const b=bookingByRow(row);if(!b)return;closeBk();
   const k=encodeURIComponent(b.key),g=b.guest||{},needCard=b.status==='Needs card',active=(b.status==='Confirmed'||needCard)&&!b.partyId;
-  const src=b.source==='Website'?'Website':b.source==='FareHarbor'?'FareHarbor'+(b.fhId?' #'+esc(b.fhId):''):b.source==='Staff'?'Added by staff':esc(b.source);
+  const src=b.source==='Website'?'Website':b.source==='FareHarbor'?'FareHarbor'+(b.fhId?' #'+esc(b.fhId):''):b.source==='Staff'?(/walkin/.test(b.addons||'')?'Walk-in':/prepaid/.test(b.addons||'')?'Event booked by the team':'Booked by the team'):esc(b.source);
   const wine=!/wine/.test(b.addons||'')?'':/\|paid\|/.test(b.addons)?'🍾 Sparkling wine · paid online':/refunded/.test(b.addons)?'🍾 Sparkling wine · refunded':'🍾 Sparkling wine · collect $30 at the studio';
   const st=b.partyId?'✓ Checked in':b.status==='Confirmed'?'Booked':needCard?(cardLate(b)?'No card added · spot released':'Waiting for their card · held until '+new Date(new Date(b.created).getTime()+CARD_MIN*6e4).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})):b.status;
   const ph=b.phone?`<a href="sms:${esc(b.phone.replace(/[^\d+]/g,''))}">${esc(fmtPhone(b.phone))}</a>`:'—';
