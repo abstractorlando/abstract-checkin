@@ -310,7 +310,6 @@ function renderNames(){
   const have=old.map(i=>i.value),edited=old.map(i=>i.dataset.edited==='1');
   const first=$('first').value.trim();
   box.innerHTML=`<label class="l">Who is creating? <span class="muted">(first names)</span></label>
-    <p class="muted" style="margin:-2px 0 8px;font-size:13px">Booking for someone else, like your child? Just change the name.</p>
     <div class="row">${Array.from({length:size},(_,i)=>{const v=i===0?(edited[0]?have[0]:first):(have[i]||'');
       return `<input placeholder="Artist ${i+1}" value="${esc(v)}" autocapitalize="words" required data-edited="${i===0&&edited[0]?1:0}" oninput="this.classList.remove('bad');this.dataset.edited='1'">`}).join('')}</div>`;
 }
