@@ -90,6 +90,9 @@
   .btn.small{padding:8px 14px;font-size:14px;min-height:40px}
   .btn:disabled{opacity:.5;cursor:default}
   .add{margin-top:10px}
+  .ush{font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--purp);margin:12px 0 6px}
+  .usrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;width:100%;text-align:left;font:inherit;font-size:15px;background:#f6f3fe;border:1.5px solid #e4dcfa;border-radius:12px;padding:10px 12px;margin:0 0 6px;cursor:pointer;color:var(--ink)}
+  .usrow .usgo{margin-left:auto;color:var(--purp);font-weight:700}
   .party{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;background:#fff}
   .ph{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
   .ph b{font-size:17px}
@@ -276,7 +279,7 @@
 <body>
 <header>
   <h1><span class="hb">Abstract </span>Check-In</h1>
-  <button class="gear" onclick="goSearch()" aria-label="Search bookings" title="Search bookings">🔍</button>
+  <button class="gear" onclick="goSearch()" aria-label="Search everything" title="Search everything: bookings, art on the shelf, past visits">🔍</button>
   <button class="gear bell" id="bellBtn" onclick="openBell()" aria-label="New bookings" title="New bookings">🔔<span id="bellN" class="bn hide"></span></button>
   <button class="gear" onclick="openGift()" aria-label="Gift cards" title="Check a gift card">🎁</button>
   <button class="gear who hide" id="whoBtn" onclick="switchUser()" title="Signed in on this device. Tap to switch."></button>
@@ -310,7 +313,7 @@
         <button type="button" class="btn ghost small" onclick="shiftDay(1)" aria-label="Next day">›</button>
         <button type="button" class="btn ghost small today" onclick="setArrDay(today())">Today</button>
       </div>
-      <input id="bkFilter" placeholder="🔍 Search bookings" title="Name, phone, email, confirmation # or a word from their notes" oninput="onSearch()" autocomplete="off" type="search">
+      <input id="bkFilter" placeholder="🔍 Search bookings by name, phone or email" title="Name, phone, email, confirmation # or a word from their notes" oninput="onSearch()" autocomplete="off" type="search">
       <div class="slots" id="slotChips"></div>
       <div id="arrivals" style="margin-top:10px"></div>
       <div id="daySum"></div>
@@ -348,7 +351,7 @@
       <button class="btn ghost small" onclick="loadDay()">Refresh</button>
     </div>
     <div class="card"><label class="l" for="ciQ">Find a checked-in party (any day)</label>
-      <input id="ciQ" type="search" placeholder="🔍 Search check-ins" title="Reservation or guest name, phone or email" oninput="debCi()" autocomplete="off"></div>
+      <input id="ciQ" type="search" placeholder="🔍 Search visits by name, phone or email" title="Reservation or guest name, phone or email" oninput="debCi()" autocomplete="off"></div>
     <div id="newBar" class="card hide" style="border:2px solid var(--mag);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
       <b id="newCount" style="font-size:17px"></b>
       <button class="btn main" style="width:auto;font-size:16px" onclick="printNew()">Print new labels</button>
@@ -382,7 +385,7 @@
   <section id="vFind" class="hide">
     <div class="card">
       <label class="l" for="q">Pickup: ask for the reservation name</label>
-      <input id="q" placeholder="Type a name…" oninput="debFind()">
+      <input id="q" placeholder="Name, phone or email…" oninput="debFind()">
       <datalist id="pieceTypes"></datalist>
       <button class="btn ghost small" style="width:auto;margin-top:10px" onclick="openFhStore()">+ Add pieces already on the shelf from FareHarbor</button>
     </div>
@@ -966,7 +969,7 @@ async function giftUndo(i){if(!confirm('Undo the last use on this card? The amou
 async function confirmPickup(id){
   const idx=[...$('puModal').querySelectorAll('input:checked')].map(x=>+x.value);if(!idx.length)return toast('Tick at least one piece');
   try{const r=await call('markPickedUp',id,idx);$('puModal').remove();
-    toast(r.all?'All picked up ✓':`Picked up ✓ · ${r.left} piece${r.left>1?'s':''} still on the shelf`,4500);refreshView()}
+    toast(r.all?'All picked up ✓':`Picked up ✓ · ${r.left} piece${r.left>1?'s':''} still on the shelf`,4500);refreshView();if($('usModal'))usRun()}
   catch(e){toast('Could not update: '+(e.message||e),5000)}
 }
 async function editContact(id){
@@ -1026,7 +1029,7 @@ function renderPickup(list){
   ps.sort((a,b)=>rank(a)-rank(b)||String(b[0].date).localeCompare(String(a[0].date)));
   $('findList').innerHTML=ps.length?ps.map(p=>{const f=p[0],s=f.storage;
     return `<div class="party pkp"><div class="ph"><div><b style="font-size:20px">${esc(f.reservation)}</b><br><span>Class ${esc(niceDate(f.date))} · ${esc(f.time)} · ${p.length} guest${p.length>1?'s':''}</span>
-      ${f.phone||f.email?`<br><span class="muted" style="font-size:14px">${[f.phone?`<a href="tel:${esc(f.phone)}" style="color:var(--teal)">${esc(fmtPhone(f.phone))}</a>`:'',f.email?esc(f.email):''].filter(Boolean).join(' · ')}</span>`:''}</div></div>
+      ${f.phone||f.email?`<br><span class="muted" style="font-size:14px">${[f.phone?esc(fmtPhone(f.phone)):'',f.email?esc(f.email):''].filter(Boolean).join(' · ')}</span>`:''}</div></div>
       ${s?storageLine(p):`<div class="st"><span class="muted">Not stored yet. Pieces from this class are still drying or haven't been stored.</span></div>`}
       ${otherPieces(p)}
       <div id="sf_${f.partyId}"></div></div>`}).join(''):'<p class="muted">No checked-in party found with that name.</p>';
@@ -1034,7 +1037,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611111741';
+const BUILD='202611111754';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1404,7 +1407,56 @@ function cardSentModal(name,sent,link){
   m.onclick=e=>{if(e.target===m)softClose(m)};document.body.appendChild(m);
 }
 let SR=[],SQ='',sTimer;
-function goSearch(){show('new');window.scrollTo(0,0);setTimeout(()=>$('bkFilter').focus(),50)}
+/* ---------- 🔍 search everything ----------
+   One box for the whole team: type a name, phone or email and see, per guest, their contact info,
+   upcoming bookings, art on the shelf and past visits. Uses the two searches the app already has
+   (bookings + check-ins), run side by side, so it adds no extra load. */
+let US={q:'',bk:[],ci:[]},usT;
+function openUS(){
+  if($('usModal'))return $('usQ').focus();
+  const m=document.createElement('div');m.className='modal';m.id='usModal';m.style.alignItems='flex-start';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:640px;width:100%;margin-top:4vh;max-height:90vh;overflow:auto">
+    <div style="display:flex;gap:8px;align-items:center"><input id="usQ" type="search" placeholder="🔍 Name, phone or email" autocomplete="off" style="flex:1" oninput="clearTimeout(usT);usT=setTimeout(usRun,350)">
+    <button class="btn ghost small" onclick="$('usModal').remove()">Close</button></div>
+    <p class="muted" style="font-size:13px;margin:6px 2px 0">Searches bookings, art on the shelf and past visits.</p><div id="usRes"></div></div>`;
+  m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);setTimeout(()=>$('usQ').focus(),30);
+}
+async function usRun(){
+  const q=$('usQ')?$('usQ').value.trim():'';if(q.length<2){$('usRes').innerHTML='';return}
+  if(US.q!==q)$('usRes').innerHTML='<p class="muted" style="margin-top:12px">Searching…</p>';
+  try{const [bk,ci]=await Promise.all([call('searchBookings',q),call('search',q)]);
+    if(!$('usQ')||$('usQ').value.trim()!==q)return;US={q,bk:bk||[],ci:ci||[]};usRender()}
+  catch(e){if($('usRes'))$('usRes').innerHTML=`<p class="muted">Could not search: ${esc(e.message||e)}</p>`}
+}
+function usKey(o){const d=String(o.phone||'').replace(/\D/g,'').slice(-10);return d.length===10?d:String(o.email||'').trim().toLowerCase()||String(o.reservation||'').trim().toLowerCase()}
+function usRender(){
+  const G=new Map(),get=o=>{const k=usKey(o);if(!G.has(k))G.set(k,{name:o.reservation,phone:o.phone,email:o.email,up:[],past:[],shelf:[],visits:new Map()});const g=G.get(k);g.phone=g.phone||o.phone;g.email=g.email||o.email;return g};
+  const t=today();
+  US.bk.forEach(b=>{if(b.status==='Cancelled'||b.status==='Late cancel')return;const g=get(b);
+    if(b.date>=t&&!b.partyId)g.up.push(b);else g.visits.set(b.date+'|'+b.time,{date:b.date,time:b.time,size:b.size})});
+  groupParties(US.ci).forEach(p=>{const f=p[0];parties[f.partyId]=p;p.forEach(r=>cache[r.row]=r);const g=get(f);
+    g.visits.set(f.date+'|'+f.time,{date:f.date,time:f.time,size:p.length});
+    const s=f.storage;if(s&&!s.pickedUp&&(s.items||[]).some(i=>!i.picked))g.shelf.push(p)});
+  const list=[...G.values()].sort((a,b)=>(b.up.length?2:0)+(b.shelf.length?1:0)-((a.up.length?2:0)+(a.shelf.length?1:0)));
+  if(!list.length){$('usRes').innerHTML='<p class="muted" style="margin-top:12px">No one found. Try part of the name, the last 4 digits of their phone, or their email.</p>';return}
+  const sd=d=>{const [y,m,dd]=d.split('-').map(Number);return new Date(y,m-1,dd).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})};
+  $('usRes').innerHTML=list.map(g=>{
+    const vis=[...g.visits.values()].filter(v=>v.date<t).sort((a,b)=>b.date.localeCompare(a.date));
+    const up=g.up.sort((a,b)=>a.date.localeCompare(b.date)||tMin(a.time)-tMin(b.time));
+    return `<div class="party" style="margin-top:12px"><b style="font-size:19px">${esc(g.name||'')}</b>
+      <div class="muted" style="font-size:14px">${[g.phone?esc(fmtPhone(g.phone)):'',g.email?esc(g.email):''].filter(Boolean).join(' · ')||'No contact on file'}</div>
+      ${up.length?`<div class="ush">Upcoming</div>${up.map(b=>`<button class="usrow" onclick="usOpenBk(${b.row})"><b>${esc(sd(b.date))} · ${esc(b.time)}</b> <span>party of ${b.size}</span> <span class="cp ${b.status==='Needs card'?'ov':'cpb'}">${b.status==='Needs card'?'Needs card':'Booked'}</span><span class="usgo">Open ›</span></button>`).join('')}`:''}
+      ${g.shelf.map(p=>{const f=p[0],s=f.storage,left=(s.items||[]).filter(i=>!i.picked),pb=ymdOf(s.pickupBy);
+        return `<div class="ush">Art on the shelf <span class="muted" style="font-weight:500">· from ${esc(sd(f.date))}</span></div>
+        ${left.map(i=>`<div class="pcs"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}</span></div>`).join('')}
+        ${pb?`<div style="font-size:14px;margin:4px 0;color:${pb<t?'#c40056':'inherit'}"><b>Pick up by ${esc(niceDate(pb))}</b>${pb<t?' · past the deadline':''}</div>`:''}
+        <div style="display:flex;gap:8px;margin-top:6px"><button class="btn main small" style="width:auto" onclick="pickedUp('${f.partyId}')">Mark picked up</button><button class="btn ghost small" onclick="printTicket('${f.partyId}')">🧾 Ticket</button></div>`}).join('')}
+      ${vis.length?`<div class="ush">Past visits · ${vis.length}</div><div class="muted" style="font-size:14px">${vis.slice(0,4).map(v=>`${esc(sd(v.date))} · ${esc(v.time)} · ${v.size} guest${v.size>1?'s':''}`).join('<br>')}${vis.length>4?`<br>and ${vis.length-4} more`:''}</div>`:''}
+      ${!up.length&&!g.shelf.length&&!vis.length?'<div class="muted" style="font-size:14px;margin-top:6px">No bookings or visits yet.</div>':''}
+    </div>`}).join('');
+}
+function usOpenBk(row){const m=$('usModal');if(m)m.remove();viewBooking(row)}
+function goSearch(){openUS()}
 document.addEventListener('keydown',e=>{if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'')){e.preventDefault();goSearch()}});
 function onSearch(){const q=$('bkFilter').value.trim();clearTimeout(sTimer);
   if(q.length<2){SR=[];SQ='';renderArrivals();return}
@@ -1526,7 +1578,7 @@ function renderArrivals(){
   if(searching)$('arrivals').insertAdjacentHTML('afterbegin',`<p class="muted" style="margin:0 0 8px;font-size:14px">${SR.length} booking${SR.length>1?'s':''} on any day · upcoming first${SR.length>=30?' · showing the first 30':''}</p>`);
 }
 function bookingByKey(k){k=decodeURIComponent(k);return arrivals.find(b=>b.key===k)||SR.find(b=>b.key===k)}
-function bookingByRow(row){return arrivals.find(x=>x.row===row)||SR.find(x=>x.row===row)}
+function bookingByRow(row){return arrivals.find(x=>x.row===row)||SR.find(x=>x.row===row)||US.bk.find(x=>x.row===row)}
 /* ---------- staff notes + guest profiles (never shown to guests) ---------- */
 async function editNote(k){
   const b=bookingByKey(k);if(!b)return;
