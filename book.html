@@ -78,6 +78,8 @@
   .timer.out{background:#fff5e6;color:#8a5a00}
   .closed{padding:14px;border-radius:14px;background:#fff5e6;font-size:14px}
   input.bad{border-color:#c40056!important;background:#fff0f5}
+  .calrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:12px 0 4px;font-size:14px}.calrow span{color:var(--muted);font-weight:600}
+  .calrow a{display:inline-block;padding:8px 14px;border:1.5px solid var(--line);border-radius:999px;font-weight:700;color:var(--purp);text-decoration:none;background:#fff}
 </style>
 </head>
 <body>
@@ -154,6 +156,7 @@
       <h2 id="cTitle">You're booked!</h2>
       <p id="cWhen" style="font-size:18px;font-weight:700;margin:4px 0"></p>
       <p class="muted" id="cParty"></p>
+      <div id="cCal"></div>
       <p style="margin:18px 0 0" id="cText"></p>
       <p style="margin:12px 0 0">Please arrive about 10 minutes early to settle in and pick your project and colors.</p>
       <p class="hide" id="cWine" style="margin:12px 0 0">🥂 Your sparkling wine will be chilled and waiting ($30, paid at the studio).</p>
@@ -404,9 +407,29 @@ async function finish(id,siId,opts){
   $('cWine').textContent=b.paid?'🥂 Your sparkling wine is paid and will be chilled and waiting for you.':'🥂 Your sparkling wine will be chilled and waiting for you.';
   $('cTitle').textContent=`You're booked, ${b.name.split(' ')[0]}!`;
   $('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;$('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;
+  $('cCal').innerHTML=calButtons(b.date,b.time,b.size,b.manage||'');
   window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
 }
 
+/* ---------- add to calendar (Google, or a calendar file for Apple / Outlook) ---------- */
+function calButtons(date,time,size,link){
+  const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(time||'');if(!date||!m)return '';
+  let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;
+  const p=n=>String(n).padStart(2,'0'),d=date.replace(/-/g,''),st=`${d}T${p(h)}${p(m[2])}00`,en=`${d}T${p(h+1)}${p(m[2])}00`;
+  // studio time (Orlando) -> exact moment, so the calendar file shows the right time anywhere
+  const [Y,Mo,D]=date.split('-').map(Number),guess=Date.UTC(Y,Mo-1,D,h,+m[2]);
+  const ny=new Date(new Date(guess).toLocaleString('en-US',{timeZone:'America/New_York'})),utc=new Date(new Date(guess).toLocaleString('en-US',{timeZone:'UTC'}));
+  const t0=guess+(utc-ny),zt=t=>new Date(t).toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  const title='Abstract Orlando',loc='Abstract Orlando, 12211 Regency Village Dr, Suite 11, Orlando, FL 32821';
+  const det=`Party of ${size}. Please arrive about 10 minutes early.`+(link?`\nYour booking: ${link}`:'');
+  const g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+`&dates=${st}/${en}&ctz=America/New_York&location=`+encodeURIComponent(loc)+'&details='+encodeURIComponent(det);
+  const esc2=t=>t.replace(/\\/g,'\\\\').replace(/,/g,'\\,').replace(/;/g,'\;').replace(/\n/g,'\\n');
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Abstract Orlando//Booking//EN','BEGIN:VEVENT','UID:'+d+p(h)+p(m[2])+'-'+size+'@abstractorlando.com',
+    'DTSTAMP:'+zt(Date.now()),'DTSTART:'+zt(t0),'DTEND:'+zt(t0+36e5),
+    'SUMMARY:'+esc2(title),'LOCATION:'+esc2(loc),'DESCRIPTION:'+esc2(det),'BEGIN:VALARM','TRIGGER:-PT2H','ACTION:DISPLAY','DESCRIPTION:Abstract Orlando','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const ah='data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
+  return `<div class="calrow"><span>Add to calendar:</span><a href="${g}" target="_blank" rel="noopener">Google</a><a href="${ah}" download="abstract-orlando.ics">Apple / Outlook</a></div>`;
+}
 /* ---------- manage existing booking (?b=ID&t=TOKEN) ---------- */
 let mine=null,move={date:null,time:null};
 async function loadMine(){
@@ -425,6 +448,7 @@ function renderMine(){
     <div class="sum"><span>Day</span><b>${esc(niceDate(b.date))}</b></div><div class="sum"><span>Time</span><b>${esc(b.time)}</b></div>
     <div class="sum"><span>Party</span><b>${b.size} guest${b.size>1?'s':''}</b></div>
     <div class="sum"><span>Status</span><b>${b.status==='Confirmed'?(b.past?'Done':'Confirmed ✓'):esc(b.status==='Late cancel'?'Cancelled':b.status)}</b></div>
+    ${active?calButtons(b.date,b.time,b.size,location.href):''}
     ${b.deposit?`<div class="sum"><span>${b.fareharbor?'Deposit paid':'Credit'}</span><b>$${b.deposit} · comes off your bill</b></div>`:''}
     ${active&&b.depositOnly?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> If you cancel or reschedule now, your $${b.deposit} deposit can't be carried over. Nothing else is charged.</div>`
       :`<div class="policy"><b>Free changes anytime before ${esc(deadlineText(b))}.</b> Reschedule and your $${b.deposit} deposit moves with you. Cancel before then and we'll save it as credit for your next visit. After that, cancelling or not showing up means the deposit can't be carried over.</div>`)
@@ -510,7 +534,7 @@ function cardDone(){
   const b=mine;$('manage').classList.add('hide');$('confirmed').classList.remove('hide');
   $('heroTitle').textContent='We can\'t wait to see you!';$('heroSub').textContent='Your reservation is confirmed.';
   $('cTitle').textContent=`You're booked, ${b.name.split(' ')[0]}!`;$('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;
-  $('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;$('cText').innerHTML=b.phone?`We'll text your booking details to <b>${esc(b.phone)}</b>.`:'';
+  $('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;$('cCal').innerHTML=calButtons(b.date,b.time,b.size,location.href);$('cText').innerHTML=b.phone?`We'll text your booking details to <b>${esc(b.phone)}</b>.`:'';
   $('cWine').classList.add('hide');window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
 }
 function renderMove(){
