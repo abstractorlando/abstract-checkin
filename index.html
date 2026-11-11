@@ -1036,7 +1036,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611111820';
+const BUILD='202611111846';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1539,7 +1539,8 @@ function renderArrivals(){
   const isCx=b=>b.status==='Cancelled'||b.status==='Late cancel';
   const all=searching?SR:arrivals.filter(b=>(!SLOT||b.time===SLOT)&&!isCx(b)).sort((a,b)=>tMin(a.time)-tMin(b.time));
   const hidden=searching?[]:all.filter(done);
-  const list=(searching||showDone)?all:all.filter(b=>!done(b));
+  // a class roster shows everyone booked in it: still-to-arrive first, checked in / past underneath (dimmed)
+  const list=searching?all:all.slice().sort((a,b)=>tMin(a.time)-tMin(b.time)||(done(a)?1:0)-(done(b)?1:0));
   if(searching&&!SR.length){$('arrivals').innerHTML=SQ?`<p class="muted">No bookings found for “${esc($('bkFilter').value.trim())}” on any day.</p>`:'<p class="muted">Searching all days…</p>';return}
   if(!searching&&!arrivals.length){$('arrivals').innerHTML='<p class="muted">No bookings for this day yet. New bookings show up here on their own. For walk-ins or phone bookings, tap <b>+ Add booking</b>.</p>';return}
   const ckd=t=>arrivals.filter(b=>b.time===t&&b.partyId).reduce((s,b)=>s+(b.checked||b.size),0);
@@ -1569,8 +1570,7 @@ function renderArrivals(){
     return `${head}<div class="arrw"><button class="arr${(b.partyId&&!part(b))||off?' in':''}${picked&&picked.row===b.row?' sel':''}" onclick="viewBooking(${b.row})">
     <span class="t">${searching?`<small style="display:block;font-size:12px;color:var(--muted)">${b.date===today()?'Today':niceDate(b.date)}</small>${esc(b.time)}`:''}<span class="szp"><b>${b.size}</b>${b.size===1?'guest':'guests'}</span></span><span class="nm">${b.partyId?'✓ ':''}${esc(b.reservation)}${tag}${wine}${st}${gt}${hist}${ns}${dep}${snote}${gnote}${b.note?`<span class="gcom">💬 <b>Guest wrote:</b> “${esc(b.note)}”</span>`:''}</span></button>${tools}${act}</div>`});
   $('arrivals').innerHTML=(searching?_rows.join(''):classBlocks(list,_rows,cnt,ckd))+
-    (hidden.length?`<button class="btn ghost small" style="margin-top:4px" onclick="showDone=!showDone;renderArrivals()">${showDone?'Hide':'Show'} checked in &amp; past (${hidden.length})</button>`:'')
-    ||'<p class="muted">No match.</p>';
+    ''||'<p class="muted">No match.</p>';
   if(!searching){const cx=arrivals.filter(b=>isCx(b)&&(!SLOT||b.time===SLOT)).sort((a,b)=>tMin(a.time)-tMin(b.time));
     if(cx.length)$('arrivals').insertAdjacentHTML('beforeend',`<details class="cxl"><summary>Cancelled for this day (${cx.length})</summary>${cx.map(b=>{const [who,at]=(b.cancelBy||'').split('|');
       return `<button class="cxr" onclick="viewBooking(${b.row})"><span><b>${esc(b.reservation)}</b> · ${esc(b.time)} class · party of ${b.size}<br><small>${b.status==='Late cancel'?'<span class="tag LATE">LATE CANCEL</span> ':''}${who?'Cancelled by '+esc(who==='Guest online'?'the guest online':who)+(at?' on '+exactTime(at).replace(/, (\d)/,' at $1'):''):'Cancelled (before we tracked who and when)'}${b.status==='Late cancel'?(b.fee?' · '+(/^Waived/.test(b.fee)?'fee waived':'fee charged'):' · fee not decided'):''}</small></span></button>`}).join('')}</details>`)}
