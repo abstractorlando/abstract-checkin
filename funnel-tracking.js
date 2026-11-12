@@ -107,7 +107,7 @@
       if (b.id === 'plus' || b.id === 'minus') {
         setTimeout(function () { step('35_size_changed'); }, 0);   // wait so party_size shows the new number
       }
-      if (b.id === 'toPay') step('50_continue_tapped', { repeat: true });
+      if (b.id === 'toPay') { sweepFields(); step('50_continue_tapped', { repeat: true }); }
       if (b.id === 'back') step('65_back_to_details', { repeat: true });
       if (b.id === 'book') {
         var a = g('agree');
@@ -120,15 +120,27 @@
 
     /* ---------- details fields: first touch of each ---------- */
     var FIELD = { first: '41_first_name', last: '42_last_name', cc: '43_phone', phone: '43_phone', email: '44_email', note: '47_note' };
-    document.addEventListener('focusin', function (e) {
-      var t = e.target;
+    function touched(t) {
       if (!t) return;
       var k = t.id ? FIELD[t.id] : null;
       if (!k && closest(t, '#guestNames')) k = '45_artist_names';
       if (!k) return;
       step('40_details_started');
       step(k);
-    });
+    }
+    // a tap into the field, typing, or the browser's autofill filling it in (autofill never taps the other fields)
+    document.addEventListener('focusin', function (e) { touched(e.target); });
+    document.addEventListener('input', function (e) { touched(e.target); });
+    document.addEventListener('change', function (e) { touched(e.target); });
+    // safety net: when Continue is tapped, count every field that has something in it
+    function sweepFields() {
+      Object.keys(FIELD).forEach(function (id) {
+        var el = g(id);
+        if (el && id !== 'cc' && String(el.value || '').trim()) touched(el);
+      });
+      var gn = document.querySelectorAll('#guestNames input');
+      for (var i = 0; i < gn.length; i++) { if (String(gn[i].value || '').trim()) { touched(gn[i]); break; } }
+    }
 
     var addons = g('addons');
     if (addons) addons.addEventListener('change', function (e) {
