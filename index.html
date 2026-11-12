@@ -493,12 +493,27 @@ function askPin(wrong){if(asking)return;asking=true;
   const close=()=>{m.remove();asking=false};
   $('pinCancel').onclick=close;
   $('pinForm').onsubmit=e=>{e.preventDefault();const v=$('pinIn').value.trim();if(!v){$('pinIn').focus();return}
-    close();PIN=v;try{localStorage.setItem('abs_pin',PIN)}catch(e){};loadMe();loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()};
+    close();PIN=v;try{localStorage.setItem('abs_pin',PIN)}catch(e){};touchActive();loadMe();loadArrivals();if(!$('vToday').classList.contains('hide'))loadDay()};
 }
 /* who's signed in on this device: every change is saved under their name */
 let ME=null;
-async function loadMe(){if(!PIN)return;try{ME=await call('whoAmI')}catch(e){return}
+async function loadMe(){if(!PIN)return;try{ME=await call('whoAmI')}catch(e){return}idleCheck();if(!ME)return;
   $('whoBtn').textContent=ME.device?'🏫 '+String(ME.name).replace(/^Classroom /,''):'👤 '+String(ME.name).split(' ')[0];$('whoBtn').classList.remove('hide');showMailLeft(ME.owner?ME.emailsLeft:null)}
+/* Personal sign-ins (everyone except the classroom iPads) sign out on their own after 3 hours with no
+   activity, and overnight, so the next person never works under someone else's name. */
+const IDLE_MS=3*36e5;
+function touchActive(){try{localStorage.setItem('abs_seen',String(Date.now()))}catch(e){}}
+function idleCheck(){
+  if(!PIN||!ME||ME.device)return;
+  let seen=0;try{seen=+localStorage.getItem('abs_seen')||0}catch(e){}
+  if(!seen){touchActive();return}
+  const sameDay=new Date(seen).toDateString()===new Date().toDateString();
+  if(Date.now()-seen>IDLE_MS||!sameDay){PIN='';ME=null;try{localStorage.removeItem('abs_pin');localStorage.removeItem('abs_seen')}catch(e){}
+    document.querySelectorAll('.modal').forEach(m=>m.remove());$('whoBtn').classList.add('hide');askPin();toast('Signed out after a while with no activity. Enter your PIN.',5000)}
+}
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(ME&&!ME.device){idleCheck();if(PIN)touchActive()}},true));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)idleCheck()});
+setInterval(idleCheck,60e3);
 function switchUser(){if(ME&&!confirm(ME.device?`This is ${ME.name}.\n\nSign it out? An owner will need to sign in and set it up again.`:`Signed in as ${ME.name}.\n\nSwitch to someone else? Their PIN will be asked next.`))return;
   PIN='';ME=null;try{localStorage.removeItem('abs_pin')}catch(e){};$('whoBtn').classList.add('hide');askPin()}
 function showMailLeft(n){const b=$('mailAlert');if(!b)return;const low=typeof n==='number'&&n<=20;b.classList.toggle('hide',!low);
@@ -1036,7 +1051,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611121729';
+const BUILD='202611121736';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
