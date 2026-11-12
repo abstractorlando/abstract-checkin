@@ -1036,7 +1036,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611121726';
+const BUILD='202611121729';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1446,8 +1446,8 @@ function usRender(){
       <div class="muted" style="font-size:14px">${[g.phone?esc(fmtPhone(g.phone)):'',g.email?esc(g.email):''].filter(Boolean).join(' · ')||'No contact on file'}</div>
       ${up.length?`<div class="ush">Upcoming</div>${up.map(b=>`<button class="usrow" onclick="usOpenBk(${b.row})"><b>${esc(sd(b.date))} · ${esc(b.time)}</b> <span>party of ${b.size}</span> <span class="cp ${b.status==='Needs card'?'ov':'cpb'}">${b.status==='Needs card'?'Needs card':'Booked'}</span><span class="usgo">Open ›</span></button>`).join('')}`:''}
       ${g.shelf.map(p=>{const f=p[0],s=f.storage,left=(s.items||[]).filter(i=>!i.picked),pb=ymdOf(s.pickupBy);
-        return `<div class="ush">${left.length} piece${left.length>1?'s':''} on the shelf <span class="muted" style="font-weight:500">· from ${esc(sd(f.date))}</span></div>
-        ${left.map(i=>`<div class="pcs"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}</span></div>`).join('')}
+        const all=(s.items||[]).length;return `<div class="ush">${left.length} piece${left.length>1?'s':''} on the shelf${all>left.length?` <span class="muted" style="font-weight:500">· ${all-left.length} of ${all} already picked up</span>`:''} <span class="muted" style="font-weight:500">· from ${esc(sd(f.date))}</span></div>
+        ${(s.items||[]).slice().sort((a,b)=>(a.picked?1:0)-(b.picked?1:0)).map(i=>`<div class="pcs${i.picked?' gone':''}"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}${i.picked?` <span class="muted">· picked up${i.picked&&/^\d{4}-/.test(String(i.picked))?' '+esc(sd(String(i.picked).slice(0,10))):''}</span>`:''}</span></div>`).join('')}
         ${pb?`<div style="font-size:14px;margin:4px 0;color:${pb<t?'#c40056':'inherit'}"><b>Pick up by ${esc(niceDate(pb))}</b>${pb<t?' · past the deadline':''}</div>`:''}
         <div style="display:flex;gap:8px;margin-top:6px"><button class="btn main small" style="width:auto" onclick="pickedUp('${f.partyId}')">Mark picked up</button><button class="btn ghost small" onclick="printTicket('${f.partyId}')">🧾 Ticket</button></div>`}).join('')}
       ${vis.length?`<div class="ush">Past visits · ${vis.length}</div><div class="muted" style="font-size:14px">${vis.slice(0,4).map(v=>`${esc(sd(v.date))} · ${esc(v.time)} · ${v.size} guest${v.size>1?'s':''}`).join('<br>')}${vis.length>4?`<br>and ${vis.length-4} more`:''}</div>`:''}
