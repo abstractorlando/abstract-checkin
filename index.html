@@ -1036,7 +1036,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611111853';
+const BUILD='202611120013';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1576,7 +1576,7 @@ function renderArrivals(){
       return `<button class="cxr" onclick="viewBooking(${b.row})"><span><b>${esc(b.reservation)}</b> · ${esc(b.time)} class · party of ${b.size}<br><small>${b.status==='Late cancel'?'<span class="tag LATE">LATE CANCEL</span> ':''}${who?'Cancelled by '+esc(who==='Guest online'?'the guest online':who)+(at?' on '+exactTime(at).replace(/, (\d)/,' at $1'):''):'Cancelled (before we tracked who and when)'}${b.status==='Late cancel'?(b.fee?' · '+(/^Waived/.test(b.fee)?'fee waived':'fee charged'):' · fee not decided'):''}</small></span></button>`}).join('')}</details>`)}
   if(searching)$('arrivals').insertAdjacentHTML('afterbegin',`<p class="muted" style="margin:0 0 8px;font-size:14px">${SR.length} booking${SR.length>1?'s':''} on any day · upcoming first${SR.length>=30?' · showing the first 30':''}</p>`);
 }
-function bookingByKey(k){k=decodeURIComponent(k);return arrivals.find(b=>b.key===k)||SR.find(b=>b.key===k)}
+function bookingByKey(k){k=decodeURIComponent(k);return arrivals.find(b=>b.key===k)||SR.find(b=>b.key===k)||US.bk.find(b=>b.key===k)}
 function bookingByRow(row){return arrivals.find(x=>x.row===row)||SR.find(x=>x.row===row)||US.bk.find(x=>x.row===row)}
 /* ---------- staff notes + guest profiles (never shown to guests) ---------- */
 async function editNote(k){
