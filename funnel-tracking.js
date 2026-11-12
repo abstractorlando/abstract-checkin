@@ -193,7 +193,40 @@
       send('payment_error', { reason: why });
     }).observe(e2, { childList: true, characterData: true, subtree: true });
 
-    /* "card fields filled in": the card form lives inside Stripe, so listen on Stripe's own change event. */
+    /* "card fields filled in": the card form lives inside Stripe, so listen on Stripe's own change event.
+       Two independent hooks are used (one when the card form is created, one right after the page mounts it);
+       a short guard makes sure the step is only counted once per card form. */
+    var lastCardAt = 0;
+    function hookCard(p) {
+      if (!p || !p.on || p.__aoHooked) return;
+      try { p.__aoHooked = true; } catch (e) {}
+      var sent = false;   // once per card form
+      p.on('change', function (ev) {
+        if (!ev || !ev.complete || sent) return;
+        sent = true;
+        var now = Date.now();
+        if (now - lastCardAt < 3000) return;
+        lastCardAt = now;
+        step('56_card_complete', { event: 'payment_card_complete', repeat: true });
+      });
+    }
+
+    // hook 1: the page's own mountCard() builds the card form; look it up as soon as it finishes
+    if (typeof window.mountCard === 'function' && !window.mountCard.__aoWrapped) {
+      var origMount = window.mountCard;
+      var wrappedMount = function () {
+        var out = origMount.apply(this, arguments);
+        try {
+          var pe = (typeof elements !== 'undefined' && elements && elements.getElement) ? elements.getElement('payment') : null;
+          hookCard(pe);
+        } catch (e) {}
+        return out;
+      };
+      wrappedMount.__aoWrapped = true;
+      window.mountCard = wrappedMount;
+    }
+
+    // hook 2: wrap Stripe so any payment form created is hooked at creation
     if (window.Stripe && !window.Stripe.__aoTracked) {
       var OrigStripe = window.Stripe;
       var Wrapped = function () {
@@ -205,12 +238,7 @@
             var origCreate = els.create;
             els.create = function (type) {
               var p = origCreate.apply(els, arguments);
-              if (type === 'payment' && p && p.on) {
-                var sent = false;   // once per card form
-                p.on('change', function (ev) {
-                  if (ev && ev.complete && !sent) { sent = true; step('56_card_complete', { event: 'payment_card_complete', repeat: true }); }
-                });
-              }
+              if (type === 'payment') hookCard(p);
               return p;
             };
             return els;
@@ -220,7 +248,7 @@
       };
       try { Object.assign(Wrapped, OrigStripe); } catch (e) {}
       Wrapped.__aoTracked = true;
-      window.Stripe = Wrapped;
+      try { window.Stripe = Wrapped; } catch (e) {}
     }
 
     /* ---------- finished, and leaving ---------- */
