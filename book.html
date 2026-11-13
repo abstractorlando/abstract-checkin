@@ -324,13 +324,13 @@ function renderNames(){
 }
 /* Giftory: every artist has a name, a voucher # and the project tier on that voucher */
 function renderGfNames(){
-  const box=$('guestNames'),old=[...box.querySelectorAll('.gfa')].map(r=>({n:r.querySelector('.gn').value,v:r.querySelector('.gv').value,t:r.querySelector('.gt').value,e:r.querySelector('.gn').dataset.edited}));
-  const first=$('first').value.trim();
-  box.innerHTML=`<label class="l">Artists and vouchers</label>`+Array.from({length:size},(_,i)=>{const o=old[i]||{},n=i===0&&o.e!=='1'?first:(o.n||'');
-    return `<div class="gfa" style="border:2px solid #ece9f6;border-radius:14px;padding:10px 12px;margin:0 0 10px">
-      <div class="row"><input class="gn" placeholder="Artist ${i+1} first name" value="${esc(n)}" data-edited="${i===0?(o.e||0):1}" autocapitalize="words" oninput="this.classList.remove('bad');this.dataset.edited='1'">
-      <input class="gv" placeholder="Voucher #" value="${esc(o.v||'')}" autocapitalize="characters" oninput="this.classList.remove('bad')"></div>
-      <select class="gt" style="margin-top:8px" onchange="this.classList.remove('bad')"><option value="">Project on the voucher…</option>${GF.tiers.map(t=>`<option value="${t.id}"${o.t===t.id?' selected':''}>${esc(t.label)}</option>`).join('')}</select></div>`}).join('');
+  const box=$('guestNames'),old=[...box.querySelectorAll('.gn')].map(x=>({n:x.value,e:x.dataset.edited}));
+  const v=$('gfV')?$('gfV').value:'',t=$('gfT')?$('gfT').value:'',first=$('first').value.trim();
+  box.innerHTML=`<label class="l" for="gfV">Giftory voucher</label>
+    <div class="row" style="margin-bottom:12px"><input id="gfV" placeholder="Voucher #" value="${esc(v)}" autocapitalize="characters" oninput="this.classList.remove('bad')">
+    <select id="gfT" class="gt" onchange="this.classList.remove('bad')"><option value="">Project…</option>${GF.tiers.map(x=>`<option value="${x.id}"${t===x.id?' selected':''}>${esc(x.label)}</option>`).join('')}</select></div>
+    <label class="l">Artist names</label>`+Array.from({length:size},(_,i)=>{const o=old[i]||{},n=i===0&&o.e!=='1'?first:(o.n||'');
+    return `<input class="gn" style="margin-bottom:8px" placeholder="Artist ${i+1} first name" value="${esc(n)}" data-edited="${i===0?(o.e||0):1}" autocapitalize="words" oninput="this.classList.remove('bad');this.dataset.edited='1'">`}).join('');
 }
 // keep artist 1 in step with the booker's first name until someone changes it by hand
 document.addEventListener('input',e=>{if(e.target.id!=='first')return;const a=$('guestNames').querySelector(GF?'.gn':'input');if(a&&a.dataset.edited!=='1')a.value=e.target.value.trim()});
@@ -380,10 +380,11 @@ async function gfBook(){
   if(!first||!last)return $('err1').textContent='Please add the guest\'s first and last name.';
   if(!phone)return $('err1').textContent='Please check the guest\'s mobile number. Their confirmation is texted there.';
   if(!/^\S+@\S+\.\S+$/.test(email))return $('err1').textContent='Please check the guest\'s email.';
-  const rows=[...$('guestNames').querySelectorAll('.gfa')],bad=[];
-  const artists=rows.map(r=>{const a={name:r.querySelector('.gn').value.trim(),voucher:r.querySelector('.gv').value.trim(),tier:r.querySelector('.gt').value};
-    [['.gn',a.name],['.gv',a.voucher],['.gt',a.tier]].forEach(([c,v])=>{if(!v){r.querySelector(c).classList.add('bad');bad.push(1)}});return a});
-  if(bad.length)return $('err1').textContent='Please add a name, voucher # and project for every artist.';
+  const voucher=$('gfV').value.trim(),tier=$('gfT').value,bad=[];
+  if(!voucher){$('gfV').classList.add('bad');bad.push(1)}
+  if(!tier){$('gfT').classList.add('bad');bad.push(1)}
+  const artists=[...$('guestNames').querySelectorAll('.gn')].map(x=>{const n=x.value.trim();if(!n){x.classList.add('bad');bad.push(1)}return{name:n,voucher,tier}});
+  if(bad.length)return $('err1').textContent='Please add the voucher #, the project and every artist\'s first name.';
   const btn=$('toPay');btn.disabled=true;btn.textContent='Booking…';
   try{const b=await call('partnerBook',{key:GKEY,date:sel.date,time:sel.time,name:first+' '+last,phone,email,artists,wine:($('gfWine')&&$('gfWine').value.trim())||'',note:$('note').value});
     $('flow').classList.add('hide');$('confirmed').classList.remove('hide');

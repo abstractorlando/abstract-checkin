@@ -739,7 +739,7 @@ async function loadGiftory(ym){const box=$('gfBox');if(!box)return;
       <button class="btn ghost" style="width:auto;padding:0 16px" onclick="navigator.clipboard.writeText(GFM.link).then(()=>toast('Link copied ✓'))">Copy link</button>
       <a class="btn ghost" style="width:auto;padding:0 16px;display:flex;align-items:center;text-decoration:none" href="${esc(m.link)}" target="_blank" rel="noopener">Open</a></div>
     <div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px"><button class="btn ghost small" onclick="loadGiftory('${shift(-1)}')">‹</button><b style="flex:1;text-align:center">${esc(label)}</b><button class="btn ghost small" onclick="loadGiftory('${shift(1)}')">›</button></div>
-    ${m.rows.length?m.rows.map(r=>`<div class="ne" style="align-items:flex-start"><span><b>${esc(r.name)}</b> <span class="muted" style="font-size:13px">${esc(niceDate(r.date))} · ${esc(r.time)} · ${r.id}</span>
+    ${m.rows.length?m.rows.map(r=>`<div class="ne" style="align-items:flex-start"><span><b>${esc(r.name)}</b> <span class="muted" style="font-size:13px">${esc(niceDate(r.date))} · ${esc(r.time)} · ${r.id} · party of ${r.size}${r.booked&&r.booked!==r.size?` <b style="color:#c40056">(booked for ${r.booked})</b>`:''}</span>
         <span style="display:block;font-size:13px">${r.artists.map(a=>`${esc(a.name)}: ${esc(a.tier)} (#${esc(a.voucher)})`).join(' · ')}${r.wine?` · wine (#${esc(r.wine)})`:''}</span></span>
       <span style="text-align:right;white-space:nowrap"><span class="tag" style="background:${col[r.status]||'#8a8799'}">${esc(r.status.toUpperCase())}</span><br><span class="muted" style="font-size:13px">$${money(r.net)}</span></span></div>`).join('')
       :'<p class="muted">No Giftory bookings this month.</p>'}
@@ -1082,7 +1082,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611132133';
+const BUILD='202611132335';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
