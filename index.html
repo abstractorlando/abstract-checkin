@@ -102,7 +102,7 @@
   .ph span{color:var(--muted);font-size:14px}
   .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
   .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff;display:inline-block;white-space:nowrap;margin:2px 0}
-  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#e8590c;letter-spacing:.04em;font-size:10px;vertical-align:middle}.tag.GF{background:#0f8a6b;letter-spacing:.04em;font-size:10px;vertical-align:middle}
+  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#e8590c;letter-spacing:.04em;font-size:10px;vertical-align:middle}.dep.gf{background:#e6f6f1;color:#0b5e49;border:1.5px solid #0f8a6b}.tag.GF{background:#0f8a6b;letter-spacing:.04em;font-size:10px;vertical-align:middle}
   .dep{display:inline-block;margin-top:4px;font-size:13px;font-weight:800;color:#fff;background:#0b7a3e;border-radius:8px;padding:3px 9px}.dep.fh{background:#fff4e6;color:#c2410c;border:2px solid #e8590c}
   .tools{display:flex;gap:6px;margin:4px 0 2px 4px;flex-wrap:wrap}.tl{border:0;background:none;color:var(--muted);font:600 13px Poppins;padding:4px 8px;border-radius:8px;cursor:pointer}.tl:hover{background:var(--soft);color:var(--ink)}
   .mv{display:flex;gap:8px;margin:6px 0 4px;flex-wrap:wrap}.mv input,.mv select{flex:1;min-width:140px;min-height:44px;padding:8px 10px;font-size:15px}
@@ -1078,7 +1078,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611132340';
+const BUILD='202611132343';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1562,7 +1562,8 @@ function artistList(g){const a=artistNames(g);if(!a.length)return '';if(a.length
 function depText(b){
   const d=+b.deposit||0, n=b.size||1;
   if(/(^|,|\|)prepaid/.test(b.addons||'')) return 'Event · booked manually (no card)';
-  if(b.source==='Giftory') return 'Paid by Giftory: ring it up in Toast with the "Giftory" payment. Guest pays any upgrade.';
+  if(b.source==='Giftory'){const m=/(\d+) × (\$\d+ project)/.exec(b.staffNote||'');
+    return `🎁 Giftory voucher${m?`: ${m[2].replace(' project',' tier')} for ${m[1]} artist${m[1]>1?'s':''}`:''}. Use the "Giftory" payment in Toast for that amount only. Charge anything extra as usual.`}
   if(b.source!=='FareHarbor') return d?`$${money(d)} credit from a cancelled booking`:'';
   if(!d) return 'No deposit paid on FareHarbor';
   if(d>n*25+1) return `Paid in full on FareHarbor · $${money(d)}`;
@@ -1597,7 +1598,7 @@ function renderArrivals(){
     const head='';
     const tag=b.source==='Giftory'?' <span class="tag GF">GIFTORY</span>':b.source==='Website'?' <span class="tag WEB">WEB</span>':b.source==='FareHarbor'?' <span class="tag FH">FAREHARBOR</span>':b.source==='Staff'?` <span class="tag WEB">${/walkin/.test(b.addons||'')?'WALK-IN':/prepaid/.test(b.addons||'')?'EVENT':'BOOKED BY TEAM'}</span>`:'';
     const wine=!/wine/.test(b.addons||'')?'':/gwine/.test(b.addons)?' <span class="tag WINE">🍾 WINE · GIFTORY</span>':/\|paid\|/.test(b.addons)?' <span class="tag WINE">🍾 WINE PAID</span>':/refunded/.test(b.addons)?'':' <span class="tag WINE">🍾 WINE · collect $30</span>';
-    const dep=depText(b)?`<span class="dep${b.source==='FareHarbor'?' fh':''}">💵 ${esc(depText(b))}</span>`:'';
+    const dep=!depText(b)?'':b.source==='Giftory'?`<span class="dep gf">${esc(depText(b))}</span>`:`<span class="dep${b.source==='FareHarbor'?' fh':''}">💵 ${esc(depText(b))}</span>`;
     const started=dateTime(b.date,b.time)+60*6e4<Date.now();
     const st=b.partyId?(part(b)?` <span class="tag NC">${b.checked} OF ${b.size} HERE</span>`:' <span class="tag OK">CHECKED IN</span>')+(b.nsGuests?` <span class="tag GN">${b.nsGuests} NO-SHOW</span>`:''):b.status==='Confirmed'?(started?' <span class="tag NC">NOT CHECKED IN</span>':searching?' <span class="tag BK">BOOKED</span>':''):b.status==='Needs card'?(cardLate(b)?' <span class="tag LATE">NO CARD · SPOT RELEASED</span>':' <span class="tag WINE">WAITING FOR CARD</span>'):b.status==='Late cancel'?' <span class="tag LATE">LATE CANCEL</span>':b.status==='No-show'?' <span class="tag LATE">NO-SHOW</span>':b.status==='Cancelled'?' <span class="tag LATE">CANCELLED</span>':'';
     const fee=FEE_PER_GUEST*b.size;
