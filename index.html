@@ -409,10 +409,6 @@
   <div id="projBox"></div>
   <div id="gfBox"></div>
   <div id="ownerSet">
-  <h2 style="margin:26px 0 6px">Booking notices</h2>
-  <p class="muted" style="margin:0 0 8px">Every new booking, reschedule, cancellation and party request is emailed to:</p>
-  <div id="notifyList"><p class="muted">Loading…</p></div>
-  <div style="display:flex;gap:8px;margin-top:10px"><input id="notifyNew" type="email" placeholder="Add an email" autocapitalize="off" style="flex:1"><button class="btn main" style="width:auto;padding:0 18px" onclick="addNotify()">Add</button></div>
   </div>
   <h2 style="margin:26px 0 6px">Guest booking link</h2>
   <p class="muted" style="margin:0 0 8px">Send this when a guest asks how to book.</p>
@@ -696,8 +692,8 @@ async function sendToPrinter(){
   f.onload=()=>{setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){window.open(url,'_blank')}},300)};
   f.src=url;
 }
-function openSettings(){const own=!!(ME&&ME.owner);$('ownerSet').classList.toggle('hide',!own);if(!own){$('notifyList').innerHTML=''}
-  $('setModal').classList.remove('hide');if(own)loadNotify();loadTeam()}
+function openSettings(){const own=!!(ME&&ME.owner);$('ownerSet').classList.toggle('hide',!own);
+  $('setModal').classList.remove('hide');loadTeam()}
 async function loadTeam(){const box=$('teamBox');box.innerHTML='';$('gfBox').innerHTML='';if(!PROJECTS)await loadProjects();setTimeout(renderProjBox,0);setTimeout(()=>{if(ME&&ME.owner)loadGiftory()},0);
   try{ME=await call('whoAmI')}catch(e){return}
   const mail=ME.owner&&typeof ME.emailsLeft==='number'?`<p class="muted" style="margin:6px 0 0;font-size:14px">Emails Google lets us send today: <b>${ME.emailsLeft}</b> left</p>`:'';
@@ -1082,7 +1078,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611132335';
+const BUILD='202611132340';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
