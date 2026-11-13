@@ -442,7 +442,7 @@ const PIECE_TYPES = {   /* fallback only: the real list is edited in Settings > 
   "Canvas": ["Degas 16\"x12\"", "Monet 20\"x16\"", "Van Gogh 36\"x12\""],
   "Vases/Table Sculptures": ["Daisy - Small Vase", "Magnolia - Large Vase", "Moonflower", "Halo"],
   "Bears": ["Cub", "Yearling", "Grizzly", "Silvertip", "Kodiak"],
-  "Sculptures": ["Gargantua", "Tars", "Trooper", "Topolino/Topolina", "Snoopy", "Air Abstract", "Heart", "Turbo", "Skully"],
+  "Sculptures": ["Gargantua", "Tars", "Trooper", "Topolino", "Topolina", "Snoopy", "Air Abstract", "Heart", "Turbo", "Skully"],
   "Piggy Bank": ["Cooper", "626", "Fluffy", "The Bat", "Labubu", "Winnie", "Kitty", "Floppy"],
   "Table Decor": ["Banksy Wooden Tray", "Pollock Wooden Tray", "Frida Lazy Susan", "Hilma Lazy Susan", "Goya Bamboo Tray", "Dali Bamboo Tray", "Warhol Acacia Tray", "Tapas Coasters", "Ear Coasters", "Hexagon Coasters"],
   "Wall Cutouts": ["Sunshine", "Crush", "Surfboard", "Shark", "Melody", "T-Rex", "Ears", "The Boss", "Donnie", "Helmet"],
@@ -1060,7 +1060,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611131543';
+const BUILD='202611132103';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
