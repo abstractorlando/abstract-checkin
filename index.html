@@ -1060,7 +1060,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611131510';
+const BUILD='202611131543';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1990,7 +1990,7 @@ async function loadWeek(){
     const [y,m,dd]=d.date.split('-').map(Number),dt=new Date(y,m-1,dd);
     const head=`<div class="wh${d.date===today()?' today':''}" onclick="$('schedDay').value='${d.date}';setSchedView('day')"><b>${dt.toLocaleDateString('en-US',{weekday:'long'})}</b> ${m}/${dd}${d.open?'':' <span class="wcl">· Closed</span>'}</div>`;
     const note=d.dayNote?`<div class="wn">📝 ${esc(d.dayNote)}</div>`:'';
-    if(!d.open)return `<div class="wd">${head}${note}<div class="wc closed">${d.regular?'Closed':'—'}</div></div>`;
+    if(!d.open)return `<div class="wd">${head}${note}<div class="wc closed">${d.holiday?'Closed · '+esc(d.holiday):d.regular?'Closed':'—'}</div></div>`;
     return `<div class="wd">${head}${note}`+d.classes.map(c=>{const full=c.cap>0&&c.booked>=c.cap,closed=c.cap===0,pct=c.cap?Math.min(100,(c.booked-(c.held||0))/c.cap*100):0;
       return `<button class="wc${full?' full':''}${closed?' closed':''}${c.private?' pv':''}" onclick="SLOT='${c.time}';setArrDay('${d.date}');show('new');window.scrollTo(0,0)">
         <b>${c.private?'🔒 ':''}${esc(c.time)}</b>${full?'<span class="fl">Full</span>':''}
@@ -2041,7 +2041,7 @@ document.addEventListener('change',e=>{if(e.target&&e.target.id==='pvTime')$('pv
 function renderSched(){
   const d=SCH,title=niceDate(d.date);
   if(!d.dayOpen){$('schedBox').innerHTML=`<div class="card sday closed"><div><b style="font-size:20px">${esc(title)}</b><br>
-    <span class="muted">${d.regular?'Closed for booking':'Not a regular class day'}</span>${dayNote(d)}</div>
+    <span class="muted">${d.holiday?'Closed for '+esc(d.holiday)+'. Nobody can book online.':d.regular?'Closed for booking':'Not a regular class day'}</span>${dayNote(d)}</div>
     <button class="btn main" style="width:auto;padding:0 22px" onclick="setCap('*',${d.regular?'null':d.defaultCap})">Open this day</button></div>`+privHtml(d);return}
   const nt=d.notes||{};
   $('schedBox').innerHTML=`<div class="card sday"><div><b style="font-size:20px">${esc(title)}</b><br><span class="muted">Online booking is open · <a href="#" style="color:var(--teal);font-weight:600" onclick="copyLink('${esc(d.bookUrl||'')}');return false">copy booking page link</a></span>${dayNote(d)}</div>
