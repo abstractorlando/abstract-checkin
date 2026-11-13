@@ -740,14 +740,20 @@ function storageLine(p){
   const s=p[0].storage,id=p[0].partyId;if(s&&s.pickupBy)s.pickupBy=ymdOf(s.pickupBy);
   if(!s)return `<div class="st"><span class="muted">Not in storage yet</span><button class="btn ghost small" onclick="openStore('${id}')">Store &amp; notify</button></div>`;
   const sent=[s.emailSent?'email':'',s.textSent?'text':''].filter(Boolean).join(' + '),items=s.items||[],left=items.filter(i=>!i.picked);
-  return `<div class="st sto"><div style="flex:1"><div class="stt">${s.pickedUp?'<span class="done">✓ All picked up</span>':`<b>${left.length} piece${left.length===1?'':'s'} on the shelf</b>${left.length<items.length?` <span class="muted">(${items.length-left.length} already picked up)</span>`:''}`}</div>
-      ${items.map((i,k)=>`<div class="pcs${i.picked?' gone':''}"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}${i.picked?` <span class="muted">· picked up ${exactTime(i.picked)}</span>`:''}</span></div>`).join('')}
+  return `<div class="st sto"><div style="flex:1"><div class="stt">${s.pickedUp?`<span class="done">${doneLabel(items)}</span>`:`<b>${left.length} piece${left.length===1?'':'s'} on the shelf</b>${left.length<items.length?` <span class="muted">(${goneLabel(items)})</span>`:''}`}</div>
+      ${items.map((i,k)=>`<div class="pcs${i.picked?' gone':''}"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}${i.picked?` <span class="muted">· ${i.ship?'📦 moved to shipping':'picked up'} ${exactTime(i.picked)}</span>`:''}</span></div>`).join('')}
       <span class="muted" style="font-size:13px">${sent?'Guest notified by '+sent:s.notifyAt?'Guest will be notified '+exactTime(s.notifyAt).replace(/, (\d)/,' at $1'):'Guest not notified yet'}${s.reminders?` · ${s.reminders} reminder${s.reminders>1?'s':''} sent`:''}</span>
       ${s.pickupBy&&!s.pickedUp?`<div style="font-size:14px;margin-top:4px;color:${s.pickupBy<today()?'#c40056':'inherit'}"><b>Pick up by ${esc(niceDate(s.pickupBy))}</b>${s.pickupBy<today()?' · past the deadline':''}</div>`:''}</div>
     <div style="display:flex;gap:6px;flex-direction:column">${s.pickedUp?'':`<button class="btn main small" style="width:auto" onclick="pickedUp('${id}')">Mark picked up</button>`}
       ${s.pickedUp?'':`<button class="btn ghost small" onclick="printTicket('${id}')">🧾 Ticket</button>`}
+      ${s.pickedUp?'':`<button class="btn ghost small" onclick="pickedUp('${id}','ship')">📦 Ship instead</button>`}
       <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
 }
+/* pieces that left the shelf: picked up, or moved to shipping after being stored */
+function goneLabel(items){const g=items.filter(i=>i.picked),sh=g.filter(i=>i.ship).length,pu=g.length-sh;
+  return [pu?`${pu} already picked up`:'',sh?`${sh} moved to shipping`:''].filter(Boolean).join(' · ')}
+function doneLabel(items){const sh=items.filter(i=>i.ship).length;
+  return sh===items.length?'✓ All moved to shipping':sh?'✓ All picked up or shipping':'✓ All picked up'}
 let DAYSLOT='',DAYBK=[];
 const WHERE={shelf:'Storage',ship:'Shipping',home:'Took home'};
 const needsProjects=p=>p.some(g=>!(g.details||[]).length);
@@ -903,14 +909,14 @@ async function saveStore(id){
   catch(e){toast('Could not save: '+(e.message||e),5000)}
 }
 /* ---- pickup: all pieces, or only the ones they're taking today ---- */
-function pickedUp(id){
-  const p=parties[id][0],items=(p.storage.items||[]).map((i,k)=>Object.assign({k},i)).filter(i=>!i.picked);
+function pickedUp(id,how){
+  const ship=how==='ship',p=parties[id][0],items=(p.storage.items||[]).map((i,k)=>Object.assign({k},i)).filter(i=>!i.picked);
   const m=document.createElement('div');m.className='modal';m.id='puModal';
-  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px"><b style="font-size:20px">Pickup: ${esc(p.reservation)}</b>
-    <p class="muted" style="margin:4px 0 12px">Grab these from the shelves. Untick anything that's being left for someone else to pick up later (partial pickups aren't recommended).</p>
-    <button class="btn ghost small" style="margin:0 0 6px" onclick="printTicket('${id}')">🧾 Print ticket for the vault</button>
-    ${items.map(i=>`<label class="chk pu"><input type="checkbox" value="${i.k}" checked> <span class="loc">${esc(i.shelf)}</span> <b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}</label>`).join('')}
-    <button class="btn main" style="margin-top:12px" onclick="confirmPickup('${id}')">Mark as picked up</button>
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px"><b style="font-size:20px">${ship?'Ship instead':'Pickup'}: ${esc(p.reservation)}</b>
+    <p class="muted" style="margin:4px 0 12px">${ship?'Tick only the pieces they now want shipped. They come off the shelf list and stop getting pickup reminders. Anything left unticked stays on the shelf for pickup.':'Grab these from the shelves. Untick anything that\'s being left for someone else to pick up later (partial pickups aren\'t recommended).'}</p>
+    ${ship?'':`<button class="btn ghost small" style="margin:0 0 6px" onclick="printTicket('${id}')">🧾 Print ticket for the vault</button>`}
+    ${items.map(i=>`<label class="chk pu"><input type="checkbox" value="${i.k}"${!ship||items.length===1?' checked':''}> <span class="loc">${esc(i.shelf)}</span> <b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}</label>`).join('')}
+    <button class="btn main" style="margin-top:12px" onclick="confirmPickup('${id}'${ship?",'ship'":''})">${ship?'📦 Move to shipping':'Mark as picked up'}</button>
     <button class="btn ghost" style="width:100%;margin-top:8px" onclick="$('puModal').remove()">Cancel</button></div>`;
   m.onclick=e=>{if(e.target===m)softClose(m)};document.body.appendChild(m);
 }
@@ -980,10 +986,10 @@ async function giftUse(i){const c=GIFT.cards[i],amt=parseFloat(String($('gAmt'+i
   try{GIFT.cards[i]=await call('giftUse',c.row,amt,'');renderGift();toast(`Saved ✓ ${usd(GIFT.cards[i].left)} left on this card`,4000)}catch(e){toast(e.message||String(e),5000)}}
 async function giftUndo(i){if(!confirm('Undo the last use on this card? The amount goes back on the balance.'))return;
   try{GIFT.cards[i]=await call('giftUndo',GIFT.cards[i].row);renderGift();toast('Undone ✓')}catch(e){toast(e.message||String(e),5000)}}
-async function confirmPickup(id){
+async function confirmPickup(id,how){
   const idx=[...$('puModal').querySelectorAll('input:checked')].map(x=>+x.value);if(!idx.length)return toast('Tick at least one piece');
-  try{const r=await call('markPickedUp',id,idx);$('puModal').remove();
-    toast(r.all?'All picked up ✓':`Picked up ✓ · ${r.left} piece${r.left>1?'s':''} still on the shelf`,4500);refreshView();if($('usModal'))usRun()}
+  try{const r=await call('markPickedUp',id,idx,how||'');$('puModal').remove();
+    toast(how==='ship'?`Moved to shipping ✓${r.left?` · ${r.left} piece${r.left>1?'s':''} still on the shelf`:''} · Add them to the shipping sheet as usual`:r.all?'All picked up ✓':`Picked up ✓ · ${r.left} piece${r.left>1?'s':''} still on the shelf`,6000);refreshView();if($('usModal'))usRun()}
   catch(e){toast('Could not update: '+(e.message||e),5000)}
 }
 async function editContact(id){
@@ -1051,7 +1057,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611121736';
+const BUILD='202611131458';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1461,10 +1467,10 @@ function usRender(){
       <div class="muted" style="font-size:14px">${[g.phone?esc(fmtPhone(g.phone)):'',g.email?esc(g.email):''].filter(Boolean).join(' · ')||'No contact on file'}</div>
       ${up.length?`<div class="ush">Upcoming</div>${up.map(b=>`<button class="usrow" onclick="usOpenBk(${b.row})"><b>${esc(sd(b.date))} · ${esc(b.time)}</b> <span>party of ${b.size}</span> <span class="cp ${b.status==='Needs card'?'ov':'cpb'}">${b.status==='Needs card'?'Needs card':'Booked'}</span><span class="usgo">Open ›</span></button>`).join('')}`:''}
       ${g.shelf.map(p=>{const f=p[0],s=f.storage,left=(s.items||[]).filter(i=>!i.picked),pb=ymdOf(s.pickupBy);
-        const all=(s.items||[]).length;return `<div class="ush">${left.length} piece${left.length>1?'s':''} on the shelf${all>left.length?` <span class="muted" style="font-weight:500">· ${all-left.length} of ${all} already picked up</span>`:''} <span class="muted" style="font-weight:500">· from ${esc(sd(f.date))}</span></div>
-        ${(s.items||[]).slice().sort((a,b)=>(a.picked?1:0)-(b.picked?1:0)).map(i=>`<div class="pcs${i.picked?' gone':''}"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}${i.picked?` <span class="muted">· picked up${i.picked&&/^\d{4}-/.test(String(i.picked))?' '+esc(sd(String(i.picked).slice(0,10))):''}</span>`:''}</span></div>`).join('')}
+        const all=(s.items||[]).length;return `<div class="ush">${left.length} piece${left.length>1?'s':''} on the shelf${all>left.length?` <span class="muted" style="font-weight:500">· ${goneLabel(s.items||[])}</span>`:''} <span class="muted" style="font-weight:500">· from ${esc(sd(f.date))}</span></div>
+        ${(s.items||[]).slice().sort((a,b)=>(a.picked?1:0)-(b.picked?1:0)).map(i=>`<div class="pcs${i.picked?' gone':''}"><span class="loc">${esc(i.shelf)}</span><span><b>${esc(i.project)}</b>${i.who?` <span class="muted">· ${esc(i.who)}</span>`:''}${i.picked?` <span class="muted">· ${i.ship?'moved to shipping':'picked up'}${i.picked&&/^\d{4}-/.test(String(i.picked))?' '+esc(sd(String(i.picked).slice(0,10))):''}</span>`:''}</span></div>`).join('')}
         ${pb?`<div style="font-size:14px;margin:4px 0;color:${pb<t?'#c40056':'inherit'}"><b>Pick up by ${esc(niceDate(pb))}</b>${pb<t?' · past the deadline':''}</div>`:''}
-        <div style="display:flex;gap:8px;margin-top:6px"><button class="btn main small" style="width:auto" onclick="pickedUp('${f.partyId}')">Mark picked up</button><button class="btn ghost small" onclick="printTicket('${f.partyId}')">🧾 Ticket</button></div>`}).join('')}
+        <div style="display:flex;gap:8px;margin-top:6px"><button class="btn main small" style="width:auto" onclick="pickedUp('${f.partyId}')">Mark picked up</button><button class="btn ghost small" onclick="printTicket('${f.partyId}')">🧾 Ticket</button><button class="btn ghost small" onclick="pickedUp('${f.partyId}','ship')">📦 Ship instead</button></div>`}).join('')}
       ${vis.length?`<div class="ush">Past visits · ${vis.length}</div><div class="muted" style="font-size:14px">${vis.slice(0,4).map(v=>`${esc(sd(v.date))} · ${esc(v.time)} · ${v.size} guest${v.size>1?'s':''}`).join('<br>')}${vis.length>4?`<br>and ${vis.length-4} more`:''}</div>`:''}
       ${!up.length&&!g.shelf.length&&!vis.length?'<div class="muted" style="font-size:14px;margin-top:6px">No bookings or visits yet.</div>':''}
     </div>`}).join('');
