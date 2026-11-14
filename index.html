@@ -442,7 +442,7 @@ const PIECE_TYPES = {   /* fallback only: the real list is edited in Settings > 
   "Sculptures": ["Gargantua", "Tars", "Trooper", "Topolino", "Topolina", "Snoopy", "Air Abstract", "Heart", "Turbo", "Skully"],
   "Piggy Bank": ["Cooper", "626", "Fluffy", "The Bat", "Labubu", "Winnie", "Kitty", "Floppy"],
   "Table Decor": ["Banksy Wooden Tray", "Pollock Wooden Tray", "Frida Lazy Susan", "Hilma Lazy Susan", "Goya Bamboo Tray", "Dali Bamboo Tray", "Warhol Acacia Tray", "Tapas Coasters", "Ear Coasters", "Hexagon Coasters"],
-  "Wall Cutouts": ["Sunshine", "Crush", "Surfboard", "Shark", "Melody", "T-Rex", "Ears", "The Boss", "Donnie", "Helmet"],
+  "Wall Cutouts": ["Sunshine", "Crush", "Small Surfboard", "Large Surfboard", "Shark", "Melody", "T-Rex", "Ears", "The Boss", "Donnie", "Helmet"],
   "Seasonals": ["Christmas Thief (Grinch)", "Ornaments", "Christmas Tree"]
 };
 
@@ -766,7 +766,7 @@ function storageLine(p){
       <span class="muted" style="font-size:13px">${sent?'Guest notified by '+sent:s.notifyAt?'Guest will be notified '+exactTime(s.notifyAt).replace(/, (\d)/,' at $1'):'Guest not notified yet'}${s.reminders?` · ${s.reminders} reminder${s.reminders>1?'s':''} sent`:''}</span>
       ${s.pickupBy&&!s.pickedUp?`<div style="font-size:14px;margin-top:4px;color:${s.pickupBy<today()?'#c40056':'inherit'}"><b>Pick up by ${esc(niceDate(s.pickupBy))}</b>${s.pickupBy<today()?' · past the deadline':''}</div>`:''}</div>
     <div style="display:flex;gap:6px;flex-direction:column">${s.pickedUp?'':`<button class="btn main small" style="width:auto" onclick="pickedUp('${id}')">Mark picked up</button>`}
-      ${s.pickedUp?'':`<button class="btn ghost small" onclick="printTicket('${id}')">🧾 Ticket</button>`}
+      <button class="btn ghost small" onclick="printTicket('${id}')">🧾 Ticket</button>
       ${s.pickedUp?'':`<button class="btn ghost small" onclick="pickedUp('${id}','ship')">📦 Ship instead</button>`}
       <button class="btn ghost small" onclick="openStore('${id}')">Edit</button></div></div>`;
 }
@@ -943,7 +943,8 @@ function pickedUp(id,how){
 }
 /* Pickup ticket for the Star receipt printer (80 mm): big reservation name, every piece with its shelf */
 function printTicket(id){
-  const p=parties[id],f=p[0],s=f.storage||{},items=(s.items||[]).filter(i=>!i.picked);
+  // pieces still on the shelf; once everything is picked up, the ticket lists what was picked up (not shipped)
+  const p=parties[id],f=p[0],s=f.storage||{},left=(s.items||[]).filter(i=>!i.picked),done=!left.length,items=done?(s.items||[]).filter(i=>!i.ship):left;
   const byShelf=[...items].sort((a,b)=>a.shelf.localeCompare(b.shelf,undefined,{numeric:true}));
   const w=window.open('','ticket','width=420,height=700');if(!w)return toast('Allow pop-ups to print the ticket',5000);
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Pickup ticket</title><style>
@@ -952,7 +953,7 @@ function printTicket(id){
     .nm{font-size:26pt;font-weight:900;line-height:1.05;margin:6px 0 2px;word-wrap:break-word}.ct{font-size:16pt;font-weight:900;margin:4px 0}
     .it{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #000}.sh{font-size:24pt;font-weight:900;border:3px solid #000;border-radius:6px;padding:1px 6px;min-width:22mm;text-align:center}
     .pr{font-size:14pt;font-weight:700;line-height:1.15}.wh{font-size:11pt;font-weight:400}.bx{width:6mm;height:6mm;border:2px solid #000;margin-left:auto;flex:none}</style></head><body>
-    <div class="c br">ABSTRACT ORLANDO</div><div class="c sm">PICKUP TICKET</div><div class="hr"></div>
+    <div class="c br">ABSTRACT ORLANDO</div><div class="c sm">${done?'PICKED UP':'PICKUP TICKET'}</div><div class="hr"></div>
     <div class="nm">${esc(f.reservation)}</div>
     <div class="sm">Class: ${esc(niceDate(f.date))} · ${esc(f.time)}<br>${f.phone?esc(f.phone):''}</div><div class="hr"></div>
     <div class="ct">${items.length} PIECE${items.length===1?'':'S'}</div>
@@ -1078,7 +1079,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611132343';
+const BUILD='202611141848';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
