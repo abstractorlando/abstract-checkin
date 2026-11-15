@@ -502,13 +502,14 @@ async function loadMe(){if(!PIN)return;try{ME=await call('whoAmI')}catch(e){retu
 /* Personal sign-ins (everyone except the classroom iPads) sign out on their own after 3 hours with no
    activity, and overnight, so the next person never works under someone else's name. */
 const IDLE_MS=3*36e5;
-function touchActive(){try{localStorage.setItem('abs_seen',String(Date.now()))}catch(e){}}
+// own storage name: 'abs_seen' belongs to the 🔔 bell (sharing it made old notifications come back)
+function touchActive(){try{localStorage.setItem('abs_active',String(Date.now()))}catch(e){}}
 function idleCheck(){
   if(!PIN||!ME||ME.device)return;
-  let seen=0;try{seen=+localStorage.getItem('abs_seen')||0}catch(e){}
+  let seen=0;try{seen=+localStorage.getItem('abs_active')||0}catch(e){}
   if(!seen){touchActive();return}
   const sameDay=new Date(seen).toDateString()===new Date().toDateString();
-  if(Date.now()-seen>IDLE_MS||!sameDay){PIN='';ME=null;try{localStorage.removeItem('abs_pin');localStorage.removeItem('abs_seen')}catch(e){}
+  if(Date.now()-seen>IDLE_MS||!sameDay){PIN='';ME=null;try{localStorage.removeItem('abs_pin');localStorage.removeItem('abs_active')}catch(e){}
     document.querySelectorAll('.modal').forEach(m=>m.remove());$('whoBtn').classList.add('hide');askPin();toast('Signed out after a while with no activity. Enter your PIN.',5000)}
 }
 ['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(ME&&!ME.device){idleCheck();if(PIN)touchActive()}},true));
@@ -1079,7 +1080,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611141848';
+const BUILD='202611151506';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -2100,7 +2101,7 @@ $('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$(
 
 /* ---------- 🔔 new bookings bell ---------- */
 let ACT=[],ACT_SEEN='',ACT_FIRST=true,AUDIO=null;
-try{ACT_SEEN=localStorage.getItem('abs_seen')||''}catch(e){}
+try{ACT_SEEN=localStorage.getItem('abs_seen')||'';if(!/^\d{4}-/.test(ACT_SEEN))ACT_SEEN=''}catch(e){}   // ignore old sign-out timestamps saved here by mistake
 const EV={confirmed:['🎨','booked','Booked'],moved:['🔁','rescheduled','Rescheduled'],cancelled:['✖️','cancelled','Cancelled'],late:['⚠️','cancelled late','Cancelled'],changed:['👥','changed party size','Changed'],party:['🎈','sent a party request','Sent'],card:['💳','saved their card','Card saved']};
 function exactTime(iso){const d=new Date(iso);return isNaN(d)?'':d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
 function ago(iso){const m=Math.round((Date.now()-new Date(iso))/6e4);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' hr ago':new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
