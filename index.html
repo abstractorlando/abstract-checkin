@@ -102,7 +102,7 @@
   .ph span{color:var(--muted);font-size:14px}
   .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
   .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff;display:inline-block;white-space:nowrap;margin:2px 0}
-  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#e8590c;letter-spacing:.04em;font-size:10px;vertical-align:middle}.dep.gf{background:#e6f6f1;color:#0b5e49;border:1.5px solid #0f8a6b}.tag.GF{background:#0f8a6b;letter-spacing:.04em;font-size:10px;vertical-align:middle}
+  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#e8590c;letter-spacing:.04em;font-size:10px;vertical-align:middle}.dep.gf{background:#e6f6f1;color:#0b5e49;border:1.5px solid #0f8a6b}.epx{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:50%;background:#f1eef8;color:#6b6878;font:700 20px/1 Poppins,sans-serif;cursor:pointer}.epx:hover{background:#ffe3ef;color:#c40056}.tag.GF{background:#0f8a6b;letter-spacing:.04em;font-size:10px;vertical-align:middle}
   .dep{display:inline-block;margin-top:4px;font-size:13px;font-weight:800;color:#fff;background:#0b7a3e;border-radius:8px;padding:3px 9px}.dep.fh{background:#fff4e6;color:#c2410c;border:2px solid #e8590c}
   .tools{display:flex;gap:6px;margin:4px 0 2px 4px;flex-wrap:wrap}.tl{border:0;background:none;color:var(--muted);font:600 13px Poppins;padding:4px 8px;border-radius:8px;cursor:pointer}.tl:hover{background:var(--soft);color:var(--ink)}
   .mv{display:flex;gap:8px;margin:6px 0 4px;flex-wrap:wrap}.mv input,.mv select{flex:1;min-width:140px;min-height:44px;padding:8px 10px;font-size:15px}
@@ -1104,7 +1104,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611161655';
+const BUILD='202611162215';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1913,8 +1913,11 @@ function editParty(k){
   m._was=b.size;m._names=names;epRender(b.size);
 }
 function epRender(n){const m=$('epModal'),cur=[...m.querySelectorAll('#epList input')].map(i=>i.value);if(cur.length)m._names=cur.concat(m._names.slice(cur.length));
-  $('epN').textContent=n;$('epList').innerHTML=Array.from({length:n},(_,i)=>`<input style="margin-bottom:6px" placeholder="Artist ${i+1} first name" value="${esc(m._names[i]||'')}">`).join('');
+  $('epN').textContent=n;$('epList').innerHTML=Array.from({length:n},(_,i)=>`<div style="position:relative;margin-bottom:6px"><input style="padding-right:46px" placeholder="Artist ${i+1} first name" value="${esc(m._names[i]||'')}">${n>1?`<button type="button" class="epx" onclick="epRemove(${i})" title="Remove this artist" aria-label="Remove artist ${i+1}">×</button>`:''}</div>`).join('');
   const d=n-m._was;$('epHint').textContent=d>0?`adding ${d}`:d<0?`removing ${-d}`:''}
+/* × on a name: remove that one artist and lower the party size by 1 */
+function epRemove(i){const m=$('epModal'),cur=[...m.querySelectorAll('#epList input')].map(x=>x.value);if(cur.length<2)return;
+  cur.splice(i,1);m._names=cur.concat(m._names.slice(cur.length+1));$('epList').innerHTML='';epRender(cur.length)}
 function epSize(d){const n=Math.max(1,+$('epN').textContent+d);epRender(n)}
 async function saveParty(force){
   const m=$('epModal'),b=bookingByKey(m.dataset.k);if(!b)return;
