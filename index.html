@@ -216,7 +216,10 @@
   .chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;margin:0 6px 6px 0;font:600 14px Poppins;cursor:pointer;color:var(--ink)}
   .chip.on{background:var(--purp);border-color:var(--purp);color:#fff}
   .si{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
-  .modal{position:fixed;inset:0;background:rgba(29,27,38,.55);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));z-index:9}
+  .modal{position:fixed;inset:0;background:rgba(29,27,38,.55);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));z-index:9;box-shadow:0 0 0 100vmax rgba(29,27,38,.55)}
+  @media (display-mode:standalone) and (max-width:640px){.modal{padding-top:calc(14px + max(env(safe-area-inset-top),50px))}.mbox{max-height:calc(100dvh - 40px - max(env(safe-area-inset-top),50px) - env(safe-area-inset-bottom))}}
+  .mhead{position:sticky;top:-24px;margin:-24px -24px 6px;padding:18px 18px 12px 24px;background:#fff;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line,#eee);text-align:left}
+  .mhead .bkx{position:static;float:none;margin:0;flex:none}
   .mbox{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center;max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain}
   .arr{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font:500 16px Poppins;color:var(--ink);cursor:pointer;min-height:54px}
   .arr:hover{border-color:var(--teal)}
@@ -1184,7 +1187,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611162355';
+const BUILD='202611162358';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -2246,8 +2249,8 @@ function renderBellCount(){
 function openBell(){
   const u=new Set(unseen().map(a=>a.at));
   const m=document.createElement('div');m.className='modal';m.id='bellModal';
-  m.innerHTML=`<div class="mbox bk" style="max-width:520px"><button class="bkx" onclick="$('bellModal').remove()" aria-label="Close">×</button>
-    <b style="font-size:21px">New activity</b><p class="muted" style="margin:4px 0 10px;font-size:14px">Bookings, changes and party requests from guests. Tap one to open it.</p>
+  m.innerHTML=`<div class="mbox bk" style="max-width:520px"><div class="mhead"><b style="font-size:21px">New activity</b><button class="bkx" onclick="$('bellModal').remove()" aria-label="Close">×</button></div>
+    <p class="muted" style="margin:4px 0 10px;font-size:14px">Bookings, changes and party requests from guests. Tap one to open it.</p>
     ${ACT.length?ACT.map((a,i)=>{const e=EV[a.kind]||['•',a.kind,'Done'];const td=a.date===today();
       const day=a.date?(new Date(a.date+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})):'';
       const cls=a.kind==='party'?`${day?'for '+day:'Date not set'}${a.size?' · '+esc(a.size)+' kids':''}${a.detail?' · '+esc(a.detail):''}`
