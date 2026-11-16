@@ -102,7 +102,13 @@
   .ph span{color:var(--muted);font-size:14px}
   .gi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);margin-top:8px}
   .tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px;color:#fff;display:inline-block;white-space:nowrap;margin:2px 0}
-  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#e8590c;letter-spacing:.04em;font-size:10px;vertical-align:middle}.dep.gf{background:#e6f6f1;color:#0b5e49;border:1.5px solid #0f8a6b}.epx{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:50%;background:#f1eef8;color:#6b6878;font:700 20px/1 Poppins,sans-serif;cursor:pointer}.epx:hover{background:#ffe3ef;color:#c40056}.tag.GF{background:#0f8a6b;letter-spacing:.04em;font-size:10px;vertical-align:middle}
+  .tag.NEW{background:var(--purp)}.tag.WEB{background:var(--purp);font-size:10px;vertical-align:middle}.tag.LATE{background:#c40056;font-size:10px;vertical-align:middle}.tag.WINE{background:#b8860b;font-size:10px;vertical-align:middle}.tag.FH{background:#e8590c;letter-spacing:.04em;font-size:10px;vertical-align:middle}.dep.gf{background:#e6f6f1;color:#0b5e49;border:1.5px solid #0f8a6b}.epx{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:50%;background:#f1eef8;color:#6b6878;font:700 20px/1 Poppins,sans-serif;cursor:pointer}.epx:hover{background:#ffe3ef;color:#c40056}.ctask{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 8px;font:500 15px Poppins,sans-serif;color:var(--ink);cursor:pointer}
+  .ctask.ok{background:#f3faf6;border-color:#cfe9db}.ctask.ok .ctx{color:#5b7a69}
+  .cbox{flex:0 0 26px;height:26px;border:2px solid #c9c4dc;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}.ctask.ok .cbox{background:#1a8f5a;border-color:#1a8f5a}
+  .ctx{flex:1;line-height:1.35}.cby{display:block;font-size:12px;color:var(--muted);margin-top:2px}.cday{font-size:11px;font-weight:700;color:#4e3aa2;background:#efeafc;border-radius:999px;padding:1px 8px;white-space:nowrap}
+  .cauto{display:block;font-size:12px;color:#1a8f5a;margin-top:3px}.cauto.warn{color:#b26a00}
+  .invr{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)}.invr input{width:86px;flex:0 0 86px;text-align:center}.invr input.low{border-color:#c40056;background:#fff0f6;color:#c40056;font-weight:700}
+  .tag.GF{background:#0f8a6b;letter-spacing:.04em;font-size:10px;vertical-align:middle}
   .dep{display:inline-block;margin-top:4px;font-size:13px;font-weight:800;color:#fff;background:#0b7a3e;border-radius:8px;padding:3px 9px}.dep.fh{background:#fff4e6;color:#c2410c;border:2px solid #e8590c}
   .tools{display:flex;gap:6px;margin:4px 0 2px 4px;flex-wrap:wrap}.tl{border:0;background:none;color:var(--muted);font:600 13px Poppins;padding:4px 8px;border-radius:8px;cursor:pointer}.tl:hover{background:var(--soft);color:var(--ink)}
   .mv{display:flex;gap:8px;margin:6px 0 4px;flex-wrap:wrap}.mv input,.mv select{flex:1;min-width:140px;min-height:44px;padding:8px 10px;font-size:15px}
@@ -293,6 +299,7 @@
     <button id="tabFind" onclick="show('find')"><i>⌂</i><span>Pickup</span></button>
     <button id="tabShip" onclick="show('ship')"><i>📦</i><span>Shipping<b id="shipBadge" class="tbadge hide"></b></span></button>
     <button id="tabSched" onclick="show('sched')"><i>▦</i><span>Schedule</span></button>
+    <button id="tabConc" class="hide" onclick="show('conc')"><i>✓</i><span>Concierge</span></button>
   </nav>
 </header>
 
@@ -384,6 +391,14 @@
     <div id="schedBox"><p class="muted">Loading…</p></div>
   </section>
 
+  <section id="vConc" class="hide">
+    <div class="card" style="padding-bottom:10px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap"><b id="concTitle" style="font-size:20px">Concierge</b><span id="concProg" class="muted" style="font-size:14px"></span></div>
+      <div class="vt" style="margin:12px 0 4px"><button id="cvOpen" class="on" onclick="concSide('Opening')">Opening</button><button id="cvClose" onclick="concSide('Closing')">Closing</button></div>
+    </div>
+    <div id="concList"><p class="muted">Loading…</p></div>
+    <button class="btn ghost" id="invBtn" style="margin-top:14px" onclick="openInv()">Inventory</button>
+  </section>
   <!-- FIND -->
   <section id="vFind" class="hide">
     <div class="card">
@@ -498,6 +513,7 @@ function askPin(wrong){if(asking)return;asking=true;
 /* who's signed in on this device: every change is saved under their name */
 let ME=null;
 async function loadMe(){if(!PIN)return;try{ME=await call('whoAmI')}catch(e){return}idleCheck();if(!ME)return;
+  $('tabConc').classList.toggle('hide',!!ME.device);   // classroom iPads don't need it
   $('whoBtn').textContent=ME.device?'🏫 '+String(ME.name).replace(/^Classroom /,''):'👤 '+String(ME.name).split(' ')[0];$('whoBtn').classList.remove('hide');showMailLeft(ME.owner?ME.emailsLeft:null)}
 /* Personal sign-ins (everyone except the classroom iPads) sign out on their own after 3 hours with no
    activity, and overnight, so the next person never works under someone else's name. */
@@ -541,11 +557,64 @@ function nearestTime(){
 
 /* ---------- tabs ---------- */
 function show(v){document.body.classList.toggle('wide',v==='sched'&&SVIEW==='week');
-  ['new','today','find','ship','sched'].forEach(k=>{$('v'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==v);$('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on',k===v)});
+  ['new','today','find','ship','sched','conc'].forEach(k=>{$('v'+k[0].toUpperCase()+k.slice(1)).classList.toggle('hide',k!==v);$('tab'+k[0].toUpperCase()+k.slice(1)).classList.toggle('on',k===v)});
   if(v==='sched')loadSched();
   if(v==='today')loadDay(); if(v==='new')loadArrivals(); if(v==='find')$('q').focus();
   if(v==='ship')loadShip();
+  if(v==='conc')loadConc();
 }
+/* ---------- Concierge: opening / closing checklist + inventory (lists live in the sheet tabs) ---------- */
+let CONC=null,CSIDE=null;
+async function loadConc(){
+  if(!CSIDE)CSIDE=new Date().getHours()>=15?'Closing':'Opening';
+  try{CONC=await call('conciergeDay',today());renderConc()}catch(e){$('concList').innerHTML=`<p class="muted">Could not load: ${esc(e.message||e)}</p>`}}
+function concSide(w){CSIDE=w;renderConc()}
+function concDoneAuto(t){if(t.auto==='inventory'){const l=CONC.lastCount;return l&&String(l.at).slice(0,10)===CONC.date}return false}
+function renderConc(){if(!CONC)return;const c=CONC,t0=new Date(c.date+'T12:00');
+  $('concTitle').textContent='Concierge · '+t0.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  const cnt=w=>{const L=c.tasks.filter(t=>t.when===w);return `${w} ${L.filter(t=>c.done[t.task]||concDoneAuto(t)).length}/${L.length}`};
+  $('concProg').textContent=cnt('Opening')+' · '+cnt('Closing');
+  $('cvOpen').classList.toggle('on',CSIDE==='Opening');$('cvClose').classList.toggle('on',CSIDE==='Closing');
+  const tm=iso=>new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  $('concList').innerHTML=c.tasks.map((t,i)=>({t,i})).filter(x=>x.t.when===CSIDE).map(({t,i})=>{
+    const d=c.done[t.task],ok=!!d||concDoneAuto(t);
+    let auto='';
+    if(t.auto==='projects'||t.auto==='checkins'){const L=c.auto[t.auto]||[];
+      auto=L.length?`<span class="cauto warn">${L.length} ${t.auto==='projects'?'part'+(L.length>1?'ies':'y')+' with no projects':'booking'+(L.length>1?'s':'')+' not checked in'}: ${L.map(esc).join(', ')}</span>`:`<span class="cauto">Nothing missing right now</span>`}
+    if(t.auto==='inventory')auto=`<span class="cauto">${ok?'Counted today':'<a href="#" onclick="event.stopPropagation();openInv();return false">Open inventory</a>'}</span>`;
+    return `<button type="button" class="ctask${ok?' ok':''}" onclick="concTick(${i})"><span class="cbox">${ok?'✓':''}</span><span class="ctx">${esc(t.task)}${t.days?` <span class="cday">${esc(t.days.replace(/,/g,' & '))} only</span>`:''}
+      ${d?`<span class="cby">${esc(String(d.by).split(' ')[0])} · ${tm(d.at)}</span>`:''}${auto}</span></button>`}).join('')||'<p class="muted">Nothing on this list today.</p>';
+  $('invBtn').textContent=c.dow==='Sat'?'Inventory (Saturday count)':'Inventory';$('invBtn').classList.toggle('main',c.dow==='Sat');$('invBtn').classList.toggle('ghost',c.dow!=='Sat');
+}
+async function concTick(i){const t=CONC.tasks[i];if(!t)return;if(t.auto==='inventory'&&!CONC.done[t.task]){openInv();return}
+  const on=!CONC.done[t.task];if(on)CONC.done[t.task]={by:ME?ME.name:'',at:new Date().toISOString()};else delete CONC.done[t.task];renderConc();
+  try{CONC.done=await call('conciergeTick',CONC.date,t.task,on);renderConc()}catch(e){toast('Could not save: '+(e.message||e),4000);loadConc()}}
+let INV=null;
+async function openInv(){
+  const m=document.createElement('div');m.className='modal';m.id='invModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:520px;width:100%;max-height:90vh;overflow:auto"><b style="font-size:20px">Inventory</b><p class="muted" id="invSub" style="margin:4px 0 10px">Loading…</p><div id="invList"></div>
+    <div style="display:flex;gap:8px;margin-top:14px;position:sticky;bottom:0;background:#fff;padding-top:8px"><button class="btn ghost" style="flex:1" onclick="softClose($('invModal'))">Close</button><button class="btn main" style="flex:1" id="invSave" onclick="saveInv()">Save count</button></div></div>`;
+  m.onclick=e=>{if(e.target===m)softClose(m)};document.body.appendChild(m);
+  try{INV=await call('invGet')}catch(e){$('invSub').textContent='Could not load: '+(e.message||e);return}
+  $('invSub').textContent=(INV.lastAt?`Last count: ${new Date(INV.lastAt).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}${INV.lastBy?' by '+String(INV.lastBy).split(' ')[0]:''}. `:'')+'Type how many are on the shelf. Red means below PAR.';
+  let cat='';$('invList').innerHTML=INV.items.map((x,i)=>{const h=x.cat!==cat?`<div class="ush" style="margin-top:12px">${esc(cat=x.cat)}</div>`:'';
+    return h+`<div class="invr"><span><b>${esc(x.item)}</b><br><span class="muted" style="font-size:12px">PAR ${x.par}${x.last!==null?' · last '+x.last:''}${x.store?' · '+esc(x.store):''}</span></span><input type="number" inputmode="numeric" min="0" data-i="${i}" oninput="invMark(this)"></div>`}).join('');
+}
+function invMark(el){const x=INV.items[+el.dataset.i];el.classList.toggle('low',el.value!==''&&+el.value<x.par)}
+async function saveInv(){const counts={};let n=0;
+  $('invList').querySelectorAll('input').forEach(el=>{if(el.value!==''){counts[INV.items[+el.dataset.i].item]=+el.value;n++}});
+  if(!n)return toast('Enter at least one count');
+  const btn=$('invSave');btn.disabled=true;
+  try{INV=await call('invSave',counts);$('invModal').remove();toast('Count saved ✓',3000);
+    const low=INV.items.filter(x=>x.last!==null&&x.last<x.par);showShopping(low);loadConc()}
+  catch(e){btn.disabled=false;toast('Could not save: '+(e.message||e),5000)}}
+function showShopping(low){const by={};low.forEach(x=>{(by[x.store||'Other']=by[x.store||'Other']||[]).push(x)});
+  const text=Object.keys(by).map(s=>s+':\n'+by[s].map(x=>`- ${x.item} (have ${x.last}, PAR ${x.par}, shelf holds ${x.cap})`).join('\n')).join('\n\n');
+  const m=document.createElement('div');m.className='modal';m.id='shopModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:480px"><b style="font-size:20px">Shopping list</b>
+    ${low.length?Object.keys(by).map(s=>`<div class="ush" style="margin-top:12px">${esc(s)}</div>${by[s].map(x=>`<div style="font-size:14px;padding:3px 0">${esc(x.item)} <span class="muted">· have ${x.last}, PAR ${x.par}</span></div>`).join('')}`).join(''):'<p>Everything is at or above PAR. Nothing to buy.</p>'}
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('shopModal').remove()">Close</button>${low.length?'<button class="btn main" style="flex:1" id="shopCopy">Copy list</button>':''}</div></div>`;
+  document.body.appendChild(m);if($('shopCopy'))$('shopCopy').onclick=()=>navigator.clipboard.writeText(text).then(()=>toast('List copied ✓'),()=>toast('Could not copy'));}
 
 /* ---------- check-in form ---------- */
 function addGuest(name='',type='',projects=1){
@@ -1115,7 +1184,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611162235';
+const BUILD='202611162341';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
