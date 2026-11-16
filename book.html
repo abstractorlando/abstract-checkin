@@ -275,7 +275,7 @@ function startHold(until){
 /** Spots left at the picked time (0 = no time picked yet). */
 function spotsLeft(){const d=AV&&AV.days.find(x=>x.date===sel.date),t=d&&d.times.find(x=>x.time===sel.time);return t?t.left:0}
 function setSize(n){
-  const max=spotsLeft()||1;
+  const max=GF?Math.min(6,spotsLeft()||1):(spotsLeft()||1);   // a Giftory voucher covers up to 6 guests
   size=Math.max(1,Math.min(max,n));$('size').textContent=size;$('sizeNote').textContent=size>1?'artists':'artist';
   $('minus').disabled=size<=1;$('plus').disabled=size>=max;
   $('sizeCard').classList.toggle('off',!spotsLeft());
