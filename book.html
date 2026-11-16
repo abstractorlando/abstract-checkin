@@ -385,7 +385,7 @@ async function gfBook(){
   if(!tier){$('gfT').classList.add('bad');bad.push(1)}
   const artists=[...$('guestNames').querySelectorAll('.gn')].map(x=>{const n=x.value.trim();if(!n){x.classList.add('bad');bad.push(1)}return{name:n,voucher,tier}});
   if(bad.length)return $('err1').textContent='Please add the voucher #, the project and every artist\'s first name.';
-  const code=$('gfCode').value.trim();if(!code){$('gfCode').classList.add('bad');return $('err1').textContent='Please enter your team passcode.'}
+  const code=$('gfCode').value.trim();if(!code){$('gfCode').classList.add('bad');return $('err1').textContent='Please enter the passcode.'}
   const btn=$('toPay');btn.disabled=true;btn.textContent='Booking…';
   try{const b=await call('partnerBook',{key:GKEY,date:sel.date,time:sel.time,name:first+' '+last,phone,email,artists,code,wine:($('gfWine')&&$('gfWine').value.trim())||'',note:$('note').value});
     $('flow').classList.add('hide');$('confirmed').classList.remove('hide');
@@ -402,7 +402,7 @@ function gfSetup(){
   const h=$('detailsCard').querySelector('h2');if(h)h.textContent='Guest details';
   $('detailsCard').querySelector('.hint').textContent='📱 The guest receiving the gift. Their confirmation and reminders are texted here.';
   $('email').placeholder='guest@email.com';
-  $('addons').innerHTML=`<label class="l" for="gfCode">Giftory team passcode</label><input id="gfCode" inputmode="numeric" autocomplete="off" placeholder="6 digits" style="margin-bottom:12px" oninput="this.classList.remove('bad')">
+  $('addons').innerHTML=`<label class="l" for="gfCode">Passcode</label><input id="gfCode" inputmode="numeric" autocomplete="off" style="margin-bottom:12px" oninput="this.classList.remove('bad')">
     <label class="l" for="gfWine">Wine add-on voucher # <span class="muted">(only if their gift includes a bottle of wine)</span></label><input id="gfWine" placeholder="Leave blank if none">`;
   $('note').placeholder='Anything we should know? (optional)';
   $('toPay').textContent='Book with vouchers';$('lockLine').textContent='No card needed. Free to reschedule or cancel up to 24 hours before.';
