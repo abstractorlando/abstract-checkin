@@ -749,6 +749,10 @@ async function loadGiftory(ym){const box=$('gfBox');if(!box)return;
       <button class="btn ghost" style="width:auto;padding:0 16px" onclick="navigator.clipboard.writeText(GFM.link).then(()=>toast('Link copied ✓'))">Copy link</button>
       <a class="btn ghost" style="width:auto;padding:0 16px;display:flex;align-items:center;text-decoration:none" href="${esc(m.link)}" target="_blank" rel="noopener">Open</a></div>
     <button class="btn ghost small" style="margin-top:8px" onclick="giftoryNewLink()">Make a new link (the old one stops working)</button>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border:2px solid var(--line);border-radius:12px">
+      <span>Team passcode: <b style="font-size:20px;letter-spacing:.12em">${esc(m.code||'')}</b></span>
+      <button class="btn ghost small" onclick="giftoryNewCode()">Change passcode</button>
+      <span class="muted" style="font-size:13px;flex-basis:100%">Giftory's team types this on every booking. Send it separately from the link.</span></div>
     <div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px"><button class="btn ghost small" onclick="loadGiftory('${shift(-1)}')">‹</button><b style="flex:1;text-align:center">${esc(label)}</b><button class="btn ghost small" onclick="loadGiftory('${shift(1)}')">›</button></div>
     ${m.rows.length?m.rows.map(r=>`<div class="ne" style="align-items:flex-start"><span><b>${esc(r.name)}</b> <span class="muted" style="font-size:13px">${esc(niceDate(r.date))} · ${esc(r.time)} · ${r.id} · party of ${r.size}${r.booked&&r.booked!==r.size?` <b style="color:#c40056">(booked for ${r.booked})</b>`:''}</span>
         <span style="display:block;font-size:13px">${r.artists.map(a=>`${esc(a.name)}: ${esc(a.tier)} (#${esc(a.voucher)})`).join(' · ')}${r.wine?` · wine (#${esc(r.wine)})`:''}</span></span>
@@ -759,6 +763,9 @@ async function loadGiftory(ym){const box=$('gfBox');if(!box)return;
 async function giftoryNewLink(){
   if(!confirm('Make a new Giftory link?\n\nThe current link stops working right away. Send the new one to Giftory so their team can keep booking.'))return;
   try{await call('giftoryNewLink');await loadGiftory(GFM&&GFM.month);toast('New link ready ✓ Copy it and send it to Giftory',5000)}catch(e){toast('Could not change it: '+(e.message||e),5000)}}
+async function giftoryNewCode(){
+  if(!confirm('Make a new passcode?\n\nThe current one stops working right away. Send the new one to Giftory.'))return;
+  try{await call('giftoryNewCode');await loadGiftory(GFM&&GFM.month);toast('New passcode ready ✓',4000)}catch(e){toast('Could not change it: '+(e.message||e),5000)}}
 function copyGiftory(){const m=GFM;const t=m.rows.map(r=>`${r.date} ${r.time} · ${r.name} · ${r.status} · ${r.artists.map(a=>a.tier+' #'+a.voucher).join(', ')}${r.wine?', wine #'+r.wine:''} · $${money(r.net)}`).join('\n')+`\n\nCompleted: $${money(m.completedNet)} ($${money(m.completedWithTax)} with tax)`;
   navigator.clipboard.writeText(t).then(()=>toast('List copied ✓'),()=>toast('Could not copy',4000))}
 async function saveProjList(){try{PROJECTS=await call('saveProjects',PROJECTS);renderProjBox();toast('Project list saved ✓')}catch(e){toast(e.message||String(e),5000)}}
@@ -1108,7 +1115,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611162231';
+const BUILD='202611162235';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
