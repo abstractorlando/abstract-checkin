@@ -633,7 +633,8 @@ function drawGoldenLabel(ctx,g){
   let s=34;for(;s>18;s--){ctx.font=`800 ${pt(s)}px Poppins, Arial, sans-serif`;if(ctx.measureText('EXPIRES').width<=maxW&&ctx.measureText(g.exp).width<=maxW)break}
   const h=pt(s),y1=LH*0.42;ctx.fillText('EXPIRES',cx,y1);ctx.fillText(g.exp,cx,y1+h*1.02);
   ctx.font=`600 ${pt(11)}px Poppins, Arial, sans-serif`;let nm=g.name||'';while(ctx.measureText(nm).width>maxW&&nm.length>2)nm=nm.slice(0,-2)+'…';
-  ctx.fillText(nm,cx,LH-P-48);
+  ctx.fillText(nm,cx,LH-P-80);
+  if(g.issued){ctx.font=`500 ${pt(7)}px Poppins, Arial, sans-serif`;ctx.fillText('Issued '+g.issued,cx,LH-P-26)}
   ctx.textAlign='left';
 }
 async function makePdf(copies){
@@ -865,7 +866,7 @@ function goldenTicket(row){const g=cache[row];if(!g)return;
   const last=String(g.reservation||'').trim().split(/\s+/).slice(1).join(' '),first=String(g.name||'').trim();
   const who=first&&last&&!first.includes(' ')&&String(g.reservation).toLowerCase().startsWith(first.toLowerCase())?first+' '+last:first||g.reservation;
   const exp=mdy(goldenExpiry());
-  printLabels([{kind:'golden',name:who,exp}],{direct:true,noMark:true});
+  printLabels([{kind:'golden',name:who,exp,issued:mdy(new Date())}],{direct:true,noMark:true});
   call('logGoldenTicket',row,who,exp).catch(()=>{});   // record for reports (Golden Tickets tab)
   toast(`Golden ticket for ${who} · expires ${exp}`,5000)}
 function reprint(rows){printLabels(rows.map(r=>cache[r]).filter(Boolean).map(g=>Object.assign({},g,{projects:1})),{direct:true})}
@@ -1103,7 +1104,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611161646';
+const BUILD='202611161650';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
