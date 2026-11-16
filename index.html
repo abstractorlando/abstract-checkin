@@ -216,8 +216,8 @@
   .chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;margin:0 6px 6px 0;font:600 14px Poppins;cursor:pointer;color:var(--ink)}
   .chip.on{background:var(--purp);border-color:var(--purp);color:#fff}
   .si{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
-  .modal{position:fixed;inset:0;background:rgba(29,27,38,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
-  .mbox{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center;max-height:92vh;overflow:auto;overscroll-behavior:contain}
+  .modal{position:fixed;inset:0;background:rgba(29,27,38,.55);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));z-index:9}
+  .mbox{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center;max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain}
   .arr{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;margin-bottom:8px;font:500 16px Poppins;color:var(--ink);cursor:pointer;min-height:54px}
   .arr:hover{border-color:var(--teal)}
   .arr .t{font-weight:700;color:var(--purp);min-width:78px}
@@ -226,7 +226,7 @@
   .arr.in{opacity:.45}
   .arr.sel{border-color:var(--mag);background:#fff0f8}
   .bk{max-width:820px;max-height:92vh;overflow:auto;text-align:left;padding:20px 22px;position:relative}
-  .bkx{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:0;background:var(--soft);font:700 20px Poppins;cursor:pointer;color:var(--ink)}
+  .bkx{position:sticky;top:0;float:right;margin:-12px -12px 0 8px;z-index:3;width:44px;height:44px;border-radius:50%;border:0;background:var(--soft);font:700 22px Poppins;cursor:pointer;color:var(--ink);box-shadow:0 2px 8px rgba(20,10,60,.12)}
   .bkl{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;margin:12px 0 4px;font-size:15px}.bkl span{color:var(--muted)}.bkl a{color:var(--teal);font-weight:600;text-decoration:none}
   .bka{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px}.bka .btn{width:auto;min-height:42px;font-size:15px;padding:0 14px}
   .bkh{font:700 13px Poppins;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
@@ -1184,7 +1184,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611162341';
+const BUILD='202611162355';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
