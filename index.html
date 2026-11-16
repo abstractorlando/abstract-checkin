@@ -628,14 +628,12 @@ function drawLabel(ctx,g){
 /* Golden Ticket sticker: the expiration date is the star, big and centered */
 function drawGoldenLabel(ctx,g){
   ctx.fillStyle='#fff';ctx.fillRect(0,0,LW,LH);ctx.fillStyle='#000';ctx.strokeStyle='#000';ctx.textBaseline='alphabetic';ctx.textAlign='center';
-  const P=26,cx=LW/2;ctx.lineWidth=8;ctx.strokeRect(P,P,LW-P*2,LH-P*2);
-  ctx.font=`800 ${pt(13)}px Poppins, Arial, sans-serif`;ctx.fillText('★ GOLDEN TICKET ★',cx,P+pt(13)+30);
-  ctx.font=`700 ${pt(11)}px Poppins, Arial, sans-serif`;ctx.fillText('EXPIRES',cx,LH*0.38);
-  let s=34;for(;s>20;s--){ctx.font=`800 ${pt(s)}px Poppins, Arial, sans-serif`;if(ctx.measureText(g.exp).width<=LW-P*2-60)break}
-  ctx.fillText(g.exp,cx,LH*0.38+pt(s)*1.12);
-  ctx.font=`600 ${pt(10)}px Poppins, Arial, sans-serif`;let nm=g.name||'';while(ctx.measureText(nm).width>LW-P*2-60&&nm.length>2)nm=nm.slice(0,-2)+'…';
-  ctx.fillText(nm,cx,LH-P-pt(7)-40);
-  ctx.font=`500 ${pt(7)}px Poppins, Arial, sans-serif`;ctx.fillText(`Free project up to $200 · Issued ${g.issued}`,cx,LH-P-26);
+  const P=26,cx=LW/2,maxW=LW-P*2-70;ctx.lineWidth=8;ctx.strokeRect(P,P,LW-P*2,LH-P*2);
+  // "EXPIRES" and the date, same size, as big as fits
+  let s=34;for(;s>18;s--){ctx.font=`800 ${pt(s)}px Poppins, Arial, sans-serif`;if(ctx.measureText('EXPIRES').width<=maxW&&ctx.measureText(g.exp).width<=maxW)break}
+  const h=pt(s),y1=LH*0.42;ctx.fillText('EXPIRES',cx,y1);ctx.fillText(g.exp,cx,y1+h*1.02);
+  ctx.font=`600 ${pt(11)}px Poppins, Arial, sans-serif`;let nm=g.name||'';while(ctx.measureText(nm).width>maxW&&nm.length>2)nm=nm.slice(0,-2)+'…';
+  ctx.fillText(nm,cx,LH-P-48);
   ctx.textAlign='left';
 }
 async function makePdf(copies){
@@ -853,7 +851,7 @@ function renderParties(list,el,byClass){
       <div id="pjf_${f.partyId}"></div>
       <div id="sf_${f.partyId}"></div>
       ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b> <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span>${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
-        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button><button class="btn ghost small" onclick="goldenTicket(${g.row})" title="Print the expiration sticker for a Golden Ticket card">🎟 Golden ticket</button></div></div>`).join('')}
+        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button><button class="btn ghost small" onclick="goldenTicket(${g.row})" title="Prints the expiration sticker for the gold card">Issue golden ticket</button></div></div>`).join('')}
       ${waitingHtml(p)}
       <div id="ap_${f.partyId}"></div>
       <button class="btn ghost small" style="margin-top:10px" onclick="addToParty('${f.partyId}')">+ Add guest to this party</button>
@@ -866,8 +864,10 @@ const mdy=d=>`${d.getMonth()+1}/${d.getDate()}/${String(d.getFullYear()).slice(2
 function goldenTicket(row){const g=cache[row];if(!g)return;
   const last=String(g.reservation||'').trim().split(/\s+/).slice(1).join(' '),first=String(g.name||'').trim();
   const who=first&&last&&!first.includes(' ')&&String(g.reservation).toLowerCase().startsWith(first.toLowerCase())?first+' '+last:first||g.reservation;
-  printLabels([{kind:'golden',name:who,exp:mdy(goldenExpiry()),issued:mdy(new Date())}],{direct:true,noMark:true});
-  toast(`🎟 Golden ticket for ${who} · expires ${mdy(goldenExpiry())}`,5000)}
+  const exp=mdy(goldenExpiry());
+  printLabels([{kind:'golden',name:who,exp}],{direct:true,noMark:true});
+  call('logGoldenTicket',row,who,exp).catch(()=>{});   // record for reports (Golden Tickets tab)
+  toast(`Golden ticket for ${who} · expires ${exp}`,5000)}
 function reprint(rows){printLabels(rows.map(r=>cache[r]).filter(Boolean).map(g=>Object.assign({},g,{projects:1})),{direct:true})}
 /* extra project later on: saves the new count, prints only the new sticker */
 async function addProject(row){
@@ -1103,7 +1103,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611161642';
+const BUILD='202611161646';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
