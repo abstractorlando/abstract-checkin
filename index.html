@@ -148,7 +148,7 @@
   .tch{padding:12px 16px;color:#fff}.tch b{display:block;font:800 22px Poppins,sans-serif;letter-spacing:.06em;text-transform:uppercase}.tch span{font-size:12px;opacity:.9}
   .tcl .tch{background:#4e3aa2}.tct .tch{background:#1b9aaa}
   .trow{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:9px 16px;border-top:1px solid var(--line)}.trow b{font:800 16px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.03em}.trow small{font-size:12px;color:var(--muted);text-align:right}
-  .tinfo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.tinfo div{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.4}.tinfo b{display:block;font-size:14px;margin-bottom:2px}
+  .tinfo{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 14px}.ti{border-radius:18px;padding:16px 18px;color:#fff}.ti b{display:block;font:800 22px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.06em}.ti span{font-size:12px;font-weight:700;opacity:.85;text-transform:uppercase;letter-spacing:.06em}.ti p{margin:10px 0 0;font-size:15px;line-height:1.45}.ti.tcl{background:#4e3aa2}.ti.tct{background:#1b9aaa}.ti.tcm{background:#d6246e}
   @media(max-width:640px){.tgrid,.tinfo{grid-template-columns:1fr}}
   .rsec{background:#fff;border:2px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:14px}
   .rhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:12px}.rhead h3{margin:0;font:800 18px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#4e3aa2}.rhead span{font-size:13px;color:var(--muted)}
@@ -673,11 +673,14 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
   if(BSIDE==='resin')BSIDE='cups';
   ['cups','mix','paint','list'].forEach(k=>$('bs'+{cups:'Cups',mix:'Mix',paint:'Paint',list:'List'}[k]).classList.toggle('on',BSIDE===k));
   if(BSIDE==='paint'){const col=(t,L,cls,sub)=>`<div class="tcol ${cls}"><div class="tch"><b>${t}</b><span>${sub}</span></div>${L.map(([n,b])=>`<div class="trow" data-n="${esc((n+' '+b).toLowerCase())}"><b>${esc(n)}</b>${b?`<small>${esc(b)}</small>`:''}</div>`).join('')}</div>`;
-    B.innerHTML=`<input id="tq" type="search" placeholder="Find a color" oninput="paintFilter()" style="width:100%;font-size:17px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;margin-bottom:12px">
+    B.innerHTML=`
+      <div class="tinfo">
+        <div class="ti tcl"><b>Latex</b><span>The tints · cans</span><p>Higher natural coverage. Rich and opaque straight from the can. Each color has its own behavior, you'll get to know them with practice. Sourced from Sherwin-Williams, metallics from PPG.</p></div>
+        <div class="ti tct"><b>Tempera</b><span>The plastic jugs</span><p>Water-based, lower coverage. Thinner and more translucent by nature, giving a beautiful sheen in fluid art. Colors flow freely, perfect for stunning pours. All neon colors are tempera.</p></div>
+        <div class="ti tcm"><b>Pouring medium</b><span>Goes in every color</span><p>Makes fluid art possible. Paint alone won't give the fluid effect. Pouring medium thins the paint to the right consistency for those beautiful fluid mixes. Each color has its own formula, so follow the Bar refill recipe when filling up.</p></div></div>
+      <input id="tq" type="search" placeholder="Find a color" oninput="paintFilter()" style="width:100%;font-size:17px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;margin-bottom:12px">
       <div class="tgrid">${col('Latex',PAINT_LATEX,'tcl','Tints · the cans · Sherwin-Williams (metallics from PPG)')}${col('Tempera',PAINT_TEMPERA,'tct','The plastic jugs · all neons are tempera')}</div>
-      <div class="tinfo"><div><b>Latex</b> Rich and opaque straight from the can. Each color behaves a little differently, you'll learn them with practice.</div>
-      <div><b>Tempera</b> Water-based and thinner, more see-through, with a beautiful sheen in a pour. Flows freely.</div>
-      <div><b>Pouring medium</b> Every color is mixed with it. Paint alone won't flow. Follow the mix recipe when filling bottles.</div></div>
+      
       <p class="muted" style="font-size:12px;margin:8px 2px">The name in bold is the menu name. The small name is the brand's paint name, for reordering.</p>`;return}
   if(BSIDE==='cups'){const P=barProjects(),ORD=['sculptures','table decor','canvas','cutouts'],rk=g=>{const i=ORD.indexOf(g.toLowerCase());return i<0?99:i},groups=[...new Set(P.map(p=>p.group))].sort((a,b)=>rk(a)-rk(b));
     B.innerHTML=`<div class="pgrid"><div class="plist">${groups.map(g=>`<div class="pcat"><div class="pch">${esc(g)}<span>${P.filter(x=>x.group===g).length}</span></div><div class="pnames">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="pbtn${BSEL===p.name?' on':''}" data-n="${esc(p.name)}" onclick="barPick(${i})">${pName(p.name)}<span class="pdots">${[...parseCups(p.bg),...parseCups(p.design)].map(c=>Array.from({length:c.n},()=>`<i class="pd-${c.size}"></i>`).join('')).join('')}</span></button>`).join('')}</div></div>`).join('')}</div>
@@ -693,11 +696,10 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
     const steps=[['Bottle on the scale','Place the empty 64 oz bottle on the scale'],['TARE / ZERO','Press it so the scale reads 0'],['Paint first','Pour until the scale reaches the paint mL'],['TARE / ZERO again','Reset the scale to 0'],['Pouring medium second','Pour until the scale reaches the medium mL'],['Cap tightly',''],['Shake 20–30 seconds','Shake hard while holding the cap']];
     B.innerHTML=`<div class="rsec"><div class="rhead"><h3>64 oz bottle recipe</h3><span>For the 9, 16 and 20 oz cups, and to refill the 32 oz bottles</span></div>
       <div class="rtwo">${recipe('Full refill',900,1300)}${recipe('Half refill',400,600)}</div></div>
-      <div class="rsec"><div class="rhead"><h3>Which bottle?</h3></div>
-        <div class="rflow"><div class="rbox"><b>3 oz</b> cups</div><span class="rarr">→</span><div class="rbox rbig"><b>32 oz</b> bottles</div></div>
-        <div class="rflow"><div class="rbox"><b>9 · 16 · 20 oz</b> cups</div><span class="rarr">→</span><div class="rbox rbig"><b>64 oz</b> bottles</div></div>
-        <div class="rlow"><div><b>32 oz low?</b> Refill it from its matching 64 oz bottle.</div><div><b>64 oz low?</b> Refill it with the recipe above.</div></div>
-        <div class="rstop">Never mix colors</div></div>
+      <div class="rsec"><div class="rhead"><h3>Which bottle do I pour from?</h3></div>
+        <div class="rflow"><div class="rbox">Filling <b>3 oz</b> cups</div><span class="rarr">→</span><div class="rbox rbig">Pour from the <b>32 oz</b> bottles</div></div>
+        <div class="rflow"><div class="rbox">Filling <b>9 · 16 · 20 oz</b> cups</div><span class="rarr">→</span><div class="rbox rbig">Pour from the <b>64 oz</b> bottles</div></div>
+        <div class="rlow"><div><b>32 oz bottle running low?</b> Refill it from the 64 oz bottle of the same color.</div><div><b>64 oz bottle running low?</b> Make a new batch with the recipe above.</div></div></div>
       <div class="rsec"><div class="rhead"><h3>How to refill a 64 oz bottle</h3></div>
         <div class="rsteps">${steps.map((x,i)=>`<div class="rstep"><span>${i+1}</span><b>${x[0]}</b>${x[1]?`<small>${x[1]}</small>`:''}</div>`).join('')}</div>
         <div class="bwarn" style="margin:12px 0 0"><b>Fully blend it.</b> If paint and medium aren't fully mixed, the paint cracks when it dries.</div></div>
@@ -1427,7 +1429,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172029';
+const BUILD='202611172033';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
