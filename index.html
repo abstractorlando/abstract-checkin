@@ -144,6 +144,12 @@
   .pch{display:flex;align-items:center;gap:8px}.pch span{font-size:11px;letter-spacing:0;background:#efeafc;color:#4e3aa2;border-radius:999px;padding:1px 8px}
   .pname{text-transform:uppercase;letter-spacing:.02em;line-height:1.05}.pname small{display:block;font-size:14px;color:var(--muted);letter-spacing:.06em;margin-top:4px}
   .pnote{margin-top:14px;background:#ffe3f0;border:2px solid #f48fbf;border-radius:14px;padding:12px 14px;font-size:16px;line-height:1.4;color:#7a1145}.pnote b{display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+  .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.tcol{background:#fff;border:2px solid var(--line);border-radius:18px;overflow:hidden}
+  .tch{padding:12px 16px;color:#fff}.tch b{display:block;font:800 22px Poppins,sans-serif;letter-spacing:.06em;text-transform:uppercase}.tch span{font-size:12px;opacity:.9}
+  .tcl .tch{background:#4e3aa2}.tct .tch{background:#1b9aaa}
+  .trow{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:9px 16px;border-top:1px solid var(--line)}.trow b{font:800 16px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.03em}.trow small{font-size:12px;color:var(--muted);text-align:right}
+  .tinfo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.tinfo div{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.4}.tinfo b{display:block;font-size:14px;margin-bottom:2px}
+  @media(max-width:640px){.tgrid,.tinfo{grid-template-columns:1fr}}
   .bgrid{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:760px){.bgrid{grid-template-columns:1fr 300px;align-items:start}.btray{position:sticky;top:12px}}@media(min-width:1100px){.bgrid{grid-template-columns:1fr 360px}}@media(max-width:759px){.btray{order:-1}}@media(max-width:640px){.bseg button{font-size:13px;padding-left:4px;padding-right:4px;white-space:nowrap}}
   .bgh{font:700 12px Poppins,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4e3aa2;margin:14px 2px 8px}
   .bchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -463,7 +469,7 @@
   <section id="vBar" class="hide">
     <div class="card" style="padding-bottom:10px">
       <b style="font-size:20px">Instructor</b>
-      <div class="vt bseg" style="margin:12px 0 4px"><button id="bsCups" onclick="barSide('cups')">Cups</button><button id="bsMix" onclick="barSide('mix')">Mix paint</button><button id="bsList" onclick="barSide('list')">Checklist</button></div>
+      <div class="vt bseg" style="margin:12px 0 4px"><button id="bsCups" onclick="barSide('cups')">Cups</button><button id="bsMix" onclick="barSide('mix')">Mix paint</button><button id="bsPaint" onclick="barSide('paint')">Paint types</button><button id="bsList" onclick="barSide('list')">Checklist</button></div>
     </div>
     <div id="barBody"><p class="muted">Loading…</p></div>
   </section>
@@ -648,7 +654,14 @@ function cupShort(x){return [...parseCups(x.bg),...parseCups(x.design)].map(c=>c
 function barProjects(){const L=[];(BAR.cups||[]).forEach(x=>String(x.name).split(/\s*•\s*/).forEach(n=>{if(n.trim())L.push(Object.assign({},x,{name:n.trim()}))}));return L}
 function renderBar(){if(!BAR)return;const B=$('barBody');
   if(BSIDE==='resin')BSIDE='cups';
-  ['cups','mix','list'].forEach(k=>$('bs'+{cups:'Cups',mix:'Mix',list:'List'}[k]).classList.toggle('on',BSIDE===k));
+  ['cups','mix','paint','list'].forEach(k=>$('bs'+{cups:'Cups',mix:'Mix',paint:'Paint',list:'List'}[k]).classList.toggle('on',BSIDE===k));
+  if(BSIDE==='paint'){const col=(t,L,cls,sub)=>`<div class="tcol ${cls}"><div class="tch"><b>${t}</b><span>${sub}</span></div>${L.map(([n,b])=>`<div class="trow" data-n="${esc((n+' '+b).toLowerCase())}"><b>${esc(n)}</b>${b?`<small>${esc(b)}</small>`:''}</div>`).join('')}</div>`;
+    B.innerHTML=`<input id="tq" type="search" placeholder="Find a color" oninput="paintFilter()" style="width:100%;font-size:17px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;margin-bottom:12px">
+      <div class="tgrid">${col('Latex',PAINT_LATEX,'tcl','Tints · the cans · Sherwin-Williams (metallics from PPG)')}${col('Tempera',PAINT_TEMPERA,'tct','The plastic jugs · all neons are tempera')}</div>
+      <div class="tinfo"><div><b>Latex</b> Rich and opaque straight from the can. Each color behaves a little differently, you'll learn them with practice.</div>
+      <div><b>Tempera</b> Water-based and thinner, more see-through, with a beautiful sheen in a pour. Flows freely.</div>
+      <div><b>Pouring medium</b> Every color is mixed with it. Paint alone won't flow. Follow the mix recipe when filling bottles.</div></div>
+      <p class="muted" style="font-size:12px;margin:8px 2px">The name in bold is the menu name. The small name is the brand's paint name, for reordering.</p>`;return}
   if(BSIDE==='cups'){const P=barProjects(),groups=[...new Set(P.map(p=>p.group))];
     B.innerHTML=`<div class="pgrid"><div class="plist">${groups.map(g=>`<div class="pcat"><div class="pch">${esc(g)}<span>${P.filter(x=>x.group===g).length}</span></div><div class="pnames">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="pbtn${BSEL===p.name?' on':''}" data-n="${esc(p.name)}" onclick="barPick(${i})">${pName(p.name)}<span class="pdots">${[...parseCups(p.bg),...parseCups(p.design)].map(c=>Array.from({length:c.n},()=>`<i class="pd-${c.size}"></i>`).join('')).join('')}</span></button>`).join('')}</div></div>`).join('')}</div>
       <div class="pdet" id="pdet"></div></div>`;renderPick();return}
@@ -674,6 +687,7 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
       return `<button type="button" class="ctask${d?' ok':''}" onclick="barTick(${i})"><span class="cbox">${d?'✓':''}</span><span class="ctx">${esc(t.task)}${t.days?` <span class="cday">${esc(t.days.replace(/,/g,' & '))} only</span>`:''}${d?`<span class="cby">${esc(String(d.by).split(' ')[0])} · ${tm(d.at)}</span>`:''}</span></button>`}).join('')}`}
 function barJump(g){const el=$('xg-'+g.replace(/\W/g,''));if(el)window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-130,behavior:'smooth'})}
 let BSEL=null;
+const PAINT_LATEX=[["White", ""], ["Navy", "Anchors Aweigh"], ["Snow", "Inverness Gray"], ["Sand", "Onion Powder"], ["Cloud", "Samovar Silver"], ["Stone", "Skyline Steel"], ["Aqua", "Tarreyton"], ["Sky", "Vast Sky"], ["Red", "Heartthrob"], ["Yellow", "Daisy"], ["Sage", "Sage Splendor"], ["Emerald", "Roycroft Bottle Green"], ["Olive", "Artichoke"], ["Wine", "Red Red Wine"], ["Coral", "Youthful Coral"], ["Seafoam Green", "Cape Verde"], ["Rose", "Sanguine"], ["Night", "Mediterranean Night"], ["Mint", "Mucho Mint"], ["Blush", "Primrose"]],PAINT_TEMPERA=[["Black", ""], ["Tan", "Peach"], ["Brown", ""], ["Green", ""], ["Orange", ""], ["Purple", ""], ["Lavender", ""], ["Pink", ""], ["Blue", ""], ["Teal", ""], ["Gold", ""], ["Silver", ""], ["Neon Blue", ""], ["Neon Yellow", ""], ["Neon Green", ""], ["Neon Orange", ""], ["Neon Pink", ""], ["Neon Purple", ""], ["Neon Red", ""], ["Neon Magenta", ""]];
 // name in caps; a size or (note) after the name goes on a smaller second line
 function pName(n){const m=/^(.*?)\s+(\(.*\)|\d.*)$/.exec(n);return m?`${esc(m[1])}<small>${esc(m[2].replace(/^\(|\)$/g,''))}</small>`:esc(n)}
 const CUPDIM={Small:{h:74,w:58,oz:3,c:'#1b9aaa'},Medium:{h:112,w:78,oz:9,c:'#e8890c'},Large:{h:140,w:90,oz:16,c:'#d6246e'},XL:{h:160,w:100,oz:20,c:'#4e3aa2'}};
@@ -695,6 +709,7 @@ function renderPick(){const D=$('pdet');if(!D)return;const p=barProjects().find(
   if(!p){D.innerHTML='<div class="pempty">Tap a project to see its cups</div>';return}
   D.innerHTML=`<button class="pclose" onclick="$('pdet').classList.remove('open')" aria-label="Close">×</button><div class="pgh">${esc(p.group)}</div><div class="pname">${pName(p.name)}</div>
     ${p.bg&&p.bg!=='N/A'?cupBlock(p.bg,'Background',false):''}${cupBlock(p.design,'Design colors',true)}${p.note?`<div class="pnote"><b>Remember</b>${esc(p.note)}</div>`:''}`}
+function paintFilter(){const q=$('tq').value.trim().toLowerCase();document.querySelectorAll('#barBody .trow').forEach(r=>r.classList.toggle('hide',!!q&&!r.dataset.n.includes(q)))}
 function barFilter(){const q=$('bq').value.trim().toLowerCase();document.querySelectorAll('#barBody .bchip').forEach(b=>b.classList.toggle('hide',!!q&&!b.dataset.n.includes(q)));
   document.querySelectorAll('#barBody .bgrp').forEach(g=>g.classList.toggle('hide',!g.querySelector('.bchip:not(.hide)')))}
 function barAdd(i){const p=barProjects()[i];BTRAY[p.name]=BTRAY[p.name]||{p,n:0};BTRAY[p.name].n++;
@@ -1371,7 +1386,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172013';
+const BUILD='202611172015';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
