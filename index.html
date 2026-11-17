@@ -405,7 +405,7 @@
       <div class="vt" style="margin:12px 0 4px"><button id="cvOpen" class="on" onclick="concSide('Opening')">Opening</button><button id="cvClose" onclick="concSide('Closing')">Closing</button><button id="cvFlow" onclick="concSide('Flow')">Class flow</button></div>
     </div>
     <div id="concList"><p class="muted">Loading…</p></div>
-    <button class="btn ghost" id="invBtn" style="margin-top:14px" onclick="openInv()">Inventory</button>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" id="invBtn" style="flex:1" onclick="openInv()">Inventory</button><button class="btn ghost" id="shopBtn" style="flex:1" onclick="openShop()">Shopping list</button></div>
   </section>
   <!-- FIND -->
   <section id="vFind" class="hide">
@@ -586,7 +586,7 @@ function renderConc(){if(!CONC)return;const c=CONC,t0=new Date(c.date+'T12:00');
   $('concProg').textContent=cnt('Opening')+' · '+cnt('Closing');
   const left=c.tasks.filter(t=>t.days&&!c.done[t.task]&&!concDoneAuto(t)).length;$('concN').textContent=left;$('concN').classList.toggle('hide',!left);$('concN').title=left+' task'+(left>1?'s':'')+' just for today';
   $('cvOpen').classList.toggle('on',CSIDE==='Opening');$('cvClose').classList.toggle('on',CSIDE==='Closing');$('cvFlow').classList.toggle('on',CSIDE==='Flow');
-  $('invBtn').classList.toggle('hide',CSIDE==='Flow');
+  $('invBtn').parentNode.classList.toggle('hide',CSIDE==='Flow');
   if(CSIDE==='Flow'){const F=(c.flow&&c.flow.length?c.flow:FLOW_DEFAULT);let n=0;
     $('concList').innerHTML=`<p class="muted" style="margin:0 0 10px;font-size:14px">The steps for every class. Nothing to check off, just follow along.</p>`+F.map(f=>/standard/i.test(f.step)?`<div class="cstd"><b>${esc(f.step)}</b><br>${esc(f.details)}</div>`
       :`<div class="cflow"><span class="cnum">${++n}</span><span class="ctx"><b>${esc(f.step)}</b>${f.details?`<span class="cdet">${esc(f.details)}</span>`:''}</span></div>`).join('');return}
@@ -642,10 +642,14 @@ async function saveInv(){const counts={};let n=0;
   try{INV=await call('invSave',counts);try{localStorage.removeItem(INV_DRAFT)}catch(e){}$('invModal').remove();toast('Count saved ✓',3000);
     const low=INV.items.filter(x=>x.last!==null&&x.last<x.par);showShopping(low);loadConc()}
   catch(e){btn.disabled=false;toast('Could not save: '+(e.message||e),5000)}}
-function showShopping(low){const by={};low.forEach(x=>{(by[x.store||'Other']=by[x.store||'Other']||[]).push(x)});
+async function openShop(){const b=$('shopBtn');b.disabled=true;
+  try{INV=await call('invGet')}catch(e){toast('Could not load: '+(e.message||e),4000);b.disabled=false;return}b.disabled=false;
+  if(!INV.lastAt)return toast('No inventory count saved yet',3000);
+  showShopping(INV.items.filter(x=>x.last!==null&&x.last<x.par),`From the count on ${new Date(INV.lastAt).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}${INV.lastBy?' by '+String(INV.lastBy).split(' ')[0]:''}`)}
+function showShopping(low,sub){const by={};low.forEach(x=>{(by[x.store||'Other']=by[x.store||'Other']||[]).push(x)});
   const text=Object.keys(by).map(s=>s+':\n'+by[s].map(x=>`- ${x.item} (have ${x.last}, PAR ${x.par}, shelf holds ${x.cap})`).join('\n')).join('\n\n');
   const m=document.createElement('div');m.className='modal';m.id='shopModal';
-  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:480px"><b style="font-size:20px">Shopping list</b>
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:480px"><b style="font-size:20px">Shopping list</b>${sub?`<p class="muted" style="margin:2px 0 0;font-size:13px">${esc(sub)}</p>`:''}
     ${low.length?Object.keys(by).map(s=>`<div class="ush" style="margin-top:12px">${esc(s)}</div>${by[s].map(x=>`<div style="font-size:14px;padding:3px 0">${esc(x.item)} <span class="muted">· have ${x.last}, PAR ${x.par}</span></div>`).join('')}`).join(''):'<p>Everything is at or above PAR. Nothing to buy.</p>'}
     <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('shopModal').remove()">Close</button>${low.length?'<button class="btn main" style="flex:1" id="shopCopy">Copy list</button>':''}</div></div>`;
   document.body.appendChild(m);if($('shopCopy'))$('shopCopy').onclick=()=>navigator.clipboard.writeText(text).then(()=>toast('List copied ✓'),()=>toast('Could not copy'));}
@@ -1218,7 +1222,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611170031';
+const BUILD='202611170035';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
