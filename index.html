@@ -611,7 +611,7 @@ let INV=null;
 async function openInv(){
   const m=document.createElement('div');m.className='modal';m.id='invModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:520px;width:100%;max-height:90vh;overflow:auto"><b style="font-size:20px">Inventory</b><p class="muted" id="invSub" style="margin:4px 0 10px">Loading…</p><div id="invList"></div>
-    <div style="display:flex;gap:8px;margin-top:14px;position:sticky;bottom:0;background:#fff;padding-top:8px"><button class="btn ghost" style="flex:1" onclick="softClose($('invModal'))">Close</button><button class="btn main" style="flex:1" id="invSave" onclick="saveInv()">Save count</button></div></div>`;
+    <div style="display:flex;gap:8px;margin-top:14px;position:sticky;bottom:0;background:#fff;padding-top:8px"><button class="btn ghost" style="flex:1" onclick="invClose()">Close</button><button class="btn main" style="flex:1" id="invSave" onclick="saveInv()">Save count</button></div></div>`;
   m.onclick=e=>{if(e.target===m)m.querySelector('.mbox').animate([{transform:'scale(1)'},{transform:'scale(1.02)'},{transform:'scale(1)'}],{duration:180})};document.body.appendChild(m);
   try{INV=await call('invGet')}catch(e){$('invSub').textContent='Could not load: '+(e.message||e);return}
   $('invSub').textContent=(INV.lastAt?`Last count: ${new Date(INV.lastAt).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}${INV.lastBy?' by '+String(INV.lastBy).split(' ')[0]:''}. `:'')+'Type how many are on the shelf. Red means below PAR.';
@@ -626,6 +626,14 @@ function invMark(el){const x=INV.items[+el.dataset.i];el.classList.toggle('low',
 function invRestore(){let r=null;try{r=JSON.parse(localStorage.getItem(INV_DRAFT)||'null')}catch(e){}
   if(!r||r.day!==today())return;let n=0;$('invList').querySelectorAll('input').forEach(el=>{const v=r.d[INV.items[+el.dataset.i].item];if(v!==undefined){el.value=v;invMark(el);n++}});
   if(n)toast(`Picked up where you left off (${n} counted)`,3500)}
+function invClose(){const m=$('invModal');if(!m)return;if(!m.dataset.dirty){m.remove();return}
+  const q=document.createElement('div');q.className='modal';q.id='invAsk';q.style.zIndex=11;
+  q.innerHTML=`<div class="mbox" style="max-width:340px"><b style="font-size:19px">Save this count?</b><p class="muted" style="margin:6px 0 16px;font-size:14px">You typed some numbers but haven't saved them yet.</p>
+    <button class="btn main" style="width:100%" onclick="$('invAsk').remove();saveInv()">Save count</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="invDiscard()">Don't save</button>
+    <button class="btn ghost" style="width:100%;margin-top:8px;border:0" onclick="$('invAsk').remove()">Keep counting</button></div>`;
+  document.body.appendChild(q)}
+function invDiscard(){try{localStorage.removeItem(INV_DRAFT)}catch(e){}const q=$('invAsk');if(q)q.remove();const m=$('invModal');if(m)m.remove()}
 window.addEventListener('beforeunload',e=>{const m=$('invModal');if(m&&m.dataset.dirty){e.preventDefault();e.returnValue=''}});
 async function saveInv(){const counts={};let n=0;
   $('invList').querySelectorAll('input').forEach(el=>{if(el.value!==''){counts[INV.items[+el.dataset.i].item]=+el.value;n++}});
@@ -1210,7 +1218,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611170022';
+const BUILD='202611170031';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
