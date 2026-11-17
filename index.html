@@ -688,10 +688,17 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
     B.innerHTML=`<div class="pgrid"><div class="plist">${groups.map(g=>`<div class="pcat"><div class="pch">${esc(g)}<span>${P.filter(x=>x.group===g).length}</span></div><div class="pnames">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="pbtn${BSEL===p.name?' on':''}" data-n="${esc(p.name)}" onclick="barPick(${i})">${pName(p.name)}<span class="pdots">${[...parseCups(p.bg),...parseCups(p.design)].map(c=>Array.from({length:c.n},()=>`<i class="pd-${c.size}"></i>`).join('')).join('')}</span></button>`).join('')}</div></div>`).join('')}</div>
       <div class="pdet" id="pdet"></div></div>`;renderPick();return}
   if(BSIDE==='mix'){
-    const bottle=(paint,med)=>{const tot=paint+med,H=150,k=Math.min(1,tot/2200)*.9,ph=Math.round(H*k*paint/tot),mh=Math.round(H*k*med/tot);
-      return `<svg width="96" height="200" viewBox="0 0 96 200" aria-hidden="true"><path d="M36 6h24v22l12 14v146a8 8 0 0 1-8 8H32a8 8 0 0 1-8-8V42l12-14z" fill="#fff" stroke="#2b2540" stroke-width="3" stroke-linejoin="round"/>
-        <rect x="27" y="${193-ph}" width="42" height="${ph}" rx="3" fill="#4e3aa2"/><rect x="27" y="${193-ph-mh}" width="42" height="${mh}" rx="3" fill="#d9f3f6"/>
-        <rect x="33" y="0" width="30" height="9" rx="3" fill="#2b2540"/></svg>`};
+    // wide-mouth 64 oz (2000 mL) reagent bottle, filled to scale: paint on the bottom, pouring medium on top
+    const bottle=(paint,med)=>{const top=50,bot=196,H=bot-top,cap=2000,y=v=>bot-H*Math.min(v,cap)/cap,yp=y(paint),ym=y(paint+med),id='bt'+paint;
+      const ticks=[500,1000,1500,2000].map(v=>`<line x1="16" x2="26" y1="${y(v)}" y2="${y(v)}" stroke="#9aa3b5" stroke-width="1.5"/><text x="29" y="${y(v)+3.5}" font-size="8" font-family="Poppins,sans-serif" fill="#7d8597">${v}</text>`).join('');
+      const body='M36 30 h48 v8 q0 6 8 12 q16 10 16 26 v108 q0 16 -16 16 h-64 q-16 0 -16 -16 v-108 q0 -16 16 -26 q8 -6 8 -12 z';
+      return `<svg width="120" height="214" viewBox="0 0 120 214" aria-hidden="true"><defs><clipPath id="${id}"><path d="${body}"/></clipPath></defs>
+        <path d="${body}" fill="#f4f7fa"/>
+        <g clip-path="url(#${id})"><rect x="0" y="${yp}" width="120" height="${bot+20-yp}" fill="#4e3aa2"/><rect x="0" y="${ym}" width="120" height="${yp-ym}" fill="#cdeef3"/>
+          <rect x="18" y="${top}" width="7" height="${H}" rx="3" fill="#fff" opacity=".45"/></g>
+        ${ticks}<path d="${body}" fill="none" stroke="#2b2540" stroke-width="2.5" stroke-linejoin="round"/>
+        <rect x="32" y="8" width="56" height="24" rx="4" fill="#fff" stroke="#2b2540" stroke-width="2.5"/>
+        ${[40,48,56,64,72,80].map(x=>`<line x1="${x}" x2="${x}" y1="12" y2="28" stroke="#c9ceda" stroke-width="1.5"/>`).join('')}</svg>`};
     const recipe=(t,paint,med)=>`<div class="rcard"><div class="rtitle">${t}</div><div class="rbody">${bottle(paint,med)}<div class="ramt">
       <div><span class="rdot" style="background:#4e3aa2"></span><b>${paint}</b> mL<small>PAINT · add first</small></div>
       <div><span class="rdot" style="background:#d9f3f6;border:1.5px solid #9dd7de"></span><b>${med}</b> mL<small>POURING MEDIUM · add second</small></div></div></div></div>`;
@@ -1431,7 +1438,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172101';
+const BUILD='202611172106';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
