@@ -156,6 +156,8 @@
   .rcard{background:#f6f3ff;border-radius:16px;padding:14px 16px}.rtitle{font:800 15px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ink)}
   .rbody{display:flex;align-items:center;gap:14px}.ramt{display:flex;flex-direction:column;gap:14px}.ramt div{font-size:16px;color:var(--ink)}.ramt b{font-size:34px;font-weight:800;color:#4e3aa2}.ramt small{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
   .rdot{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:8px;vertical-align:middle}
+  .rshake{margin-left:auto;align-self:center;background:#d6246e;color:#fff;border-radius:18px;padding:14px 18px;text-align:center;min-width:120px}.rshake b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.1em}.rshake span{display:block;font:800 34px Poppins,sans-serif;line-height:1.1;margin-top:4px}.rshake i{display:block;font-style:normal;font-weight:700;font-size:13px}.rshake small{display:block;font-size:11px;opacity:.9;margin-top:6px}
+  @media(max-width:700px){.rbody{flex-wrap:wrap}.rshake{margin-left:0;flex:1 1 100%}}
   .rflow{display:flex;align-items:center;gap:12px;margin-bottom:10px}.rbox{flex:1;background:#f6f3ff;border-radius:14px;padding:14px;font-size:15px;text-align:center}.rbox b{font-size:22px;color:#4e3aa2;margin-right:4px}.rbox.rbig{background:#4e3aa2;color:#fff}.rbox.rbig b{color:#fff}.rarr{font:800 28px Poppins;color:var(--muted)}
   .rlow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 10px}.rlow div{border:2px dashed var(--line);border-radius:12px;padding:10px 12px;font-size:14px}
   .rstop{background:#ffe3f0;color:#a0104f;border:2px solid #f48fbf;border-radius:12px;padding:10px;text-align:center;font:800 16px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.08em}
@@ -701,9 +703,10 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
         ${[40,48,56,64,72,80].map(x=>`<line x1="${x}" x2="${x}" y1="12" y2="28" stroke="#c9ceda" stroke-width="1.5"/>`).join('')}</svg>`};
     const recipe=(t,paint,med)=>`<div class="rcard"><div class="rtitle">${t}</div><div class="rbody">${bottle(paint,med)}<div class="ramt">
       <div><span class="rdot" style="background:#4e3aa2"></span><b>${paint}</b> mL<small>PAINT · add first</small></div>
-      <div><span class="rdot" style="background:#d9f3f6;border:1.5px solid #9dd7de"></span><b>${med}</b> mL<small>POURING MEDIUM · add second</small></div></div></div></div>`;
-    const steps=[['Bottle on the scale','Place the empty 64 oz bottle on the scale'],['TARE / ZERO','Press it so the scale reads 0'],['Paint first','Pour until the scale reaches the paint mL'],['TARE / ZERO again','Reset the scale to 0'],['Pouring medium second','Pour until the scale reaches the medium mL'],['Cap tightly',''],['Shake 20–30 seconds','Shake hard while holding the cap']];
-    B.innerHTML=`<div class="rsec"><div class="rhead"><h3>64 oz bottle recipe</h3><span>For the 9, 16 and 20 oz cups, and to refill the 32 oz bottles</span></div>
+      <div><span class="rdot" style="background:#d9f3f6;border:1.5px solid #9dd7de"></span><b>${med}</b> mL<small>POURING MEDIUM · add second</small></div></div>
+      <div class="rshake"><b>Then shake</b><span>30–45</span><i>seconds</i><small>Hold the lid on tight</small></div></div></div>`;
+    const steps=[['Bottle on the scale','Place the empty 64 oz bottle on the scale'],['TARE / ZERO','Press it so the scale reads 0'],['Paint first','Pour until the scale reaches the paint mL'],['TARE / ZERO again','Reset the scale to 0'],['Pouring medium second','Pour until the scale reaches the medium mL'],['Cap tightly',''],['Shake 30–45 seconds','Shake hard, holding the lid on tight']];
+    B.innerHTML=`<div class="rsec"><div class="rhead"><h3>64 oz bottle recipe</h3></div>
       <div class="rtwo">${recipe('Full refill',900,1300)}${recipe('Half refill',400,600)}</div></div>
       <div class="rsec"><div class="rhead"><h3>Which bottle do I pour from?</h3></div>
         <div class="rflow"><div class="rbox">Filling <b>3 oz</b> cups</div><span class="rarr">→</span><div class="rbox rbig">Pour from the <b>32 oz</b> bottles</div></div>
@@ -721,7 +724,7 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
           <ul class="rlist"><li>Check all tints <b>every night</b></li><li>Very low → <b>replace with a new one</b></li><li>Never leave an almost-empty tint at the bar</li></ul></div></div>
       <div class="rsec"><div class="rhead"><h3>Closing the bar</h3><span>Tick these off in Checklist → Bar Closing</span></div>
         <div class="rthree">
-          <div><div class="rcol" style="background:#4e3aa2">Paint</div><ul class="rlist"><li>All 32 oz bottles filled</li><li>All 64 oz bottles filled</li><li>Correct ratios used (scale)</li><li>All bottles shaken 30 sec each</li><li>Lids clean inside & outside</li><li>No crusty paint</li></ul></div>
+          <div><div class="rcol" style="background:#4e3aa2">Paint</div><ul class="rlist"><li>All 32 oz bottles filled</li><li>All 64 oz bottles filled</li><li>Correct ratios used (scale)</li><li>All bottles shaken 30–45 sec each</li><li>Lids clean inside & outside</li><li>No crusty paint</li></ul></div>
           <div><div class="rcol" style="background:#d6246e">Restock</div><ul class="rlist"><li>Cups: 3 · 9 · 16 · 20 oz</li><li>Gloves</li><li>Sticks (all sizes)</li><li>Napkins</li><li>Baby wipes</li></ul></div>
           <div><div class="rcol" style="background:#1b9aaa">Clean</div><ul class="rlist"><li>Wipe bottles: damp microfiber + alcohol</li><li>Wipe bar surface: microfiber + alcohol</li><li>No paint stains, drips or mess</li></ul></div></div>
         <div class="rstd"><div><b>Looks messy?</b> Clean it.</div><div><b>Feels low?</b> Refill it.</div></div></div>`;return}
@@ -1438,7 +1441,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172106';
+const BUILD='202611172108';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
