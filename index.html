@@ -108,6 +108,20 @@
   .ctx{flex:1;line-height:1.35}.cby{display:block;font-size:12px;color:var(--muted);margin-top:2px}.cday{font-size:11px;font-weight:700;color:#4e3aa2;background:#efeafc;border-radius:999px;padding:1px 8px;white-space:nowrap}
   .cauto{display:block;font-size:12px;color:#1a8f5a;margin-top:3px}
   body.barwide main{max-width:1200px}
+  .xbar{position:sticky;top:0;z-index:3;background:var(--bg,#f4f2fa);padding:6px 0 8px;margin-bottom:4px}
+  .xjump{display:flex;gap:8px;flex-wrap:wrap}.xjump button{flex:1;min-width:110px;padding:12px 10px;border-radius:999px;border:2px solid #4e3aa2;background:#fff;color:#4e3aa2;font:700 15px Poppins,sans-serif;cursor:pointer}
+  .xleg{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);margin-top:8px}
+  .xgrp{background:#fff;border:2px solid var(--line);border-radius:18px;padding:6px 16px 4px;margin-bottom:14px;scroll-margin-top:130px}
+  .xgh{font:800 13px Poppins,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#4e3aa2;padding:10px 0 6px}
+  .xrow{display:flex;align-items:center;gap:16px;padding:12px 0;border-top:1px solid var(--line)}
+  .xcups{flex:0 0 250px;display:flex;align-items:center;gap:6px}
+  .xnames{flex:1;display:flex;flex-wrap:wrap;gap:6px 18px;font:800 22px Poppins,sans-serif;color:var(--ink);line-height:1.2}
+  .xc{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:64px;padding:6px 8px;border-radius:14px;color:#fff;line-height:1}
+  .xc b{font-size:26px;font-weight:800}.xc i{font-style:normal;font-weight:800;font-size:12px;letter-spacing:.06em;margin-top:2px}.xc em{font-style:normal;font-size:10px;opacity:.85;margin-top:3px}
+  .xc.sm{min-width:0;padding:3px 8px;border-radius:8px}.xc.sm i{margin:0;font-size:11px}
+  .xc-Small{background:#1b9aaa}.xc-Medium{background:#e8890c}.xc-Large{background:#d6246e}.xc-XL{background:#4e3aa2}
+  .xplus{font:800 20px Poppins;color:var(--muted)}
+  @media(max-width:640px){.xjump{flex-wrap:nowrap;overflow-x:auto}.xjump button{flex:none;min-width:0;font-size:13px;padding:8px 14px;white-space:nowrap}.xrow{flex-direction:column;align-items:flex-start;gap:8px}.xcups{flex:none}.xnames{font-size:19px}}
   .bgrid{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:760px){.bgrid{grid-template-columns:1fr 300px;align-items:start}.btray{position:sticky;top:12px}}@media(min-width:1100px){.bgrid{grid-template-columns:1fr 360px}}@media(max-width:759px){.btray{order:-1}}@media(max-width:640px){.bseg button{font-size:13px;padding-left:4px;padding-right:4px;white-space:nowrap}}
   .bgh{font:700 12px Poppins,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4e3aa2;margin:14px 2px 8px}
   .bchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -613,10 +627,15 @@ function barProjects(){const L=[];(BAR.cups||[]).forEach(x=>String(x.name).split
 function renderBar(){if(!BAR)return;const B=$('barBody');
   if(BSIDE==='resin')BSIDE='cups';
   ['cups','mix','list'].forEach(k=>$('bs'+{cups:'Cups',mix:'Mix',list:'List'}[k]).classList.toggle('on',BSIDE===k));
-  if(BSIDE==='cups'){const P=barProjects(),groups=[...new Set(P.map(p=>p.group))];
-    B.innerHTML=`<div class="bgrid"><div><input id="bq" type="search" placeholder="Find a project" oninput="barFilter()" style="width:100%;font-size:16px;padding:12px 14px;border:2px solid var(--line);border-radius:14px">
-      ${groups.map(g=>`<div class="bgrp"><div class="bgh">${esc(g)}</div><div class="bchips">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="bchip${BTRAY[p.name]?' in':''}" data-n="${esc(p.name.toLowerCase())}" onclick="barAdd(${i})">${esc(p.name)}<small>${esc(cupShort(p))}</small></button>`).join('')}</div></div>`).join('')}</div>
-      <div class="btray" id="btray"></div></div>`;renderTray();return}
+  if(BSIDE==='cups'){const groups=[...new Set((BAR.cups||[]).map(x=>x.group))];
+    // one line per cup recipe: projects that get the same cups share a line
+    const lines=g=>{const m=new Map();(BAR.cups||[]).filter(x=>x.group===g).forEach(x=>{const k=x.bg+'|'+x.design;if(!m.has(k))m.set(k,{bg:x.bg,design:x.design,names:[]});
+      String(x.name).split(/\s*•\s*/).forEach(n=>n.trim()&&m.get(k).names.push(n.trim()))});return [...m.values()]};
+    const pill=(t,lab)=>parseCups(t).map(c=>`<span class="xc xc-${c.size}"><b>${c.n}</b><i>${c.size==='Medium'?'MED':c.size.toUpperCase()}${c.half?' ½':''}</i><em>${lab}</em></span>`).join('');
+    B.innerHTML=`<div class="xbar"><div class="xjump">${groups.map(g=>`<button onclick="barJump('${esc(g)}')">${esc(g)}</button>`).join('')}</div>
+      <div class="xleg">${CUPSZ.map(([k,oz])=>`<span class="xc xc-${k} sm"><i>${k==='Medium'?'MED':k.toUpperCase()}</i></span>${oz}`).join('')}</div></div>
+      ${groups.map(g=>`<div class="xgrp" id="xg-${esc(g).replace(/\W/g,'')}"><div class="xgh">${esc(g)}</div>${lines(g).map(l=>`<div class="xrow"><div class="xcups">${pill(l.bg,'background')}${parseCups(l.bg).length&&parseCups(l.design).length?'<span class="xplus">+</span>':''}${pill(l.design,'colors')}</div>
+        <div class="xnames">${l.names.map(n=>`<span>${esc(n)}</span>`).join('')}</div></div>`).join('')}</div>`).join('')}`;return}
   if(BSIDE==='mix'){B.innerHTML=`<div class="bwarn"><b>Always use the scale. Never guess.</b> If paint and medium aren't fully blended, the paint cracks when it dries.</div>
     <div class="bbig"><div class="bcard"><h3>Full refill · 64 oz bottle</h3><div class="bnum">900 <small>mL paint</small></div><div class="bnum">1300 <small>mL pouring medium</small></div></div>
       <div class="bcard"><h3>Half refill · 64 oz bottle</h3><div class="bnum">400 <small>mL paint</small></div><div class="bnum">600 <small>mL pouring medium</small></div></div></div>
@@ -637,6 +656,7 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
     ${BAR_LIVE?'':'<div class="bwarn">Checking off turns on after the new Concierge.gs is pasted and deployed.</div>'}
     ${BAR.tasks.map((t,i)=>({t,i})).filter(x=>x.t.when===BLIST).map(({t,i})=>{const d=BAR.done[t.task];
       return `<button type="button" class="ctask${d?' ok':''}" onclick="barTick(${i})"><span class="cbox">${d?'✓':''}</span><span class="ctx">${esc(t.task)}${t.days?` <span class="cday">${esc(t.days.replace(/,/g,' & '))} only</span>`:''}${d?`<span class="cby">${esc(String(d.by).split(' ')[0])} · ${tm(d.at)}</span>`:''}</span></button>`}).join('')}`}
+function barJump(g){const el=$('xg-'+g.replace(/\W/g,''));if(el)window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-130,behavior:'smooth'})}
 function barFilter(){const q=$('bq').value.trim().toLowerCase();document.querySelectorAll('#barBody .bchip').forEach(b=>b.classList.toggle('hide',!!q&&!b.dataset.n.includes(q)));
   document.querySelectorAll('#barBody .bgrp').forEach(g=>g.classList.toggle('hide',!g.querySelector('.bchip:not(.hide)')))}
 function barAdd(i){const p=barProjects()[i];BTRAY[p.name]=BTRAY[p.name]||{p,n:0};BTRAY[p.name].n++;
@@ -1313,7 +1333,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611171902';
+const BUILD='202611171904';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
