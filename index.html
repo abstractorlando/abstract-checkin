@@ -758,7 +758,7 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
       return `<button type="button" class="ctask${d?' ok':''}" onclick="barTick(${i})"><span class="cbox">${d?'✓':''}</span><span class="ctx">${esc(t.task)}${t.days?` <span class="cday">${esc(dayPill(t))}</span>`:''}${d?`<span class="cby">${esc(String(d.by).split(' ')[0])} · ${tm(d.at)}</span>`:''}</span></button>`}).join('')}`}
 function barJump(g){const el=$('xg-'+g.replace(/\W/g,''));if(el)window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-130,behavior:'smooth'})}
 let BSEL=null,SUP=null;
-const PAINT_LATEX=[["White", ""], ["Navy", "Anchors Aweigh"], ["Snow", "Inverness Gray"], ["Sand", "Onion Powder"], ["Cloud", "Samovar Silver"], ["Stone", "Skyline Steel"], ["Aqua", "Tarreyton"], ["Sky", "Vast Sky"], ["Red", "Heartthrob"], ["Yellow", "Daisy"], ["Sage", "Sage Splendor"], ["Emerald", "Roycroft Bottle Green"], ["Olive", "Artichoke"], ["Wine", "Red Red Wine"], ["Coral", "Youthful Coral"], ["Seafoam Green", "Cape Verde"], ["Rose", "Sanguine"], ["Night", "Mediterranean Night"], ["Mint", "Mucho Mint"], ["Blush", "Primrose"]],PAINT_TEMPERA=[["Black", ""], ["Tan", "Peach"], ["Brown", ""], ["Green", ""], ["Orange", ""], ["Purple", ""], ["Lavender", ""], ["Pink", ""], ["Blue", ""], ["Teal", "Turquoise"], ["Gold", ""], ["Silver", ""], ["Neon Blue", ""], ["Neon Yellow", ""], ["Neon Green", ""], ["Neon Orange", ""], ["Neon Pink", ""], ["Neon Purple", ""], ["Neon Red", ""], ["Neon Magenta", ""]];
+const PAINT_LATEX=[["White", ""], ["Navy", "Anchors Aweigh"], ["Snow", "Inverness Gray"], ["Sand", "Onion Powder"], ["Cloud", "Samovar Silver"], ["Stone", "Skyline Steel"], ["Aqua", "Tarreyton"], ["Sky", "Vast Sky"], ["Red", "Heartthrob"], ["Yellow", "Daisy"], ["Sage", "Sage Splendor"], ["Emerald", "Roycroft Bottle Green"], ["Olive", "Artichoke"], ["Wine", "Red Red Wine"], ["Coral", "Charisma"], ["Seafoam Green", "Cape Verde"], ["Rose", "Sanguine"], ["Night", "Mediterranean Night"], ["Mint", "Mucho Mint"], ["Blush", "Primrose"]],PAINT_TEMPERA=[["Black", ""], ["Tan", "Peach"], ["Brown", ""], ["Green", ""], ["Orange", ""], ["Purple", ""], ["Lavender", ""], ["Pink", ""], ["Blue", ""], ["Teal", "Turquoise"], ["Gold", ""], ["Silver", ""], ["Neon Blue", ""], ["Neon Yellow", ""], ["Neon Green", ""], ["Neon Orange", ""], ["Neon Pink", ""], ["Neon Purple", ""], ["Neon Red", ""], ["Neon Magenta", ""]];
 // name in caps; a size or (note) after the name goes on a smaller second line
 function pName(n){const m=/^(.*?)\s+(\(.*\)|\d.*)$/.exec(n);return m?`${esc(m[1])}<small>${esc(m[2].replace(/^\(|\)$/g,''))}</small>`:esc(n)}
 const CUPDIM={Small:{h:74,w:58,oz:3,c:'#1b9aaa'},Medium:{h:112,w:78,oz:9,c:'#4e3aa2'},Large:{h:140,w:90,oz:16,c:'#d6246e'},XL:{h:160,w:100,oz:20,c:'#e8890c'}};
@@ -1460,7 +1460,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172200';
+const BUILD='202611172202';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
