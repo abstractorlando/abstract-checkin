@@ -150,6 +150,23 @@
   .trow{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:9px 16px;border-top:1px solid var(--line)}.trow b{font:800 16px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.03em}.trow small{font-size:12px;color:var(--muted);text-align:right}
   .tinfo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.tinfo div{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.4}.tinfo b{display:block;font-size:14px;margin-bottom:2px}
   @media(max-width:640px){.tgrid,.tinfo{grid-template-columns:1fr}}
+  .rsec{background:#fff;border:2px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:14px}
+  .rhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:12px}.rhead h3{margin:0;font:800 18px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#4e3aa2}.rhead span{font-size:13px;color:var(--muted)}
+  .rtwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}.rtwo>.rsec{margin-bottom:14px}
+  .rcard{background:#f6f3ff;border-radius:16px;padding:14px 16px}.rtitle{font:800 15px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ink)}
+  .rbody{display:flex;align-items:center;gap:14px}.ramt{display:flex;flex-direction:column;gap:14px}.ramt div{font-size:16px;color:var(--ink)}.ramt b{font-size:34px;font-weight:800;color:#4e3aa2}.ramt small{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+  .rdot{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:8px;vertical-align:middle}
+  .rflow{display:flex;align-items:center;gap:12px;margin-bottom:10px}.rbox{flex:1;background:#f6f3ff;border-radius:14px;padding:14px;font-size:15px;text-align:center}.rbox b{font-size:22px;color:#4e3aa2;margin-right:4px}.rbox.rbig{background:#4e3aa2;color:#fff}.rbox.rbig b{color:#fff}.rarr{font:800 28px Poppins;color:var(--muted)}
+  .rlow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 10px}.rlow div{border:2px dashed var(--line);border-radius:12px;padding:10px 12px;font-size:14px}
+  .rstop{background:#ffe3f0;color:#a0104f;border:2px solid #f48fbf;border-radius:12px;padding:10px;text-align:center;font:800 16px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.08em}
+  .rsteps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}@media(min-width:1000px){.rsteps{grid-template-columns:repeat(7,1fr)}}.rstep{background:#f6f3ff;border-radius:14px;padding:12px;font-size:15px;line-height:1.25}
+  .rstep span{display:flex;width:30px;height:30px;border-radius:50%;background:#4e3aa2;color:#fff;font-weight:800;align-items:center;justify-content:center;margin-bottom:8px}.rstep b{display:block}.rstep small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+  .rbigline{font-size:18px;margin:0 0 6px}.rbigline b{color:#4e3aa2}
+  .rcalc{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px}.rcalc input{width:130px;font-size:18px;padding:8px 10px;border:2px solid var(--line);border-radius:10px}.rcalcout{margin-top:8px;font-size:17px}.rcalcout b{color:#4e3aa2}
+  .rlist{margin:0;padding-left:20px;line-height:1.7;font-size:15px}
+  .rthree{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.rcol{color:#fff;font:800 13px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.1em;border-radius:10px;padding:6px 12px;margin-bottom:8px;display:inline-block}
+  .rstd{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.rstd div{background:#fff8e6;border:2px solid #f2c94c;border-radius:12px;padding:10px 12px;font-size:15px;text-align:center}
+  @media(max-width:700px){.rtwo,.rthree,.rlow,.rstd{grid-template-columns:1fr}}
   .bgrid{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:760px){.bgrid{grid-template-columns:1fr 300px;align-items:start}.btray{position:sticky;top:12px}}@media(min-width:1100px){.bgrid{grid-template-columns:1fr 360px}}@media(max-width:759px){.btray{order:-1}}@media(max-width:640px){.bseg button{font-size:13px;padding-left:4px;padding-right:4px;white-space:nowrap}}
   .bgh{font:700 12px Poppins,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4e3aa2;margin:14px 2px 8px}
   .bchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -469,7 +486,7 @@
   <section id="vBar" class="hide">
     <div class="card" style="padding-bottom:10px">
       <b style="font-size:20px">Instructor</b>
-      <div class="vt bseg" style="margin:12px 0 4px"><button id="bsCups" onclick="barSide('cups')">Cups</button><button id="bsMix" onclick="barSide('mix')">Mix paint</button><button id="bsPaint" onclick="barSide('paint')">Paint types</button><button id="bsList" onclick="barSide('list')">Checklist</button></div>
+      <div class="vt bseg" style="margin:12px 0 4px"><button id="bsCups" onclick="barSide('cups')">Cups</button><button id="bsMix" onclick="barSide('mix')">Bar refill</button><button id="bsPaint" onclick="barSide('paint')">Paint types</button><button id="bsList" onclick="barSide('list')">Checklist</button></div>
     </div>
     <div id="barBody"><p class="muted">Loading…</p></div>
   </section>
@@ -665,14 +682,38 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
   if(BSIDE==='cups'){const P=barProjects(),ORD=['sculptures','table decor','canvas','cutouts'],rk=g=>{const i=ORD.indexOf(g.toLowerCase());return i<0?99:i},groups=[...new Set(P.map(p=>p.group))].sort((a,b)=>rk(a)-rk(b));
     B.innerHTML=`<div class="pgrid"><div class="plist">${groups.map(g=>`<div class="pcat"><div class="pch">${esc(g)}<span>${P.filter(x=>x.group===g).length}</span></div><div class="pnames">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="pbtn${BSEL===p.name?' on':''}" data-n="${esc(p.name)}" onclick="barPick(${i})">${pName(p.name)}<span class="pdots">${[...parseCups(p.bg),...parseCups(p.design)].map(c=>Array.from({length:c.n},()=>`<i class="pd-${c.size}"></i>`).join('')).join('')}</span></button>`).join('')}</div></div>`).join('')}</div>
       <div class="pdet" id="pdet"></div></div>`;renderPick();return}
-  if(BSIDE==='mix'){B.innerHTML=`<div class="bwarn"><b>Always use the scale. Never guess.</b> If paint and medium aren't fully blended, the paint cracks when it dries.</div>
-    <div class="bbig"><div class="bcard"><h3>Full refill · 64 oz bottle</h3><div class="bnum">900 <small>mL paint</small></div><div class="bnum">1300 <small>mL pouring medium</small></div></div>
-      <div class="bcard"><h3>Half refill · 64 oz bottle</h3><div class="bnum">400 <small>mL paint</small></div><div class="bnum">600 <small>mL pouring medium</small></div></div></div>
-    <div class="bcard" style="margin-top:12px"><h3>How to refill a 64 oz bottle</h3><ol class="bsteps"><li>Place the empty bottle on the scale</li><li>Press <b>TARE / ZERO</b></li><li>Add <b>PAINT first</b>, until the scale reaches the paint mL above</li><li>Press <b>TARE / ZERO</b> again</li><li>Add <b>POURING MEDIUM second</b>, until it reaches the medium mL above</li><li>Cap tightly</li><li>Shake hard for 20–30 seconds while holding the cap</li></ol></div>
-    <div class="bcard"><h3>Other amounts</h3><p style="margin:0 0 8px;font-size:14px">For every 100 mL of paint, add 150–200 mL of pouring medium. Small over/under (±20–50 mL) is OK.</p>
-      <label style="font-size:14px;font-weight:600">Paint (mL) <input id="bpm" type="number" inputmode="numeric" min="0" oninput="barCalc()" style="width:120px;font-size:18px;padding:8px 10px;border:2px solid var(--line);border-radius:10px;margin-left:8px"></label><div id="bcalc" class="bnum" style="font-size:22px;margin-top:8px"></div></div>
-    <div class="bbig"><div class="bcard"><h3>Which bottle</h3><ul class="bsteps" style="padding-left:18px"><li>3 oz cups → 32 oz bottles</li><li>9, 16, 20 oz cups → 64 oz bottles</li><li>32 oz low → refill from its matching 64 oz bottle</li><li>64 oz low → refill with the recipe</li><li><b>Never mix colors</b></li></ul></div>
-      <div class="bcard"><h3>Tints (latex colors)</h3><ul class="bsteps" style="padding-left:18px"><li>Check all tints nightly</li><li>Very low → replace with a new one</li><li>Never leave an almost-empty tint at the bar</li></ul></div></div>`;return}
+  if(BSIDE==='mix'){
+    const bottle=(paint,med)=>{const tot=paint+med,H=150,k=Math.min(1,tot/2200)*.9,ph=Math.round(H*k*paint/tot),mh=Math.round(H*k*med/tot);
+      return `<svg width="96" height="200" viewBox="0 0 96 200" aria-hidden="true"><path d="M36 6h24v22l12 14v146a8 8 0 0 1-8 8H32a8 8 0 0 1-8-8V42l12-14z" fill="#fff" stroke="#2b2540" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="27" y="${193-ph}" width="42" height="${ph}" rx="3" fill="#4e3aa2"/><rect x="27" y="${193-ph-mh}" width="42" height="${mh}" rx="3" fill="#d9f3f6"/>
+        <rect x="33" y="0" width="30" height="9" rx="3" fill="#2b2540"/></svg>`};
+    const recipe=(t,paint,med)=>`<div class="rcard"><div class="rtitle">${t}</div><div class="rbody">${bottle(paint,med)}<div class="ramt">
+      <div><span class="rdot" style="background:#4e3aa2"></span><b>${paint}</b> mL<small>PAINT · add first</small></div>
+      <div><span class="rdot" style="background:#d9f3f6;border:1.5px solid #9dd7de"></span><b>${med}</b> mL<small>POURING MEDIUM · add second</small></div></div></div></div>`;
+    const steps=[['Bottle on the scale','Place the empty 64 oz bottle on the scale'],['TARE / ZERO','Press it so the scale reads 0'],['Paint first','Pour until the scale reaches the paint mL'],['TARE / ZERO again','Reset the scale to 0'],['Pouring medium second','Pour until the scale reaches the medium mL'],['Cap tightly',''],['Shake 20–30 seconds','Shake hard while holding the cap']];
+    B.innerHTML=`<div class="rsec"><div class="rhead"><h3>64 oz bottle recipe</h3><span>For the 9, 16 and 20 oz cups, and to refill the 32 oz bottles</span></div>
+      <div class="rtwo">${recipe('Full refill',900,1300)}${recipe('Half refill',400,600)}</div></div>
+      <div class="rsec"><div class="rhead"><h3>Which bottle?</h3></div>
+        <div class="rflow"><div class="rbox"><b>3 oz</b> cups</div><span class="rarr">→</span><div class="rbox rbig"><b>32 oz</b> bottles</div></div>
+        <div class="rflow"><div class="rbox"><b>9 · 16 · 20 oz</b> cups</div><span class="rarr">→</span><div class="rbox rbig"><b>64 oz</b> bottles</div></div>
+        <div class="rlow"><div><b>32 oz low?</b> Refill it from its matching 64 oz bottle.</div><div><b>64 oz low?</b> Refill it with the recipe above.</div></div>
+        <div class="rstop">Never mix colors</div></div>
+      <div class="rsec"><div class="rhead"><h3>How to refill a 64 oz bottle</h3></div>
+        <div class="rsteps">${steps.map((x,i)=>`<div class="rstep"><span>${i+1}</span><b>${x[0]}</b>${x[1]?`<small>${x[1]}</small>`:''}</div>`).join('')}</div>
+        <div class="bwarn" style="margin:12px 0 0"><b>Fully blend it.</b> If paint and medium aren't fully mixed, the paint cracks when it dries.</div></div>
+      <div class="rtwo">
+        <div class="rsec"><div class="rhead"><h3>Paint ratio standard</h3></div>
+          <p class="rbigline">Every <b>100 mL</b> paint → <b>150–200 mL</b> pouring medium</p>
+          <p class="muted" style="margin:0 0 10px;font-size:13px">A small over/under (±20–50 mL) is OK. Always use the scale, never guess.</p>
+          <label class="rcalc">Paint (mL)<input id="bpm" type="number" inputmode="numeric" min="0" oninput="barCalc()" placeholder="e.g. 300"></label><div id="bcalc" class="rcalcout"></div></div>
+        <div class="rsec"><div class="rhead"><h3>Tints (latex colors)</h3></div>
+          <ul class="rlist"><li>Check all tints <b>every night</b></li><li>Very low → <b>replace with a new one</b></li><li>Never leave an almost-empty tint at the bar</li></ul></div></div>
+      <div class="rsec"><div class="rhead"><h3>Closing the bar</h3><span>Tick these off in Checklist → Bar Closing</span></div>
+        <div class="rthree">
+          <div><div class="rcol" style="background:#4e3aa2">Paint</div><ul class="rlist"><li>All 32 oz bottles filled</li><li>All 64 oz bottles filled</li><li>Correct ratios used (scale)</li><li>All bottles shaken 30 sec each</li><li>Lids clean inside & outside</li><li>No crusty paint</li></ul></div>
+          <div><div class="rcol" style="background:#d6246e">Restock</div><ul class="rlist"><li>Cups: 3 · 9 · 16 · 20 oz</li><li>Gloves</li><li>Sticks (all sizes)</li><li>Napkins</li><li>Baby wipes</li></ul></div>
+          <div><div class="rcol" style="background:#1b9aaa">Clean</div><ul class="rlist"><li>Wipe bottles: damp microfiber + alcohol</li><li>Wipe bar surface: microfiber + alcohol</li><li>No paint stains, drips or mess</li></ul></div></div>
+        <div class="rstd"><div><b>Looks messy?</b> Clean it.</div><div><b>Feels low?</b> Refill it.</div></div></div>`;return}
   if(BSIDE==='resin'){B.innerHTML=`<div class="bwarn"><b>1:1 ratio, always.</b> Hardener first, then the same amount of epoxy. Parchment paper under every cup.</div>
     <div class="bcard"><h3>Per project (no batches)</h3><table class="rtab"><tr><th>Project</th><th>Total</th><th>Hardener + Epoxy</th></tr>${(BAR.resin||[]).map(r=>`<tr><td>${esc(r.name)}</td><td><b>${esc(r.total)}</b></td><td>${esc(r.mix)}</td></tr>`).join('')}</table></div>
     <div class="bbig"><div class="bcard"><h3>How to mix</h3><ol class="bsteps"><li>Place the cup on parchment paper</li><li>Add <b>HARDENER</b> first</li><li>Add <b>EPOXY</b> second, same amount</li><li>Mix 5–8 minutes (depends on hand speed)</li><li>Instructor checks every guest</li></ol></div>
@@ -723,7 +764,7 @@ function renderTray(){const T=$('btray');if(!T)return;const items=Object.values(
     ${half?`<p class="muted" style="margin:0 0 8px;font-size:13px">${half} of the small cups are half filled (coasters/tapas).</p>`:''}
     ${items.length?items.map(({p,n})=>`<div class="bline"><span class="bnm">${esc(p.name)}<small>${p.bg&&p.bg!=='N/A'?'Background: '+esc(p.bg)+' · ':''}Design: ${esc(p.design)}</small></span><button class="bqb" onclick="barQty('${esc(p.name).replace(/'/g,"\\'")}',-1)">−</button><span class="bqn">${n}</span><button class="bqb" onclick="barQty('${esc(p.name).replace(/'/g,"\\'")}',1)">+</button></div>`).join('')
       :'<p class="muted" style="font-size:14px;margin:6px 0 0">Tap the projects for this class. The cups add up here.</p>'}`}
-function barCalc(){const v=+$('bpm').value;$('bcalc').innerHTML=v>0?`${Math.round(v*1.5)}–${Math.round(v*2)} <small>mL pouring medium</small>`:''}
+function barCalc(){const v=+$('bpm').value;$('bcalc').innerHTML=v>0?`Add <b>${Math.round(v*1.5)}–${Math.round(v*2)} mL</b> pouring medium`:''}
 async function barTick(i){const t=BAR.tasks[i];if(!t)return;if(!BAR_LIVE)return toast('Paste the new Concierge.gs to turn on checking off',4000);
   let who=ME&&!ME.device?ME.name:barWho();if(!who)return;
   const on=!BAR.done[t.task];if(on)BAR.done[t.task]={by:who,at:new Date().toISOString()};else delete BAR.done[t.task];renderBar();
@@ -1386,7 +1427,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172026';
+const BUILD='202611172029';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
