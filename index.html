@@ -259,6 +259,8 @@
   .cnote{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .wide main{max-width:1320px}
   .slots{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.slots .chip{margin:0}
+  nav button span,.vt button{text-transform:uppercase;letter-spacing:.06em}.ttl{text-transform:uppercase;letter-spacing:.05em}
+  @media(max-width:600px){nav button span{font-size:10px;letter-spacing:.02em}.vt button{font-size:12px;letter-spacing:.03em;padding:10px 4px;white-space:nowrap}}
   .vt{display:flex;gap:6px;margin:0 0 10px}.vt button{flex:1;border:2px solid var(--line);background:#fff;border-radius:999px;font:700 15px Poppins;padding:10px;cursor:pointer;color:var(--muted)}.vt button.on{background:var(--purp);border-color:var(--purp);color:#fff}
   .wk{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:8px;overflow-x:auto;padding-bottom:6px}
   .wd{display:flex;flex-direction:column;gap:6px;min-width:130px}
@@ -476,7 +478,7 @@
 
   <section id="vConc" class="hide">
     <div class="card" style="padding-bottom:10px">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap"><b id="concTitle" style="font-size:20px">Concierge</b><span id="concProg" class="muted" style="font-size:14px"></span></div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap"><b id="concTitle" class="ttl" style="font-size:20px">Concierge</b><span id="concProg" class="muted" style="font-size:14px"></span></div>
       <div class="vt" style="margin:12px 0 4px"><button id="cvOpen" class="on" onclick="concSide('Opening')">Opening</button><button id="cvClose" onclick="concSide('Closing')">Closing</button><button id="cvFlow" onclick="concSide('Flow')">Class flow</button></div>
     </div>
     <div id="concList"><p class="muted">Loading…</p></div>
@@ -485,7 +487,7 @@
   <!-- PAINT BAR -->
   <section id="vBar" class="hide">
     <div class="card" style="padding-bottom:10px">
-      <b style="font-size:20px">Instructor</b>
+      <b class="ttl" style="font-size:20px">Instructor</b>
       <div class="vt bseg" style="margin:12px 0 4px"><button id="bsCups" onclick="barSide('cups')">Cups</button><button id="bsMix" onclick="barSide('mix')">Bar refill</button><button id="bsPaint" onclick="barSide('paint')">Paint types</button><button id="bsList" onclick="barSide('list')">Checklist</button></div>
     </div>
     <div id="barBody"><p class="muted">Loading…</p></div>
@@ -1429,7 +1431,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172033';
+const BUILD='202611172101';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
