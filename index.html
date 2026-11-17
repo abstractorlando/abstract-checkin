@@ -427,7 +427,7 @@
   <section id="vBar" class="hide">
     <div class="card" style="padding-bottom:10px">
       <b style="font-size:20px">Paint Bar</b>
-      <div class="vt bseg" style="margin:12px 0 4px"><button id="bsCups" onclick="barSide('cups')">Cups</button><button id="bsMix" onclick="barSide('mix')">Mix paint</button><button id="bsResin" onclick="barSide('resin')">Resin</button><button id="bsList" onclick="barSide('list')">Checklist</button></div>
+      <div class="vt bseg" style="margin:12px 0 4px"><button id="bsCups" onclick="barSide('cups')">Cups</button><button id="bsMix" onclick="barSide('mix')">Mix paint</button><button id="bsList" onclick="barSide('list')">Checklist</button></div>
     </div>
     <div id="barBody"><p class="muted">Loading…</p></div>
   </section>
@@ -611,7 +611,8 @@ function parseCups(t){const out=[];String(t||'').split(/\s*\+\s*/).forEach(p=>{c
 function cupShort(x){return [...parseCups(x.bg),...parseCups(x.design)].map(c=>c.n+' '+c.size+(c.half?' (½)':'')).join(' + ')}
 function barProjects(){const L=[];(BAR.cups||[]).forEach(x=>String(x.name).split(/\s*•\s*/).forEach(n=>{if(n.trim())L.push(Object.assign({},x,{name:n.trim()}))}));return L}
 function renderBar(){if(!BAR)return;const B=$('barBody');
-  ['cups','mix','resin','list'].forEach(k=>$('bs'+{cups:'Cups',mix:'Mix',resin:'Resin',list:'List'}[k]).classList.toggle('on',BSIDE===k));
+  if(BSIDE==='resin')BSIDE='cups';
+  ['cups','mix','list'].forEach(k=>$('bs'+{cups:'Cups',mix:'Mix',list:'List'}[k]).classList.toggle('on',BSIDE===k));
   if(BSIDE==='cups'){const P=barProjects(),groups=[...new Set(P.map(p=>p.group))];
     B.innerHTML=`<div class="bgrid"><div><input id="bq" type="search" placeholder="Find a project" oninput="barFilter()" style="width:100%;font-size:16px;padding:12px 14px;border:2px solid var(--line);border-radius:14px">
       ${groups.map(g=>`<div class="bgrp"><div class="bgh">${esc(g)}</div><div class="bchips">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="bchip${BTRAY[p.name]?' in':''}" data-n="${esc(p.name.toLowerCase())}" onclick="barAdd(${i})">${esc(p.name)}<small>${esc(cupShort(p))}</small></button>`).join('')}</div></div>`).join('')}</div>
@@ -1312,7 +1313,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611170121';
+const BUILD='202611171902';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
