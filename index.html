@@ -106,7 +106,10 @@
   .ctask.ok{background:#f3faf6;border-color:#cfe9db}.ctask.ok .ctx{color:#5b7a69}
   .cbox{flex:0 0 26px;height:26px;border:2px solid #c9c4dc;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}.ctask.ok .cbox{background:#1a8f5a;border-color:#1a8f5a}
   .ctx{flex:1;line-height:1.35}.cby{display:block;font-size:12px;color:var(--muted);margin-top:2px}.cday{font-size:11px;font-weight:700;color:#4e3aa2;background:#efeafc;border-radius:999px;padding:1px 8px;white-space:nowrap}
-  .cauto{display:block;font-size:12px;color:#1a8f5a;margin-top:3px}.cauto.warn{color:#b26a00}
+  .cauto{display:block;font-size:12px;color:#1a8f5a;margin-top:3px}
+  .cflow{display:flex;gap:12px;align-items:flex-start;background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 8px;font:500 15px Poppins,sans-serif;color:var(--ink)}
+  .cnum{flex:0 0 28px;height:28px;border-radius:50%;background:#efeafc;color:#4e3aa2;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+  .cdet{display:block;font-size:14px;color:var(--muted);margin-top:2px;font-weight:400}.cstd{background:#f7f4ff;border-radius:14px;padding:12px 14px;font-size:14px;color:#4e3aa2;margin-top:4px}.cauto.warn{color:#b26a00}
   .invr{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)}.invr input{width:86px;flex:0 0 86px;text-align:center}.invr input.low{border-color:#c40056;background:#fff0f6;color:#c40056;font-weight:700}
   .tag.GF{background:#0f8a6b;letter-spacing:.04em;font-size:10px;vertical-align:middle}
   .dep{display:inline-block;margin-top:4px;font-size:13px;font-weight:800;color:#fff;background:#0b7a3e;border-radius:8px;padding:3px 9px}.dep.fh{background:#fff4e6;color:#c2410c;border:2px solid #e8590c}
@@ -397,7 +400,7 @@
   <section id="vConc" class="hide">
     <div class="card" style="padding-bottom:10px">
       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap"><b id="concTitle" style="font-size:20px">Concierge</b><span id="concProg" class="muted" style="font-size:14px"></span></div>
-      <div class="vt" style="margin:12px 0 4px"><button id="cvOpen" class="on" onclick="concSide('Opening')">Opening</button><button id="cvClose" onclick="concSide('Closing')">Closing</button></div>
+      <div class="vt" style="margin:12px 0 4px"><button id="cvOpen" class="on" onclick="concSide('Opening')">Opening</button><button id="cvClose" onclick="concSide('Closing')">Closing</button><button id="cvFlow" onclick="concSide('Flow')">Class flow</button></div>
     </div>
     <div id="concList"><p class="muted">Loading…</p></div>
     <button class="btn ghost" id="invBtn" style="margin-top:14px" onclick="openInv()">Inventory</button>
@@ -567,6 +570,7 @@ function show(v){document.body.classList.toggle('wide',v==='sched'&&SVIEW==='wee
   if(v==='conc')loadConc();
 }
 /* ---------- Concierge: opening / closing checklist + inventory (lists live in the sheet tabs) ---------- */
+const FLOW_DEFAULT=[{"step": "Prepare tabs 45 minutes before class", "details": "In Toast, open a new tab on the buffer tables labeled “X” for every booking in the next class."}, {"step": "Guest count first", "details": "Enter the right guest count before you name the tab."}, {"step": "Name the tab", "details": "Use the guest’s first and last name exactly as it shows in the Manifest."}, {"step": "Read the booking note", "details": "Add anything from the note to the tab, like PLUS1, a birthday or wine."}, {"step": "Promotions", "details": "Apply a discount only when the guest really has one (BDAY, Golden Ticket, Groupon, etc.)."}, {"step": "Hold the tab", "details": "When the count, name and notes are right, press HOLD so the tab is ready when the guests arrive."}, {"step": "Move tabs once guests are seated", "details": "After orders are taken and guests are in the classroom, move each tab to the right table."}, {"step": "Right instructor", "details": "Make sure every tab is under the correct instructor/server in Toast."}, {"step": "Double check", "details": "Confirm discounts, drinks and any changes are applied correctly before moving on."}, {"step": "Talk to the instructor", "details": "Tell the instructor anything important about their tables or guests."}, {"step": "Reset for the next class", "details": "Go back to the “X” buffer tables and start the next class’s tabs right away."}, {"step": "Concierge standard", "details": "Stay ahead of the flow. Following these steps keeps the lobby smooth and every guest’s move between classes seamless."}];
 let CONC=null,CSIDE=null;
 async function loadConc(){
   if(!CSIDE)CSIDE=new Date().getHours()>=15?'Closing':'Opening';
@@ -577,7 +581,11 @@ function renderConc(){if(!CONC)return;const c=CONC,t0=new Date(c.date+'T12:00');
   $('concTitle').textContent='Concierge · '+t0.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
   const cnt=w=>{const L=c.tasks.filter(t=>t.when===w);return `${w} ${L.filter(t=>c.done[t.task]||concDoneAuto(t)).length}/${L.length}`};
   $('concProg').textContent=cnt('Opening')+' · '+cnt('Closing');
-  $('cvOpen').classList.toggle('on',CSIDE==='Opening');$('cvClose').classList.toggle('on',CSIDE==='Closing');
+  $('cvOpen').classList.toggle('on',CSIDE==='Opening');$('cvClose').classList.toggle('on',CSIDE==='Closing');$('cvFlow').classList.toggle('on',CSIDE==='Flow');
+  $('invBtn').classList.toggle('hide',CSIDE==='Flow');
+  if(CSIDE==='Flow'){const F=(c.flow&&c.flow.length?c.flow:FLOW_DEFAULT);let n=0;
+    $('concList').innerHTML=`<p class="muted" style="margin:0 0 10px;font-size:14px">The steps for every class. Nothing to check off, just follow along.</p>`+F.map(f=>/standard/i.test(f.step)?`<div class="cstd"><b>${esc(f.step)}</b><br>${esc(f.details)}</div>`
+      :`<div class="cflow"><span class="cnum">${++n}</span><span class="ctx"><b>${esc(f.step)}</b>${f.details?`<span class="cdet">${esc(f.details)}</span>`:''}</span></div>`).join('');return}
   const tm=iso=>new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
   $('concList').innerHTML=c.tasks.map((t,i)=>({t,i})).filter(x=>x.t.when===CSIDE).map(({t,i})=>{
     const d=c.done[t.task],ok=!!d||concDoneAuto(t);
@@ -597,18 +605,26 @@ async function openInv(){
   const m=document.createElement('div');m.className='modal';m.id='invModal';
   m.innerHTML=`<div class="mbox" style="text-align:left;max-width:520px;width:100%;max-height:90vh;overflow:auto"><b style="font-size:20px">Inventory</b><p class="muted" id="invSub" style="margin:4px 0 10px">Loading…</p><div id="invList"></div>
     <div style="display:flex;gap:8px;margin-top:14px;position:sticky;bottom:0;background:#fff;padding-top:8px"><button class="btn ghost" style="flex:1" onclick="softClose($('invModal'))">Close</button><button class="btn main" style="flex:1" id="invSave" onclick="saveInv()">Save count</button></div></div>`;
-  m.onclick=e=>{if(e.target===m)softClose(m)};document.body.appendChild(m);
+  m.onclick=e=>{if(e.target===m)m.querySelector('.mbox').animate([{transform:'scale(1)'},{transform:'scale(1.02)'},{transform:'scale(1)'}],{duration:180})};document.body.appendChild(m);
   try{INV=await call('invGet')}catch(e){$('invSub').textContent='Could not load: '+(e.message||e);return}
   $('invSub').textContent=(INV.lastAt?`Last count: ${new Date(INV.lastAt).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}${INV.lastBy?' by '+String(INV.lastBy).split(' ')[0]:''}. `:'')+'Type how many are on the shelf. Red means below PAR.';
   let cat='';$('invList').innerHTML=INV.items.map((x,i)=>{const h=x.cat!==cat?`<div class="ush" style="margin-top:12px">${esc(cat=x.cat)}</div>`:'';
     return h+`<div class="invr"><span><b>${esc(x.item)}</b><br><span class="muted" style="font-size:12px">PAR ${x.par}${x.last!==null?' · last '+x.last:''}${x.store?' · '+esc(x.store):''}</span></span><input type="number" inputmode="numeric" min="0" data-i="${i}" oninput="invMark(this)"></div>`}).join('');
-}
-function invMark(el){const x=INV.items[+el.dataset.i];el.classList.toggle('low',el.value!==''&&+el.value<x.par)}
+  invRestore()}
+const INV_DRAFT='abs_inv_draft';
+function invDraft(){const d={};$('invList').querySelectorAll('input').forEach(el=>{if(el.value!=='')d[INV.items[+el.dataset.i].item]=el.value});
+  try{Object.keys(d).length?localStorage.setItem(INV_DRAFT,JSON.stringify({day:today(),d})):localStorage.removeItem(INV_DRAFT)}catch(e){}
+  const m=$('invModal');if(m){if(Object.keys(d).length)m.dataset.dirty=1;else delete m.dataset.dirty}}
+function invMark(el){const x=INV.items[+el.dataset.i];el.classList.toggle('low',el.value!==''&&+el.value<x.par);invDraft()}
+function invRestore(){let r=null;try{r=JSON.parse(localStorage.getItem(INV_DRAFT)||'null')}catch(e){}
+  if(!r||r.day!==today())return;let n=0;$('invList').querySelectorAll('input').forEach(el=>{const v=r.d[INV.items[+el.dataset.i].item];if(v!==undefined){el.value=v;invMark(el);n++}});
+  if(n)toast(`Picked up where you left off (${n} counted)`,3500)}
+window.addEventListener('beforeunload',e=>{const m=$('invModal');if(m&&m.dataset.dirty){e.preventDefault();e.returnValue=''}});
 async function saveInv(){const counts={};let n=0;
   $('invList').querySelectorAll('input').forEach(el=>{if(el.value!==''){counts[INV.items[+el.dataset.i].item]=+el.value;n++}});
   if(!n)return toast('Enter at least one count');
   const btn=$('invSave');btn.disabled=true;
-  try{INV=await call('invSave',counts);$('invModal').remove();toast('Count saved ✓',3000);
+  try{INV=await call('invSave',counts);try{localStorage.removeItem(INV_DRAFT)}catch(e){}$('invModal').remove();toast('Count saved ✓',3000);
     const low=INV.items.filter(x=>x.last!==null&&x.last<x.par);showShopping(low);loadConc()}
   catch(e){btn.disabled=false;toast('Could not save: '+(e.message||e),5000)}}
 function showShopping(low){const by={};low.forEach(x=>{(by[x.store||'Other']=by[x.store||'Other']||[]).push(x)});
@@ -1187,7 +1203,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611162358';
+const BUILD='202611170007';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1407,7 +1423,7 @@ function askText(msg,val,o){o=o||{};return new Promise(res=>{
 })}
 /* tapping outside a box closes it, but asks first if something was typed in it */
 document.addEventListener('input',e=>{const t=e.target,m=t.closest&&t.closest('.modal');if(m&&t.type!=='search')m.dataset.dirty='1'},true);
-function softClose(m){if(m.dataset.dirty&&!confirm('Close this? What you typed will be lost.'))return;m.remove()}
+function softClose(m){if(m.dataset.dirty&&!confirm(m.id==='invModal'?'Leave the inventory? Your counts so far are kept on this device until you save.':'Close this? What you typed will be lost.'))return;m.remove()}
 /* ---------- staff: add a booking ---------- */
 function openAddBooking(date,time){
   date=date||$('dt').value||today();AB_G=null;
