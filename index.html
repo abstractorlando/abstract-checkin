@@ -135,6 +135,14 @@
   .pbt{font:700 18px Poppins,sans-serif;color:var(--ink);margin:2px 0 10px}.pcups{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}
   .pclose{display:none;position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:50%;border:0;background:var(--soft);font:700 22px Poppins;color:var(--ink);cursor:pointer}
   @media(max-width:759px){.pdet{display:none;position:fixed;left:0;right:0;bottom:0;z-index:20;max-height:80vh;overflow:auto;border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(20,10,60,.25);padding-bottom:calc(24px + env(safe-area-inset-bottom))}.pdet.open{display:block}.pclose{display:block}}
+  .pnames{display:grid !important;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+  .pbtn{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;text-align:left;min-height:64px;text-transform:uppercase;letter-spacing:.04em;font-size:15px;line-height:1.15;padding:10px 12px}
+  .pbtn small{display:block;font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--muted);margin-top:2px}.pbtn.on small{color:#e3dcff}
+  .pdots{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}.pdots i{width:8px;height:8px;border-radius:50%}.pdots i.pd-Medium{width:10px;height:10px}.pdots i.pd-Large{width:12px;height:12px}.pdots i.pd-XL{width:13px;height:13px}
+  .pd-Small{background:#1b9aaa}.pd-Medium{background:#e8890c}.pd-Large{background:#d6246e}.pd-XL{background:#4e3aa2}.pbtn.on .pdots i{box-shadow:0 0 0 1.5px #fff}
+  .pdots{align-items:center}
+  .pch{display:flex;align-items:center;gap:8px}.pch span{font-size:11px;letter-spacing:0;background:#efeafc;color:#4e3aa2;border-radius:999px;padding:1px 8px}
+  .pname{text-transform:uppercase;letter-spacing:.02em;line-height:1.05}.pname small{display:block;font-size:14px;color:var(--muted);letter-spacing:.06em;margin-top:4px}
   .bgrid{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:760px){.bgrid{grid-template-columns:1fr 300px;align-items:start}.btray{position:sticky;top:12px}}@media(min-width:1100px){.bgrid{grid-template-columns:1fr 360px}}@media(max-width:759px){.btray{order:-1}}@media(max-width:640px){.bseg button{font-size:13px;padding-left:4px;padding-right:4px;white-space:nowrap}}
   .bgh{font:700 12px Poppins,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4e3aa2;margin:14px 2px 8px}
   .bchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -641,7 +649,7 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
   if(BSIDE==='resin')BSIDE='cups';
   ['cups','mix','list'].forEach(k=>$('bs'+{cups:'Cups',mix:'Mix',list:'List'}[k]).classList.toggle('on',BSIDE===k));
   if(BSIDE==='cups'){const P=barProjects(),groups=[...new Set(P.map(p=>p.group))];
-    B.innerHTML=`<div class="pgrid"><div class="plist">${groups.map(g=>`<div class="pcat"><div class="pch">${esc(g)}</div><div class="pnames">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="pbtn${BSEL===p.name?' on':''}" onclick="barPick(${i})">${esc(p.name)}</button>`).join('')}</div></div>`).join('')}</div>
+    B.innerHTML=`<div class="pgrid"><div class="plist">${groups.map(g=>`<div class="pcat"><div class="pch">${esc(g)}<span>${P.filter(x=>x.group===g).length}</span></div><div class="pnames">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="pbtn${BSEL===p.name?' on':''}" data-n="${esc(p.name)}" onclick="barPick(${i})">${pName(p.name)}<span class="pdots">${[...parseCups(p.bg),...parseCups(p.design)].map(c=>Array.from({length:c.n},()=>`<i class="pd-${c.size}"></i>`).join('')).join('')}</span></button>`).join('')}</div></div>`).join('')}</div>
       <div class="pdet" id="pdet"></div></div>`;renderPick();return}
   if(BSIDE==='mix'){B.innerHTML=`<div class="bwarn"><b>Always use the scale. Never guess.</b> If paint and medium aren't fully blended, the paint cracks when it dries.</div>
     <div class="bbig"><div class="bcard"><h3>Full refill · 64 oz bottle</h3><div class="bnum">900 <small>mL paint</small></div><div class="bnum">1300 <small>mL pouring medium</small></div></div>
@@ -665,6 +673,8 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
       return `<button type="button" class="ctask${d?' ok':''}" onclick="barTick(${i})"><span class="cbox">${d?'✓':''}</span><span class="ctx">${esc(t.task)}${t.days?` <span class="cday">${esc(t.days.replace(/,/g,' & '))} only</span>`:''}${d?`<span class="cby">${esc(String(d.by).split(' ')[0])} · ${tm(d.at)}</span>`:''}</span></button>`}).join('')}`}
 function barJump(g){const el=$('xg-'+g.replace(/\W/g,''));if(el)window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-130,behavior:'smooth'})}
 let BSEL=null;
+// name in caps; a size or (note) after the name goes on a smaller second line
+function pName(n){const m=/^(.*?)\s+(\(.*\)|\d.*)$/.exec(n);return m?`${esc(m[1])}<small>${esc(m[2].replace(/^\(|\)$/g,''))}</small>`:esc(n)}
 const CUPDIM={Small:{h:74,w:58,oz:3,c:'#1b9aaa'},Medium:{h:112,w:78,oz:9,c:'#e8890c'},Large:{h:140,w:90,oz:16,c:'#d6246e'},XL:{h:160,w:100,oz:20,c:'#4e3aa2'}};
 function cupSvg(size,half){const d=CUPDIM[size],W=d.w,H=d.h,t=6,inset=Math.round(W*.14),fy=half?H*.55:H*.16;
   return `<svg width="${W+8}" height="${H+10}" viewBox="-4 -6 ${W+8} ${H+10}" aria-hidden="true"><defs><clipPath id="cl${size}${half?'h':''}"><path d="M0 0 L${W} 0 L${W-inset} ${H} L${inset} ${H} Z"/></clipPath></defs>
@@ -678,11 +688,11 @@ function cupSvg(size,half){const d=CUPDIM[size],W=d.w,H=d.h,t=6,inset=Math.round
 function cupBlock(text,label,upTo){const C=parseCups(text);if(!C.length)return '';
   return C.map(c=>`<div class="pblk"><div class="pbl">${label}</div><div class="pbt">${upTo&&c.n>1?'Up to ':''}${c.n} ${c.size==='XL'?'XL':c.size.toLowerCase()} cup${c.n>1?'s':''} · ${CUPDIM[c.size].oz} oz${c.half?' · half filled':''}</div>
     <div class="pcups">${Array.from({length:c.n},()=>cupSvg(c.size,c.half)).join('')}</div></div>`).join('')}
-function barPick(i){const p=barProjects()[i];BSEL=p.name;document.querySelectorAll('#barBody .pbtn').forEach(b=>b.classList.toggle('on',b.textContent===p.name));renderPick();
+function barPick(i){const p=barProjects()[i];BSEL=p.name;document.querySelectorAll('#barBody .pbtn').forEach(b=>b.classList.toggle('on',b.dataset.n===p.name));renderPick();
   if(window.innerWidth<760){const d=$('pdet');if(d)d.classList.add('open')}}
 function renderPick(){const D=$('pdet');if(!D)return;const p=barProjects().find(x=>x.name===BSEL);
   if(!p){D.innerHTML='<div class="pempty">Tap a project to see its cups</div>';return}
-  D.innerHTML=`<button class="pclose" onclick="$('pdet').classList.remove('open')" aria-label="Close">×</button><div class="pgh">${esc(p.group)}</div><div class="pname">${esc(p.name)}</div>
+  D.innerHTML=`<button class="pclose" onclick="$('pdet').classList.remove('open')" aria-label="Close">×</button><div class="pgh">${esc(p.group)}</div><div class="pname">${pName(p.name)}</div>
     ${p.bg&&p.bg!=='N/A'?cupBlock(p.bg,'Background',false):''}${cupBlock(p.design,'Design colors',true)}`}
 function barFilter(){const q=$('bq').value.trim().toLowerCase();document.querySelectorAll('#barBody .bchip').forEach(b=>b.classList.toggle('hide',!!q&&!b.dataset.n.includes(q)));
   document.querySelectorAll('#barBody .bgrp').forEach(g=>g.classList.toggle('hide',!g.querySelector('.bchip:not(.hide)')))}
@@ -1360,7 +1370,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172007';
+const BUILD='202611172008';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
