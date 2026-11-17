@@ -18,7 +18,7 @@
   *{box-sizing:border-box}
   body{margin:0;font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--soft)}
   header{background:var(--purp);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-  header h1{margin:0;font-size:20px;font-weight:700}
+  header h1{margin:0;font-size:20px;font-weight:700;line-height:1.1}header h1 .hbr{display:block;font:600 10px Poppins,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#cfc6f5;margin:0 0 2px 1px}
   nav{display:flex;gap:6px}
   nav button{background:transparent;border:2px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;padding:8px 14px;font:600 14px Poppins;cursor:pointer;min-height:40px}
   nav button.on{background:#fff;color:var(--purp);border-color:#fff}
@@ -198,7 +198,7 @@
   /* phones: tighter, so a whole day fits on screen */
   @media (max-width:640px){
     header{flex-wrap:nowrap;padding:calc(8px + env(safe-area-inset-top)) 12px 8px}
-    header h1{font-size:17px;white-space:nowrap}header h1 .hb{display:none}
+    header h1{font-size:17px;white-space:nowrap}header h1 .hbr{display:none}
     .gear{width:36px;height:36px;font-size:16px}.gear.who{font-size:13px;padding:0 10px;height:36px}
     .card{padding:12px}
     .daynav .btn{min-width:38px;min-height:40px}.daynav .today{font-size:14px;padding:6px 10px}
@@ -295,7 +295,7 @@
 </head>
 <body>
 <header>
-  <h1><span class="hb">Abstract </span>Check-In</h1>
+  <h1><span class="hbr">Abstract Orlando</span>Check-In</h1>
   <button class="gear" onclick="goSearch()" aria-label="Search everything" title="Search everything: bookings, art on the shelf, past visits">🔍</button>
   <button class="gear bell" id="bellBtn" onclick="openBell()" aria-label="New bookings" title="New bookings">🔔<span id="bellN" class="bn hide"></span></button>
   <button class="gear" onclick="openGift()" aria-label="Gift cards" title="Check a gift card">🎁</button>
@@ -1222,7 +1222,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611170035';
+const BUILD='202611170041';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
