@@ -662,7 +662,7 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
       <div><b>Tempera</b> Water-based and thinner, more see-through, with a beautiful sheen in a pour. Flows freely.</div>
       <div><b>Pouring medium</b> Every color is mixed with it. Paint alone won't flow. Follow the mix recipe when filling bottles.</div></div>
       <p class="muted" style="font-size:12px;margin:8px 2px">The name in bold is the menu name. The small name is the brand's paint name, for reordering.</p>`;return}
-  if(BSIDE==='cups'){const P=barProjects(),groups=[...new Set(P.map(p=>p.group))];
+  if(BSIDE==='cups'){const P=barProjects(),ORD=['sculptures','table decor','canvas','cutouts'],rk=g=>{const i=ORD.indexOf(g.toLowerCase());return i<0?99:i},groups=[...new Set(P.map(p=>p.group))].sort((a,b)=>rk(a)-rk(b));
     B.innerHTML=`<div class="pgrid"><div class="plist">${groups.map(g=>`<div class="pcat"><div class="pch">${esc(g)}<span>${P.filter(x=>x.group===g).length}</span></div><div class="pnames">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="pbtn${BSEL===p.name?' on':''}" data-n="${esc(p.name)}" onclick="barPick(${i})">${pName(p.name)}<span class="pdots">${[...parseCups(p.bg),...parseCups(p.design)].map(c=>Array.from({length:c.n},()=>`<i class="pd-${c.size}"></i>`).join('')).join('')}</span></button>`).join('')}</div></div>`).join('')}</div>
       <div class="pdet" id="pdet"></div></div>`;renderPick();return}
   if(BSIDE==='mix'){B.innerHTML=`<div class="bwarn"><b>Always use the scale. Never guess.</b> If paint and medium aren't fully blended, the paint cracks when it dries.</div>
@@ -1386,7 +1386,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172020';
+const BUILD='202611172022';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
