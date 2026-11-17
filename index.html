@@ -691,11 +691,11 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
   if(BSIDE==='paint'){const col=(t,L,cls,sub)=>`<div class="tcol ${cls}"><div class="tch"><b>${t}</b><span>${sub}</span></div>${[...L].sort((x,y)=>x[0].localeCompare(y[0])).map(([n,b])=>`<div class="trow" data-n="${esc((n+' '+b).toLowerCase())}"><b>${esc(n)}</b>${b?`<small>${esc(b)}</small>`:''}</div>`).join('')}</div>`;
     B.innerHTML=`
       <div class="tinfo">
-        <div class="ti tcl"><b>Latex</b><span>The tints · cans</span><p>Higher natural coverage. Rich and opaque straight from the can. Each color has its own behavior, you'll get to know them with practice. Sourced from Sherwin-Williams, metallics from PPG.</p></div>
+        <div class="ti tcl"><b>Latex</b><span>The tints · cans</span><p>Higher natural coverage. Rich and opaque straight from the can. Each color has its own behavior, you'll get to know them with practice. Sourced from Sherwin-Williams. Rose, Blush, Mint and Night come from PPG.</p></div>
         <div class="ti tct"><b>Tempera</b><span>The plastic jugs</span><p>Water-based, lower coverage. Thinner and more translucent by nature, giving a beautiful sheen in fluid art. Colors flow freely, perfect for stunning pours. All neon colors are tempera.</p></div>
         <div class="ti tcm"><b>Pouring medium</b><span>Goes in every color</span><p>Makes fluid art possible. Paint alone won't give the fluid effect. Pouring medium thins the paint to the right consistency for those beautiful fluid mixes. Each color has its own formula, so follow the Bar refill recipe when filling up.</p></div></div>
       <input id="tq" type="search" placeholder="Find a color" oninput="paintFilter()" style="width:100%;font-size:17px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;margin-bottom:12px">
-      <div class="tgrid">${col('Latex',PAINT_LATEX,'tcl','Tints · the cans · Sherwin-Williams (metallics from PPG)')}${col('Tempera',PAINT_TEMPERA,'tct','The plastic jugs · all neons are tempera')}</div>
+      <div class="tgrid">${col('Latex',PAINT_LATEX,'tcl','Tints · the cans · Sherwin-Williams (Rose, Blush, Mint and Night from PPG)')}${col('Tempera',PAINT_TEMPERA,'tct','The plastic jugs · all neons are tempera')}</div>
       
       <p class="muted" style="font-size:12px;margin:8px 2px">The name in bold is the menu name. The small name is the brand's paint name, for reordering.</p>`;return}
   if(BSIDE==='cups'){const P=barProjects(),ORD=['sculptures','table decor','canvas','cutouts'],rk=g=>{const i=ORD.indexOf(g.toLowerCase());return i<0?99:i},groups=[...new Set(P.map(p=>p.group))].sort((a,b)=>rk(a)-rk(b));
@@ -1460,7 +1460,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172147';
+const BUILD='202611172200';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
