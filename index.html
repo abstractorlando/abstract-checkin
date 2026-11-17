@@ -171,6 +171,12 @@
   @media(max-width:700px){.rtwo,.rthree,.rlow,.rstd{grid-template-columns:1fr}}
   .supgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}.suplow{background:#ffe3f0;border:2px solid #f48fbf;border-radius:14px;padding:10px 12px}.suplow b{display:block;font-size:15px}.suplow span{display:block;font-size:13px;color:#a0104f;font-weight:700}.suplow small{font-size:11px;color:var(--muted)}
   .supcats{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}.supcats div{background:#f6f3ff;border-radius:12px;padding:10px 12px}.supcats b{display:block;text-transform:uppercase;letter-spacing:.05em;font-size:13px;color:#4e3aa2}.supcats span{font-size:12px;color:var(--muted)}
+  .gtbars{display:flex;gap:6px;align-items:flex-end;background:#fff;border:2px solid var(--line);border-radius:16px;padding:12px 10px 8px}
+  .gtb{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;cursor:pointer;padding:4px 0;border-radius:10px;font-family:Poppins,sans-serif}
+  .gtb.on{background:#fff8e6}.gtn{font-weight:800;font-size:14px;color:var(--ink)}.gtbar{width:70%;max-width:42px;border-radius:6px 6px 2px 2px;background:#f4b942}.gtb.on .gtbar{background:#d99a12}.gtl{font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .gtsum{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;margin:10px 0}.gtsum>div:first-child b{font-size:30px;font-weight:800;color:#b8860b;margin-right:8px}.gtsum span{font-size:13px}
+  .gtby{display:inline-block;background:#fff8e6;border:1.5px solid #f2c94c;border-radius:999px;padding:3px 10px;margin:2px;font-size:13px}
+  .gtlist{background:#fff;border:2px solid var(--line);border-radius:14px}.gtlist>div{padding:9px 12px;border-top:1px solid var(--line);font-size:14px}.gtlist>div:first-child{border-top:0}.gtlist small{display:block;color:var(--muted);font-size:12px}
   .bgrid{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:760px){.bgrid{grid-template-columns:1fr 300px;align-items:start}.btray{position:sticky;top:12px}}@media(min-width:1100px){.bgrid{grid-template-columns:1fr 360px}}@media(max-width:759px){.btray{order:-1}}@media(max-width:640px){.bseg button{font-size:13px;padding-left:4px;padding-right:4px;white-space:nowrap}}
   .bgh{font:700 12px Poppins,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4e3aa2;margin:14px 2px 8px}
   .bchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -519,6 +525,7 @@
 <div id="setModal" class="modal hide"><div class="mbox" style="text-align:left">
   <div id="teamBox"></div>
   <div id="projBox"></div>
+  <div id="gtBox"></div>
   <div id="gfBox"></div>
   <div id="ownerSet">
   </div>
@@ -1053,7 +1060,7 @@ async function sendToPrinter(){
 }
 function openSettings(){const own=!!(ME&&ME.owner);$('ownerSet').classList.toggle('hide',!own);
   $('setModal').classList.remove('hide');loadTeam()}
-async function loadTeam(){const box=$('teamBox');box.innerHTML='';$('gfBox').innerHTML='';if(!PROJECTS)await loadProjects();setTimeout(renderProjBox,0);setTimeout(()=>{if(ME&&ME.owner)loadGiftory()},0);
+async function loadTeam(){const box=$('teamBox');box.innerHTML='';$('gfBox').innerHTML='';$('gtBox').innerHTML='';if(!PROJECTS)await loadProjects();setTimeout(renderProjBox,0);setTimeout(()=>{if(ME&&ME.owner){loadGiftory();loadGolden()}},0);
   try{ME=await call('whoAmI')}catch(e){return}
   const mail=ME.owner&&typeof ME.emailsLeft==='number'?`<p class="muted" style="margin:6px 0 0;font-size:14px">Emails Google lets us send today: <b>${ME.emailsLeft}</b> left</p>`:'';
   if(!ME.owner){box.innerHTML=`<h2 style="margin:26px 0 6px">Signed in</h2><p style="margin:0">${esc(ME.name)}${ME.device?' <span class="muted" style="font-size:13px">(shared studio iPad)</span>':''} <button class="tl" onclick="$('setModal').classList.add('hide');switchUser()">${ME.device?'Sign out':'Switch'}</button></p>${mail}`;return}
@@ -1083,6 +1090,23 @@ function renderProjBox(){const box=$('projBox');if(!ME||!ME.owner||!PROJECTS){bo
       <button class="btn main" style="width:auto;padding:0 18px" onclick="if($('pjNew').value.trim()){PROJECTS.push({name:$('pjNew').value.trim(),cat:$('pjCat').value.trim()||'Other',home:false});saveProjList()}">Add</button></div>`}
 /* ---------- Giftory (owners): booking link + monthly list to check against their payment on the 15th ---------- */
 let GFM=null;
+/* Golden tickets issued per week (owners, Settings) */
+let GTR=null,GTW=0;
+async function loadGolden(){const box=$('gtBox');if(!box)return;
+  try{GTR=await call('goldenReport')}catch(e){box.innerHTML='';return}GTW=0;renderGolden()}
+function renderGolden(){const box=$('gtBox');if(!box||!GTR)return;
+  const fd=d=>new Date(d+'T12:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  // this week first, even if nothing was issued yet
+  const now=new Date(),mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7)),ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const W=[];for(let i=0;i<6;i++){const a=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()-7*i),k=ymd(a);W.push(GTR.find(w=>w.start===k)||{start:k,end:ymd(new Date(a.getFullYear(),a.getMonth(),a.getDate()+6)),count:0,by:{},list:[]})}
+  const max=Math.max(1,...W.map(w=>w.count)),w=W[GTW],total=GTR.reduce((n,x)=>n+x.count,0);
+  box.innerHTML=`<h2 style="margin:26px 0 6px">Golden tickets</h2>
+    <p class="muted" style="margin:0 0 10px">How many were issued each week (Mon–Sun). A reprint of the same guest's ticket counts once. Tap a week to see who got one.</p>
+    <div class="gtbars">${W.slice().reverse().map((x,j)=>{const i=W.length-1-j;return `<button class="gtb${i===GTW?' on':''}" onclick="GTW=${i};renderGolden()"><span class="gtn">${x.count}</span><span class="gtbar" style="height:${Math.round(6+x.count/max*84)}px"></span><span class="gtl">${i===0?'This week':fd(x.start)}</span></button>`}).join('')}</div>
+    <div class="gtsum"><div><b>${w.count}</b><span>${GTW===0?'this week':'week of '+fd(w.start)} · ${fd(w.start)}–${fd(w.end)}</span></div>
+      <div>${Object.keys(w.by).length?Object.entries(w.by).sort((a,b)=>b[1]-a[1]).map(([n,c])=>`<span class="gtby">${esc(String(n).split(' ')[0])} <b>${c}</b></span>`).join(''):'<span class="muted">None issued</span>'}</div></div>
+    ${w.list.length?`<div class="gtlist">${w.list.map(t=>`<div><b>${esc(t.guest)}</b> <span class="muted">· ${esc(t.party)}</span><small>${new Date(t.issued.replace(' ','T')).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})} · by ${esc(String(t.by).split(' ')[0])} · expires ${esc(t.expires)}</small></div>`).join('')}</div>`:''}
+    <p class="muted" style="font-size:12px;margin:8px 0 0">${total} issued in total since tracking started.</p>`}
 async function loadGiftory(ym){const box=$('gfBox');if(!box)return;
   try{GFM=await call('giftoryMonth',ym||'')}catch(e){box.innerHTML='';return}
   const m=GFM,[Y,Mo]=m.month.split('-').map(Number),shift=k=>{const d=new Date(Y,Mo-1+k,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
@@ -1460,7 +1484,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172202';
+const BUILD='202611172217';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
