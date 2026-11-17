@@ -107,6 +107,8 @@
   .cbox{flex:0 0 26px;height:26px;border:2px solid #c9c4dc;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}.ctask.ok .cbox{background:#1a8f5a;border-color:#1a8f5a}
   .ctx{flex:1;line-height:1.35}.cby{display:block;font-size:12px;color:var(--muted);margin-top:2px}.cday{font-size:11px;font-weight:700;color:#4e3aa2;background:#efeafc;border-radius:999px;padding:1px 8px;white-space:nowrap}
   .cauto{display:block;font-size:12px;color:#1a8f5a;margin-top:3px}
+  .ctoday{background:#fff8e6;border:2px solid #f2c94c;border-radius:16px;padding:12px 12px 4px;margin:0 0 14px}.ctoday>b{display:block;font-size:15px;color:#8a5a00;margin:0 2px 8px}
+  .ctoday .ctask{border-color:#f5dc8f}.tabn{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:999px;background:#c40056;color:#fff;font:700 11px Poppins,sans-serif;padding:0 5px;margin-left:5px;vertical-align:middle}
   .cflow{display:flex;gap:12px;align-items:flex-start;background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 8px;font:500 15px Poppins,sans-serif;color:var(--ink)}
   .cnum{flex:0 0 28px;height:28px;border-radius:50%;background:#efeafc;color:#4e3aa2;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
   .cdet{display:block;font-size:14px;color:var(--muted);margin-top:2px;font-weight:400}.cstd{background:#f7f4ff;border-radius:14px;padding:12px 14px;font-size:14px;color:#4e3aa2;margin-top:4px}.cauto.warn{color:#b26a00}
@@ -305,7 +307,7 @@
     <button id="tabFind" onclick="show('find')"><i>⌂</i><span>Pickup</span></button>
     <button id="tabShip" onclick="show('ship')"><i>📦</i><span>Shipping<b id="shipBadge" class="tbadge hide"></b></span></button>
     <button id="tabSched" onclick="show('sched')"><i>▦</i><span>Schedule</span></button>
-    <button id="tabConc" class="hide" onclick="show('conc')"><i>✓</i><span>Concierge</span></button>
+    <button id="tabConc" class="hide" onclick="show('conc')"><i>✓</i><span>Concierge</span><b id="concN" class="tabn hide"></b></button>
   </nav>
 </header>
 
@@ -520,6 +522,7 @@ function askPin(wrong){if(asking)return;asking=true;
 let ME=null;
 async function loadMe(){if(!PIN)return;try{ME=await call('whoAmI')}catch(e){return}idleCheck();if(!ME)return;
   $('tabConc').classList.toggle('hide',!!ME.device);   // classroom iPads don't need it
+  if(!ME.device)setTimeout(()=>{if(!CONC)loadConc()},2500);   // so the tab can show today's special tasks
   $('whoBtn').textContent=ME.device?'🏫 '+String(ME.name).replace(/^Classroom /,''):'👤 '+String(ME.name).split(' ')[0];$('whoBtn').classList.remove('hide');showMailLeft(ME.owner?ME.emailsLeft:null)}
 /* Personal sign-ins (everyone except the classroom iPads) sign out on their own after 3 hours with no
    activity, and overnight, so the next person never works under someone else's name. */
@@ -581,20 +584,24 @@ function renderConc(){if(!CONC)return;const c=CONC,t0=new Date(c.date+'T12:00');
   $('concTitle').textContent='Concierge · '+t0.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
   const cnt=w=>{const L=c.tasks.filter(t=>t.when===w);return `${w} ${L.filter(t=>c.done[t.task]||concDoneAuto(t)).length}/${L.length}`};
   $('concProg').textContent=cnt('Opening')+' · '+cnt('Closing');
+  const left=c.tasks.filter(t=>t.days&&!c.done[t.task]&&!concDoneAuto(t)).length;$('concN').textContent=left;$('concN').classList.toggle('hide',!left);$('concN').title=left+' task'+(left>1?'s':'')+' just for today';
   $('cvOpen').classList.toggle('on',CSIDE==='Opening');$('cvClose').classList.toggle('on',CSIDE==='Closing');$('cvFlow').classList.toggle('on',CSIDE==='Flow');
   $('invBtn').classList.toggle('hide',CSIDE==='Flow');
   if(CSIDE==='Flow'){const F=(c.flow&&c.flow.length?c.flow:FLOW_DEFAULT);let n=0;
     $('concList').innerHTML=`<p class="muted" style="margin:0 0 10px;font-size:14px">The steps for every class. Nothing to check off, just follow along.</p>`+F.map(f=>/standard/i.test(f.step)?`<div class="cstd"><b>${esc(f.step)}</b><br>${esc(f.details)}</div>`
       :`<div class="cflow"><span class="cnum">${++n}</span><span class="ctx"><b>${esc(f.step)}</b>${f.details?`<span class="cdet">${esc(f.details)}</span>`:''}</span></div>`).join('');return}
   const tm=iso=>new Date(iso).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-  $('concList').innerHTML=c.tasks.map((t,i)=>({t,i})).filter(x=>x.t.when===CSIDE).map(({t,i})=>{
+  const row=({t,i})=>{
     const d=c.done[t.task],ok=!!d||concDoneAuto(t);
     let auto='';
     if(t.auto==='projects'||t.auto==='checkins'){const L=c.auto[t.auto]||[];
       auto=L.length?`<span class="cauto warn">${L.length} ${t.auto==='projects'?'part'+(L.length>1?'ies':'y')+' with no projects':'booking'+(L.length>1?'s':'')+' not checked in'}: ${L.map(esc).join(', ')}</span>`:`<span class="cauto">Nothing missing right now</span>`}
     if(t.auto==='inventory')auto=`<span class="cauto">${ok?'Counted today':'<a href="#" onclick="event.stopPropagation();openInv();return false">Open inventory</a>'}</span>`;
     return `<button type="button" class="ctask${ok?' ok':''}" onclick="concTick(${i})"><span class="cbox">${ok?'✓':''}</span><span class="ctx">${esc(t.task)}${t.days?` <span class="cday">${esc(t.days.replace(/,/g,' & '))} only</span>`:''}
-      ${d?`<span class="cby">${esc(String(d.by).split(' ')[0])} · ${tm(d.at)}</span>`:''}${auto}</span></button>`}).join('')||'<p class="muted">Nothing on this list today.</p>';
+      ${d?`<span class="cby">${esc(String(d.by).split(' ')[0])} · ${tm(d.at)}</span>`:''}${auto}</span></button>`};
+  const all=c.tasks.map((t,i)=>({t,i})),special=all.filter(x=>x.t.days),dayName=t0.toLocaleDateString('en-US',{weekday:'long'});
+  const box=special.length?`<div class="ctoday"><b>Today only (${dayName}). Don't forget:</b>${special.map(row).join('')}</div>`:'';
+  $('concList').innerHTML=box+(all.filter(x=>x.t.when===CSIDE&&!x.t.days).map(row).join('')||'<p class="muted">Nothing on this list today.</p>');
   $('invBtn').textContent=c.dow==='Sat'?'Inventory (Saturday count)':'Inventory';$('invBtn').classList.toggle('main',c.dow==='Sat');$('invBtn').classList.toggle('ghost',c.dow!=='Sat');
 }
 async function concTick(i){const t=CONC.tasks[i];if(!t)return;if(t.auto==='inventory'&&!CONC.done[t.task]){openInv();return}
@@ -1203,7 +1210,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611170007';
+const BUILD='202611170022';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
