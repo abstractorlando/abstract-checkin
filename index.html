@@ -128,8 +128,8 @@
   .pnames{display:flex;flex-wrap:wrap;gap:8px}
   .pbtn{padding:10px 16px;border-radius:12px;border:2px solid var(--line);background:#fff;font:700 16px Poppins,sans-serif;color:var(--ink);cursor:pointer}
   .pbtn.on{background:#4e3aa2;border-color:#4e3aa2;color:#fff}
-  .pdet{background:#fff;border:2px solid var(--line);border-radius:18px;padding:18px;min-height:260px;position:relative}@media(min-width:760px){.pdet{position:sticky;top:12px}}
-  .pempty{color:var(--muted);text-align:center;padding:90px 10px;font-size:16px}
+  .pdet{background:#fff;border:2px solid var(--line);border-radius:18px;padding:18px;min-height:0;position:relative}@media(min-width:760px){.pdet{position:sticky;top:12px}}
+  .pempty{color:var(--muted);text-align:center;padding:34px 10px;font-size:16px}
   .pgh{font:800 12px Poppins,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.pname{font:800 30px Poppins,sans-serif;color:var(--ink);margin:2px 0 6px}
   .pblk{border-top:1px solid var(--line);padding:14px 0 6px}.pbl{font:800 12px Poppins,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#4e3aa2}
   .pbt{font:700 18px Poppins,sans-serif;color:var(--ink);margin:2px 0 10px}.pcups{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}
@@ -177,6 +177,13 @@
   .gtsum{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;margin:10px 0}.gtsum>div:first-child b{font-size:30px;font-weight:800;color:#b8860b;margin-right:8px}.gtsum span{font-size:13px}
   .gtby{display:inline-block;background:#fff8e6;border:1.5px solid #f2c94c;border-radius:999px;padding:3px 10px;margin:2px;font-size:13px}
   .gtlist{background:#fff;border:2px solid var(--line);border-radius:14px}.gtlist>div{padding:9px 12px;border-top:1px solid var(--line);font-size:14px}.gtlist>div:first-child{border-top:0}.gtlist small{display:block;color:var(--muted);font-size:12px}
+  .pcol{display:flex;flex-direction:column;gap:14px;min-width:0}.pdet{z-index:2}
+  .ppal{background:#fff;border:2px solid var(--line);border-radius:18px;padding:16px 16px 8px}
+  .prow{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px solid var(--line)}.prow:nth-of-type(odd){background:#faf9fd}
+  .pnum{flex:0 0 26px;height:26px;border-radius:50%;background:#4e3aa2;color:#fff;font:800 13px Poppins,sans-serif;display:flex;align-items:center;justify-content:center}
+  .psw{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px}.psw i{width:30px;height:30px;border-radius:50%;border:1.5px solid #c9c6d3;display:block}.psw.big i{width:38px;height:38px}
+  .psw em{font-style:normal;font:700 9.5px Poppins,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#5d5a6b;text-align:center;line-height:1.1}.psw.big em{color:#4e3aa2}
+  .pdiv{width:1px;align-self:stretch;background:var(--line);margin:0 2px}
   .bgrid{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:760px){.bgrid{grid-template-columns:1fr 300px;align-items:start}.btray{position:sticky;top:12px}}@media(min-width:1100px){.bgrid{grid-template-columns:1fr 360px}}@media(max-width:759px){.btray{order:-1}}@media(max-width:640px){.bseg button{font-size:13px;padding-left:4px;padding-right:4px;white-space:nowrap}}
   .bgh{font:700 12px Poppins,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#4e3aa2;margin:14px 2px 8px}
   .bchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -707,7 +714,7 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
       <p class="muted" style="font-size:12px;margin:8px 2px">The name in bold is the menu name. The small name is the brand's paint name, for reordering.</p>`;return}
   if(BSIDE==='cups'){const P=barProjects(),ORD=['sculptures','table decor','canvas','cutouts'],rk=g=>{const i=ORD.indexOf(g.toLowerCase());return i<0?99:i},groups=[...new Set(P.map(p=>p.group))].sort((a,b)=>rk(a)-rk(b));
     B.innerHTML=`<div class="pgrid"><div class="plist">${groups.map(g=>`<div class="pcat"><div class="pch">${esc(g)}<span>${P.filter(x=>x.group===g).length}</span></div><div class="pnames">${P.map((p,i)=>({p,i})).filter(x=>x.p.group===g).map(({p,i})=>`<button class="pbtn${BSEL===p.name?' on':''}" data-n="${esc(p.name)}" onclick="barPick(${i})">${pName(p.name)}<span class="pdots">${[...parseCups(p.bg),...parseCups(p.design)].map(c=>Array.from({length:c.n},()=>`<i class="pd-${c.size}"></i>`).join('')).join('')}</span></button>`).join('')}</div></div>`).join('')}</div>
-      <div class="pdet" id="pdet"></div></div>`;renderPick();return}
+      <div class="pcol"><div class="pdet" id="pdet"></div>${palettesHTML()}</div></div>`;renderPick();return}
   if(BSIDE==='mix'){
     // wide-mouth 64 oz (2000 mL) reagent bottle, filled to scale: paint on the bottom, pouring medium on top
     const bottle=(paint,med)=>{const top=50,bot=196,H=bot-top,cap=2000,y=v=>bot-H*Math.min(v,cap)/cap,yp=y(paint),ym=y(paint+med),id='bt'+paint;
@@ -765,6 +772,15 @@ function renderBar(){if(!BAR)return;const B=$('barBody');
       return `<button type="button" class="ctask${d?' ok':''}" onclick="barTick(${i})"><span class="cbox">${d?'✓':''}</span><span class="ctx">${esc(t.task)}${t.days?` <span class="cday">${esc(dayPill(t))}</span>`:''}${d?`<span class="cby">${esc(String(d.by).split(' ')[0])} · ${tm(d.at)}</span>`:''}</span></button>`}).join('')}`}
 function barJump(g){const el=$('xg-'+g.replace(/\W/g,''));if(el)window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-130,behavior:'smooth'})}
 let BSEL=null,SUP=null;
+// Palette recommendations (background + 4 design colors). Swatches are close to the real paint, metallics shown shiny.
+const PAL_COL={White:'#ffffff',Black:'#141414',Gray:'#9e9a98',Silver:'radial-gradient(circle at 35% 30%,#e6e8ea,#9a9ea2 55%,#6b6f73)',Cloud:'#d5dce2',Wine:'#5c1430',Rose:'#b8443f',
+  Gold:'radial-gradient(circle at 35% 30%,#f0d27a,#c49a2c 55%,#8a6a16)',Snow:'#dfeaf3',Navy:'#233a5e',Night:'#4d6b8c',Sky:'#bfe5f3',Sand:'#f3e9d9',Blue:'#22498f',Teal:'#3b8a8f',Aqua:'#abdcd8',
+  Coral:'#f3c8bd',Blush:'#c97b6f',Tan:'#f2d7c5',Olive:'#5a6b52',Mint:'#a9b9ae',Sage:'#dfe9c7','Neon Pink':'#ea3586',Emerald:'#3b5b3d',Red:'#d43b34','Neon Red':'#ea5a40'};
+const PALETTES=[['White','Black','Gray','Silver','White'],['Cloud','Wine','Rose','Gold','White'],['Snow','Navy','Night','Sky','Silver'],['Sand','Blue','Teal','Aqua','Navy'],['Sand','Coral','Blush','Gold','Tan'],
+  ['Sand','Olive','Mint','Sage','Gold'],['Navy','Cloud','Gray','Gold','White'],['Black','Teal','Neon Pink','Gold','White'],['Black','Emerald','Mint','Gold','Sand'],['Black','Red','Neon Red','Wine','White']];
+function palettesHTML(){const sw=(c,big)=>`<span class="psw${big?' big':''}"><i style="background:${PAL_COL[c]||'#ccc'}"></i><em>${esc(c)}</em></span>`;
+  return `<div class="ppal"><div class="pgh" style="color:#4e3aa2">Palette recommendations</div><p class="muted" style="margin:2px 0 10px;font-size:12px">Background first, then the 4 design colors. Palettes with dark backgrounds dry down darker.</p>
+    ${PALETTES.map((p,i)=>`<div class="prow"><span class="pnum">${i+1}</span>${sw(p[0],1)}<span class="pdiv"></span>${p.slice(1).map(c=>sw(c)).join('')}</div>`).join('')}</div>`}
 const PAINT_LATEX=[["White", ""], ["Navy", "Anchors Aweigh"], ["Snow", "Inverness Gray"], ["Sand", "Onion Powder"], ["Cloud", "Samovar Silver"], ["Stone", "Skyline Steel"], ["Aqua", "Tarreyton"], ["Sky", "Vast Sky"], ["Red", "Heartthrob"], ["Yellow", "Daisy"], ["Sage", "Sage Splendor"], ["Emerald", "Roycroft Bottle Green"], ["Olive", "Artichoke"], ["Wine", "Red Red Wine"], ["Coral", "Charisma"], ["Seafoam Green", "Cape Verde"], ["Rose", "Sanguine"], ["Night", "Mediterranean Night"], ["Mint", "Mucho Mint"], ["Blush", "Primrose"]],PAINT_TEMPERA=[["Black", ""], ["Tan", "Peach"], ["Brown", ""], ["Green", ""], ["Orange", ""], ["Purple", ""], ["Lavender", ""], ["Pink", ""], ["Blue", ""], ["Teal", "Turquoise"], ["Gold", ""], ["Silver", ""], ["Neon Blue", ""], ["Neon Yellow", ""], ["Neon Green", ""], ["Neon Orange", ""], ["Neon Pink", ""], ["Neon Purple", ""], ["Neon Red", ""], ["Neon Magenta", ""]];
 // name in caps; a size or (note) after the name goes on a smaller second line
 function pName(n){const m=/^(.*?)\s+(\(.*\)|\d.*)$/.exec(n);return m?`${esc(m[1])}<small>${esc(m[2].replace(/^\(|\)$/g,''))}</small>`:esc(n)}
@@ -1484,7 +1500,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611172217';
+const BUILD='202611181557';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
