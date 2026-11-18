@@ -475,7 +475,7 @@
   <section id="vShip" class="hide">
     <div class="card">
       <label class="l" for="shipQ">Shipping requests from the guest form</label>
-      <input id="shipQ" placeholder="🔍 Name, city or artist" oninput="renderShip()">
+      <input id="shipQ" type="search" placeholder="🔍 Name, city or artist" oninput="renderShip()" onsearch="renderShip()" autocomplete="off">
       <div class="chips"><button id="shipF_todo" class="on" onclick="shipFilter('todo')">Needs a label</button><button id="shipF_all" onclick="shipFilter('all')">All</button></div>
     </div>
     <div id="shipList"><p class="muted">Loading…</p></div>
@@ -513,7 +513,7 @@
   <section id="vFind" class="hide">
     <div class="card">
       <label class="l" for="q">Pickup: search by name, phone or email</label>
-      <input id="q" placeholder="Name, phone or email…" oninput="debFind()">
+      <input id="q" type="search" placeholder="Name, phone or email…" oninput="debFind()" onsearch="debFind()" autocomplete="off">
       <datalist id="pieceTypes"></datalist>
     </div>
     <div id="findList"></div>
@@ -1501,7 +1501,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611181732';
+const BUILD='202611182112';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
