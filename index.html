@@ -133,7 +133,7 @@
   .pgh{font:800 12px Poppins,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.pname{font:800 30px Poppins,sans-serif;color:var(--ink);margin:2px 0 6px}
   .pblk{border-top:1px solid var(--line);padding:14px 0 6px}.pbl{font:800 12px Poppins,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#4e3aa2}
   .pbt{font:700 18px Poppins,sans-serif;color:var(--ink);margin:2px 0 10px}.pcups{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}
-  .pclose{display:none;position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:50%;border:0;background:var(--soft);font:700 22px Poppins;color:var(--ink);cursor:pointer}
+  .pclose{display:block;position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:50%;border:0;background:var(--soft);font:700 22px Poppins;color:var(--ink);cursor:pointer}
   @media(max-width:759px){.pdet{display:none;position:fixed;left:0;right:0;bottom:0;z-index:20;max-height:80vh;overflow:auto;border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(20,10,60,.25);padding-bottom:calc(24px + env(safe-area-inset-bottom))}.pdet.open{display:block}.pclose{display:block}}
   .pnames{display:grid !important;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
   .pbtn{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;text-align:left;min-height:64px;text-transform:uppercase;letter-spacing:.04em;font-size:15px;line-height:1.15;padding:10px 12px}
@@ -797,11 +797,12 @@ function cupSvg(size,half){const d=CUPDIM[size],W=d.w,H=d.h,t=6,inset=Math.round
 function cupBlock(text,label,upTo){const C=parseCups(text);if(!C.length)return '';
   return C.map(c=>`<div class="pblk"><div class="pbl">${label}</div><div class="pbt">${upTo&&c.n>1?'Up to ':''}${c.n} ${c.size==='XL'?'XL':c.size.toLowerCase()} cup${c.n>1?'s':''} · ${CUPDIM[c.size].oz} oz${c.half?' · half filled':''}</div>
     <div class="pcups">${Array.from({length:c.n},()=>cupSvg(c.size,c.half)).join('')}</div></div>`).join('')}
-function barPick(i){const p=barProjects()[i];BSEL=p.name;document.querySelectorAll('#barBody .pbtn').forEach(b=>b.classList.toggle('on',b.dataset.n===p.name));renderPick();
+function barPick(i){const p=barProjects()[i];if(BSEL===p.name)return barUnpick();BSEL=p.name;document.querySelectorAll('#barBody .pbtn').forEach(b=>b.classList.toggle('on',b.dataset.n===p.name));renderPick();
   if(window.innerWidth<760){const d=$('pdet');if(d)d.classList.add('open')}}
+function barUnpick(){BSEL=null;document.querySelectorAll('#barBody .pbtn.on').forEach(b=>b.classList.remove('on'));const d=$('pdet');if(d)d.classList.remove('open');renderPick()}
 function renderPick(){const D=$('pdet');if(!D)return;const p=barProjects().find(x=>x.name===BSEL);
   if(!p){D.innerHTML='<div class="pempty">Tap a project to see its cups</div>';return}
-  D.innerHTML=`<button class="pclose" onclick="$('pdet').classList.remove('open')" aria-label="Close">×</button><div class="pgh">${esc(p.group)}</div><div class="pname">${pName(p.name)}</div>
+  D.innerHTML=`<button class="pclose" onclick="barUnpick()" aria-label="Clear" title="Clear">×</button><div class="pgh">${esc(p.group)}</div><div class="pname">${pName(p.name)}</div>
     ${p.bg&&p.bg!=='N/A'?cupBlock(p.bg,'Background',false):''}${cupBlock(p.design,'Design colors',true)}${p.note?`<div class="pnote"><b>Remember</b>${esc(p.note)}</div>`:''}`}
 function paintFilter(){const q=$('tq').value.trim().toLowerCase();document.querySelectorAll('#barBody .trow').forEach(r=>r.classList.toggle('hide',!!q&&!r.dataset.n.includes(q)))}
 function barFilter(){const q=$('bq').value.trim().toLowerCase();document.querySelectorAll('#barBody .bchip').forEach(b=>b.classList.toggle('hide',!!q&&!b.dataset.n.includes(q)));
@@ -1500,7 +1501,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611181607';
+const BUILD='202611181608';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
