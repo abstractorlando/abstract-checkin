@@ -179,7 +179,7 @@
   .gtlist{background:#fff;border:2px solid var(--line);border-radius:14px}.gtlist>div{padding:9px 12px;border-top:1px solid var(--line);font-size:14px}.gtlist>div:first-child{border-top:0}.gtlist small{display:block;color:var(--muted);font-size:12px}
   .pcol{display:flex;flex-direction:column;gap:14px;min-width:0}.pcol>*{flex-shrink:0}.pdet{z-index:2}
   .ppal{background:#fff;border:2px solid var(--line);border-radius:18px;padding:16px 16px 8px}
-  .prow{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px solid var(--line)}.prow:nth-of-type(odd){background:#faf9fd}
+  .palrow{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px solid var(--line)}.palrow:nth-of-type(odd){background:#faf9fd}
   .pnum{flex:0 0 26px;height:26px;border-radius:50%;background:#4e3aa2;color:#fff;font:800 13px Poppins,sans-serif;display:flex;align-items:center;justify-content:center}
   .psw{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px}.psw i{width:30px;height:30px;border-radius:50%;border:1.5px solid #c9c6d3;display:block}.psw.big i{width:38px;height:38px}
   .psw em{font-style:normal;font:700 9.5px Poppins,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#5d5a6b;text-align:center;line-height:1.1}.psw.big em{color:#4e3aa2}
@@ -780,7 +780,7 @@ const PALETTES=[['White','Black','Cloud','Silver','White'],['Cloud','Wine','Rose
   ['Sand','Olive','Mint','Sage','Gold'],['Navy','Cloud','Gray','Gold','White'],['Black','Teal','Neon Pink','Gold','White'],['Black','Emerald','Mint','Gold','Sand'],['Black','Red','Neon Red','Wine','White']];
 function palettesHTML(){const sw=(c,big)=>`<span class="psw${big?' big':''}"><i style="background:${PAL_COL[c]||'#ccc'}"></i><em>${esc(c)}</em></span>`;
   return `<div class="ppal"><div class="pgh" style="color:#4e3aa2">Palette recommendations</div><p class="muted" style="margin:2px 0 10px;font-size:12px">Background first, then the 4 design colors. Palettes with dark backgrounds dry down darker.</p>
-    ${PALETTES.map((p,i)=>`<div class="prow"><span class="pnum">${i+1}</span>${sw(p[0],1)}<span class="pdiv"></span>${p.slice(1).map(c=>sw(c)).join('')}</div>`).join('')}</div>`}
+    ${PALETTES.map((p,i)=>`<div class="palrow"><span class="pnum">${i+1}</span>${sw(p[0],1)}<span class="pdiv"></span>${p.slice(1).map(c=>sw(c)).join('')}</div>`).join('')}</div>`}
 const PAINT_LATEX=[["White", ""], ["Navy", "Anchors Aweigh"], ["Snow", "Inverness Gray"], ["Sand", "Onion Powder"], ["Cloud", "Samovar Silver"], ["Stone", "Skyline Steel"], ["Aqua", "Tarreyton"], ["Sky", "Vast Sky"], ["Red", "Heartthrob"], ["Yellow", "Daisy"], ["Sage", "Sage Splendor"], ["Emerald", "Roycroft Bottle Green"], ["Olive", "Artichoke"], ["Wine", "Red Red Wine"], ["Coral", "Charisma"], ["Seafoam Green", "Cape Verde"], ["Rose", "Sanguine"], ["Night", "Mediterranean Night"], ["Mint", "Mucho Mint"], ["Blush", "Primrose"]],PAINT_TEMPERA=[["Black", ""], ["Tan", "Peach"], ["Brown", ""], ["Green", ""], ["Orange", ""], ["Purple", ""], ["Lavender", ""], ["Pink", ""], ["Blue", ""], ["Teal", "Turquoise"], ["Gold", ""], ["Silver", ""], ["Neon Blue", ""], ["Neon Yellow", ""], ["Neon Green", ""], ["Neon Orange", ""], ["Neon Pink", ""], ["Neon Purple", ""], ["Neon Red", ""], ["Neon Magenta", ""]];
 // name in caps; a size or (note) after the name goes on a smaller second line
 function pName(n){const m=/^(.*?)\s+(\(.*\)|\d.*)$/.exec(n);return m?`${esc(m[1])}<small>${esc(m[2].replace(/^\(|\)$/g,''))}</small>`:esc(n)}
@@ -1501,7 +1501,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611181608';
+const BUILD='202611181732';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
