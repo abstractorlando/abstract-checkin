@@ -76,7 +76,9 @@
   .gl{display:flex;flex-direction:column;gap:10px;margin-top:6px}
   .g{display:flex;gap:8px;align-items:center}
   .g .n{width:28px;font-weight:700;color:var(--muted);text-align:center}
-  .g input{flex:1}
+  .g input{flex:1;min-width:0}
+  .g input.gph{flex:0 0 170px;font-size:15px}
+  @media(max-width:640px){.g{flex-wrap:wrap}.g input:not(.gph){flex:1 1 calc(100% - 200px)}.g input.gph{order:5;flex:1 1 100%;margin-left:36px}}
   .seg{display:flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
   .seg button{border:0;background:#fff;font:800 15px Poppins;padding:0;width:48px;min-height:44px;cursor:pointer;color:var(--muted)}
   .pj{display:flex;align-items:center;border:2px solid var(--line);border-radius:12px;flex:none}
@@ -446,7 +448,7 @@
     </div>
     <div class="card">
       <label class="l">Guests · tap <b>FT</b> (first timer) or <b>RG</b> (returning) for each guest who's here</label>
-      <p class="muted" style="margin:-2px 0 8px;font-size:13px">Part of the party still on the way? Leave their FT/RG blank. They stay on the booking and you can check them in when they arrive.</p>
+      <p class="muted" style="margin:-2px 0 8px;font-size:13px">Part of the party still on the way? Leave their FT/RG blank. They stay on the booking and you can check them in when they arrive. Ask each guest for their phone so they get their own "art is ready" text.</p>
       <div id="guests" class="gl"></div>
       <button class="btn ghost small add" onclick="addGuest()">+ Add guest</button>
     </div>
@@ -917,9 +919,9 @@ function showShopping(low,sub){const by={};low.forEach(x=>{const k=x.store||x.ca
   document.body.appendChild(m);if($('shopCopy'))$('shopCopy').onclick=()=>navigator.clipboard.writeText(text).then(()=>toast('List copied ✓'),()=>toast('Could not copy'));}
 
 /* ---------- check-in form ---------- */
-function addGuest(name='',type='',projects=1){
+function addGuest(name='',type='',projects=1,phone=''){
   const wrap=document.createElement('div');wrap.className='g';
-  wrap.innerHTML=`<span class="n"></span><input placeholder="First name" value="${esc(name)}" autocomplete="off">
+  wrap.innerHTML=`<span class="n"></span><input placeholder="First name" value="${esc(name)}" autocomplete="off"><input class="gph" type="tel" inputmode="tel" placeholder="Phone (optional)" autocomplete="off" onblur="this.value=this.value.trim()?fmtPhone(this.value):''">
     <div class="seg"><button type="button" class="ft">FT</button><button type="button" class="rg">RG</button></div>
     <button class="x" type="button" aria-label="Remove guest">×</button>`;
   const [ft,rg]=wrap.querySelectorAll('.seg button');
@@ -927,7 +929,7 @@ function addGuest(name='',type='',projects=1){
   ft.onclick=()=>set('FT');rg.onclick=()=>set('RG');set(type);
   wrap.dataset.projects=Math.min(Math.max(projects||1,1),9);
   wrap.querySelector('.x').onclick=()=>{wrap.remove();renum()};
-  wrap.querySelector('input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addGuest();}});
+  wrap.querySelectorAll('input').forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addGuest();}}));if(phone)wrap.querySelector('.gph').value=fmtPhone(phone);
   $('guests').appendChild(wrap);renum();wrap.querySelector('input').focus();
 }
 function addMany(){for(let i=0;i<4;i++)addGuest()}
@@ -937,14 +939,15 @@ function resetForm(){picked=null;showForm(false);if($('pickBar'))$('pickBar').cl
 
 async function saveAndPrint(){
   const reservation=$('res').value.trim();
-  const rowsEl=[...$('guests').children],all=rowsEl.map(g=>({el:g,name:cap(g.querySelector('input').value),type:g.dataset.type,projects:+g.dataset.projects||1}));
+  const rowsEl=[...$('guests').children],all=rowsEl.map(g=>({el:g,name:cap(g.querySelector('input').value),phone:g.querySelector('.gph').value.trim(),type:g.dataset.type,projects:+g.dataset.projects||1}));
   if(!reservation){toast('Add the reservation name');$('res').focus();return}
   const here=all.filter(g=>g.type),later=all.filter(g=>!g.type);
   if(!here.length){all.forEach(g=>g.el.classList.add('need'));toast('Tap FT or RG for each guest who\'s here',4000);return}
+  const badPh=here.find(g=>g.phone&&g.phone.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').length!==10);if(badPh){badPh.el.querySelector('.gph').focus();toast('Check '+(badPh.name||'that guest')+'\'s phone number (10 digits)');return}
   const noName=here.find(g=>!g.name);if(noName){noName.el.querySelector('input').focus();toast('Add a first name for each guest who\'s here');return}
   if(later.length){later.forEach(g=>g.el.classList.add('need'));
     if(!confirm(`Check in ${here.length} of ${all.length} now?\n\n${later.length} guest${later.length>1?'s have':' has'} no FT/RG yet${later.some(g=>g.name)?' ('+later.map(g=>g.name).filter(Boolean).join(', ')+')':''}. ${picked?'They stay on the booking. When they arrive, check them in from the Visits tab.':'They won\'t be checked in.'}`))return}
-  const guests=here.map(g=>({name:g.name,type:g.type,projects:g.projects}));
+  const guests=here.map(g=>({name:g.name,type:g.type,projects:g.projects,phone:g.phone?fmtPhone(g.phone):''}));
   const em=$('em').value.trim();
   if(em&&!/^\S+@\S+\.\S+$/.test(em)){toast('Check the email');$('em').focus();return}
   const btn=$('saveBtn');if(btn.disabled)return;btn.disabled=true;btn.textContent='Saving…';
@@ -1248,7 +1251,7 @@ function renderParties(list,el,byClass){
       ${storageLine(p)}
       <div id="pjf_${f.partyId}"></div>
       <div id="sf_${f.partyId}"></div>
-      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b> <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span>${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
+      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b>${g.guestPhone?` <a class="muted" href="tel:${esc(g.guestPhone)}" style="color:var(--teal);text-decoration:none">${esc(g.guestPhone)}</a>`:''} <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span>${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
         <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button><button class="btn ghost small" onclick="goldenTicket(${g.row})" title="Prints the expiration sticker for the gold card">Issue golden ticket</button></div></div>`).join('')}
       ${waitingHtml(p)}
       <div id="ap_${f.partyId}"></div>
@@ -1501,7 +1504,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611182112';
+const BUILD='202611182239';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -2344,7 +2347,7 @@ function pick(row){
   const names=b.guests?b.guests.split(/,\s*/):[b.reservation.split(' ')[0]];
   $('guests').innerHTML='';for(let i=0;i<b.size;i++)addGuest(names[i]||'');
   renderArrivals();$('formTop').scrollIntoView({behavior:'smooth'});
-  const empty=[...$('guests').querySelectorAll('input')].find(i=>!i.value);(empty||$('guests').querySelector('input')).focus();
+  const empty=[...$('guests').querySelectorAll('input:not(.gph)')].find(i=>!i.value);(empty||$('guests').querySelector('input')).focus();
 }
 async function checkEmail(){
   const b=$('mailBtn');b.disabled=true;b.textContent='Checking…';
