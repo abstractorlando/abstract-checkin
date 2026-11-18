@@ -128,7 +128,7 @@
   .pnames{display:flex;flex-wrap:wrap;gap:8px}
   .pbtn{padding:10px 16px;border-radius:12px;border:2px solid var(--line);background:#fff;font:700 16px Poppins,sans-serif;color:var(--ink);cursor:pointer}
   .pbtn.on{background:#4e3aa2;border-color:#4e3aa2;color:#fff}
-  .pdet{background:#fff;border:2px solid var(--line);border-radius:18px;padding:18px;min-height:0;position:relative}@media(min-width:760px){.pcol{position:sticky;top:12px}}
+  .pdet{background:#fff;border:2px solid var(--line);border-radius:18px;padding:18px;min-height:0;position:relative}@media(min-width:760px){.pcol{align-self:stretch}.pdet{position:sticky;top:12px;box-shadow:0 10px 24px rgba(30,20,70,.10)}}
   .pempty{color:var(--muted);text-align:center;padding:34px 10px;font-size:16px}
   .pgh{font:800 12px Poppins,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.pname{font:800 30px Poppins,sans-serif;color:var(--ink);margin:2px 0 6px}
   .pblk{border-top:1px solid var(--line);padding:14px 0 6px}.pbl{font:800 12px Poppins,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#4e3aa2}
@@ -778,12 +778,6 @@ const PAL_COL={White:'#ffffff',Black:'#141414',Gray:'#9e9a98',Silver:'radial-gra
   Coral:'#f3c8bd',Blush:'#c97b6f',Tan:'#f2d7c5',Olive:'#5a6b52',Mint:'#a9b9ae',Sage:'#dfe9c7','Neon Pink':'#ea3586',Emerald:'#3b5b3d',Red:'#d43b34','Neon Red':'#ea5a40'};
 const PALETTES=[['White','Black','Cloud','Silver','White'],['Cloud','Wine','Rose','Gold','White'],['Snow','Navy','Night','Sky','Silver'],['Sand','Aqua','Teal','Blue','Navy'],['Sand','Coral','Blush','Gold','Tan'],
   ['Sand','Olive','Mint','Sage','Gold'],['Navy','Cloud','Gray','Gold','White'],['Black','Teal','Neon Pink','Gold','White'],['Black','Emerald','Mint','Gold','Sand'],['Black','Red','Neon Red','Wine','White']];
-// The cups + palettes column follows the page scroll. When it's taller than the screen it slides with
-// the scroll until its top or bottom edge is reached, so every part of it can be seen without its own scrollbar.
-let PCOL_TOP=12,PCOL_Y=window.scrollY;
-window.addEventListener('scroll',()=>{const c=document.querySelector('#vBar:not(.hide) .pcol');const y=window.scrollY,d=y-PCOL_Y;PCOL_Y=y;
-  if(!c||window.innerWidth<760)return;const minTop=Math.min(12,window.innerHeight-c.offsetHeight-12);
-  PCOL_TOP=Math.max(minTop,Math.min(12,PCOL_TOP-d));c.style.top=PCOL_TOP+'px'},{passive:true});
 function palettesHTML(){const sw=(c,big)=>`<span class="psw${big?' big':''}"><i style="background:${PAL_COL[c]||'#ccc'}"></i><em>${esc(c)}</em></span>`;
   return `<div class="ppal"><div class="pgh" style="color:#4e3aa2">Palette recommendations</div><p class="muted" style="margin:2px 0 10px;font-size:12px">Background first, then the 4 design colors. Palettes with dark backgrounds dry down darker.</p>
     ${PALETTES.map((p,i)=>`<div class="prow"><span class="pnum">${i+1}</span>${sw(p[0],1)}<span class="pdiv"></span>${p.slice(1).map(c=>sw(c)).join('')}</div>`).join('')}</div>`}
@@ -803,7 +797,7 @@ function cupSvg(size,half){const d=CUPDIM[size],W=d.w,H=d.h,t=6,inset=Math.round
 function cupBlock(text,label,upTo){const C=parseCups(text);if(!C.length)return '';
   return C.map(c=>`<div class="pblk"><div class="pbl">${label}</div><div class="pbt">${upTo&&c.n>1?'Up to ':''}${c.n} ${c.size==='XL'?'XL':c.size.toLowerCase()} cup${c.n>1?'s':''} · ${CUPDIM[c.size].oz} oz${c.half?' · half filled':''}</div>
     <div class="pcups">${Array.from({length:c.n},()=>cupSvg(c.size,c.half)).join('')}</div></div>`).join('')}
-function barPick(i){const p=barProjects()[i];BSEL=p.name;PCOL_TOP=12;{const c=document.querySelector('.pcol');if(c)c.style.top='12px'}document.querySelectorAll('#barBody .pbtn').forEach(b=>b.classList.toggle('on',b.dataset.n===p.name));renderPick();
+function barPick(i){const p=barProjects()[i];BSEL=p.name;document.querySelectorAll('#barBody .pbtn').forEach(b=>b.classList.toggle('on',b.dataset.n===p.name));renderPick();
   if(window.innerWidth<760){const d=$('pdet');if(d)d.classList.add('open')}}
 function renderPick(){const D=$('pdet');if(!D)return;const p=barProjects().find(x=>x.name===BSEL);
   if(!p){D.innerHTML='<div class="pempty">Tap a project to see its cups</div>';return}
@@ -1506,7 +1500,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611181603';
+const BUILD='202611181607';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
