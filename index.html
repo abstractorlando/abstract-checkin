@@ -776,7 +776,7 @@ let BSEL=null,SUP=null;
 const PAL_COL={White:'#ffffff',Black:'#141414',Gray:'#9e9a98',Silver:'radial-gradient(circle at 35% 30%,#e6e8ea,#9a9ea2 55%,#6b6f73)',Cloud:'#d5dce2',Wine:'#5c1430',Rose:'#b8443f',
   Gold:'radial-gradient(circle at 35% 30%,#f0d27a,#c49a2c 55%,#8a6a16)',Snow:'#dfeaf3',Navy:'#233a5e',Night:'#4d6b8c',Sky:'#bfe5f3',Sand:'#f3e9d9',Blue:'#22498f',Teal:'#3b8a8f',Aqua:'#abdcd8',
   Coral:'#f3c8bd',Blush:'#c97b6f',Tan:'#f2d7c5',Olive:'#5a6b52',Mint:'#a9b9ae',Sage:'#dfe9c7','Neon Pink':'#ea3586',Emerald:'#3b5b3d',Red:'#d43b34','Neon Red':'#ea5a40'};
-const PALETTES=[['White','Black','Gray','Silver','White'],['Cloud','Wine','Rose','Gold','White'],['Snow','Navy','Night','Sky','Silver'],['Sand','Blue','Teal','Aqua','Navy'],['Sand','Coral','Blush','Gold','Tan'],
+const PALETTES=[['White','Black','Cloud','Silver','White'],['Cloud','Wine','Rose','Gold','White'],['Snow','Navy','Night','Sky','Silver'],['Sand','Blue','Teal','Aqua','Navy'],['Sand','Coral','Blush','Gold','Tan'],
   ['Sand','Olive','Mint','Sage','Gold'],['Navy','Cloud','Gray','Gold','White'],['Black','Teal','Neon Pink','Gold','White'],['Black','Emerald','Mint','Gold','Sand'],['Black','Red','Neon Red','Wine','White']];
 function palettesHTML(){const sw=(c,big)=>`<span class="psw${big?' big':''}"><i style="background:${PAL_COL[c]||'#ccc'}"></i><em>${esc(c)}</em></span>`;
   return `<div class="ppal"><div class="pgh" style="color:#4e3aa2">Palette recommendations</div><p class="muted" style="margin:2px 0 10px;font-size:12px">Background first, then the 4 design colors. Palettes with dark backgrounds dry down darker.</p>
@@ -1500,7 +1500,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611181559';
+const BUILD='202611181600';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
