@@ -386,6 +386,14 @@
   .lbl .when{font-weight:600;font-size:10pt;line-height:1.15}
   .lbl .ft{display:flex;justify-content:space-between;gap:4pt;white-space:nowrap;font-size:6.5pt;border-top:1pt solid #000;padding-top:2pt}
   @media (max-width:640px){.arr{gap:10px;padding:10px}.arr .t{min-width:0;flex:none}.arr .t .szp{width:46px;height:42px}.arr .t .szp b{font-size:17px}.arr .tag{font-size:10px;padding:2px 6px}.arr .dep{font-size:12px;padding:3px 8px}.arr .nm{font-size:15px}.arr .snote,.arr .gcom{font-size:13px}}
+  #busyPill{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-20px);opacity:0;pointer-events:none;z-index:99;
+    background:#1d1b26;color:#fff;border-radius:999px;padding:9px 16px 9px 12px;display:flex;align-items:center;gap:10px;font:700 14px Poppins,system-ui,sans-serif;
+    box-shadow:0 8px 24px rgba(0,0,0,.25);transition:opacity .15s,transform .15s}
+  #busyPill.on{opacity:1;transform:translate(-50%,0)}
+  #busyPill i,.isbusy::after{width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .7s linear infinite;flex:none}
+  .isbusy{pointer-events:none;position:relative;opacity:.75}
+  .isbusy::after{content:'';display:inline-block;vertical-align:-3px;margin-left:8px;border-color:currentColor;border-top-color:transparent;opacity:.8}
+  @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -592,7 +600,26 @@ const demo = {rows:[],st:{},
     const g=Object.assign({},f,{row:this.rows.length+2,num:size,size,name,type,projects:1,printed:0});this.rows.push(g);return this.wrap(g)},
   removeGuest(row,pid){const i=this.rows.findIndex(x=>x.row===row);const g=this.rows.splice(i,1)[0];const left=this.rows.filter(r=>r.partyId===pid);left.forEach(r=>r.size=left.length);return {name:g.name,left:left.length,booking:null}},
   markPickedUp(pid){this.st[pid].pickedUp=true;return true}};
-function call(fn,...args){
+/* ---------- "working on it" feedback: a spinner pill while a tapped action talks to the server,
+   and the tapped button can't be tapped again until it's done (no more 5 taps = 5 requests) ---------- */
+const BUSY={n:0,t:null,lastTap:null,lastAt:0};
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button,a.go,.btn,[onclick]');if(b){BUSY.lastTap=b;BUSY.lastAt=Date.now()}},true);
+function busyStart(){
+  const btn=Date.now()-BUSY.lastAt<2000&&BUSY.lastTap&&document.body.contains(BUSY.lastTap)?BUSY.lastTap:null;
+  if(!btn)return null;   // background refreshes stay quiet
+  btn.dataset.busy=(+btn.dataset.busy||0)+1;btn.classList.add('isbusy');
+  if(++BUSY.n===1){clearTimeout(BUSY.t);BUSY.t=setTimeout(()=>{let p=document.getElementById('busyPill');
+    if(!p){p=document.createElement('div');p.id='busyPill';p.setAttribute('role','status');p.innerHTML='<i></i><span>Working…</span>';document.body.appendChild(p)}
+    p.classList.add('on')},250)}
+  return btn;
+}
+function busyEnd(btn){
+  if(!btn)return;
+  const k=(+btn.dataset.busy||1)-1;if(k>0)btn.dataset.busy=k;else{delete btn.dataset.busy;btn.classList.remove('isbusy')}
+  if(--BUSY.n<=0){BUSY.n=0;clearTimeout(BUSY.t);const p=document.getElementById('busyPill');if(p)p.classList.remove('on')}
+}
+function call(fn,...args){const _b=busyStart();return call0(fn,...args).finally(()=>busyEnd(_b))}
+function call0(fn,...args){
   return new Promise((res,rej)=>{
     if(!hasGAS){try{res(demo[fn](...args))}catch(e){rej(e)}return}
     const sent=PIN;if(!sent)return rej(new Error('Sign in first'));
@@ -1536,7 +1563,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192059';
+const BUILD='202611192108';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
