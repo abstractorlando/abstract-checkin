@@ -1252,7 +1252,7 @@ function renderParties(list,el,byClass){
       ${storageLine(p)}
       <div id="pjf_${f.partyId}"></div>
       <div id="sf_${f.partyId}"></div>
-      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b>${g.guestPhone?` <a class="muted" href="tel:${esc(g.guestPhone)}" style="color:var(--teal);text-decoration:none">${esc(g.guestPhone)}</a>`:''} <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span>${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
+      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b>${g.guestPhone?` <a class="muted" href="tel:${esc(g.guestPhone)}" style="color:var(--teal);text-decoration:none">${esc(g.guestPhone)}</a>`:''}${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
         <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button><button class="btn ghost small" onclick="goldenTicket(${g.row})" title="Prints the expiration sticker for the gold card">Issue golden ticket</button></div></div>`).join('')}
       ${waitingHtml(p)}
       <div id="ap_${f.partyId}"></div>
@@ -1536,7 +1536,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192056';
+const BUILD='202611192059';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
