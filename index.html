@@ -585,7 +585,7 @@ const demo = {rows:[],st:{},
   getDay(d){return this.rows.filter(r=>r.date===d).slice().reverse().map(r=>this.wrap(r))},
   search(q){q=q.toLowerCase();return this.rows.filter(r=>r.name.toLowerCase().includes(q)||r.reservation.toLowerCase().includes(q)).slice().reverse().map(r=>this.wrap(r))},
   markPrinted(rows){rows.forEach(n=>{const r=this.rows.find(x=>x.row===n);if(r)r.printed++});return true},
-  updateGuest(row,n,t,pj){const r=this.rows.find(x=>x.row===row);r.name=n;r.type=t;if(pj)r.projects=pj;return this.wrap(r)},
+  updateGuest(row,n,t,pj,ph){const r=this.rows.find(x=>x.row===row);r.name=n;r.type=t;if(pj)r.projects=pj;if(ph!=null)r.guestPhone=ph;return this.wrap(r)},
   updateContact(pid,ph,em){this.rows.filter(r=>r.partyId===pid).forEach(r=>{r.phone=ph;r.email=em});return true},
   storeParty(s){const o=this.st[s.partyId]||{};this.st[s.partyId]={location:s.location.toUpperCase(),pieceType:s.pieceType,pieces:+s.pieces,emailSent:o.emailSent||s.notify,textSent:o.textSent||s.notify,pickedUp:o.pickedUp||false};return {email:s.notify?'sent':'skipped',text:s.notify?'sent':'skipped'}},
   addGuestToParty(pid,name,type){const party=this.rows.filter(r=>r.partyId===pid);const f=party[0];const size=party.length+1;party.forEach(r=>r.size=size);
@@ -1253,7 +1253,7 @@ function renderParties(list,el,byClass){
       <div id="pjf_${f.partyId}"></div>
       <div id="sf_${f.partyId}"></div>
       ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b>${g.guestPhone?` <a class="muted" href="tel:${esc(g.guestPhone)}" style="color:var(--teal);text-decoration:none">${esc(g.guestPhone)}</a>`:''} <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span>${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
-        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" style="color:var(--red,#c0392b)" onclick="removeGuest(${g.row})">Remove</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button><button class="btn ghost small" onclick="goldenTicket(${g.row})" title="Prints the expiration sticker for the gold card">Issue golden ticket</button></div></div>`).join('')}
+        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button><button class="btn ghost small" onclick="goldenTicket(${g.row})" title="Prints the expiration sticker for the gold card">Issue golden ticket</button></div></div>`).join('')}
       ${waitingHtml(p)}
       <div id="ap_${f.partyId}"></div>
       <button class="btn ghost small" style="margin-top:10px" onclick="addToParty('${f.partyId}')">+ Add guest to this party</button>
@@ -1444,20 +1444,44 @@ async function editContact(id){
   const f=parties[id][0];const ph=await askText('Phone',f.phone);if(ph===null)return;const em=await askText('Email',f.email);if(em===null)return;
   try{await call('updateContact',id,ph.trim(),em.trim());toast('Updated');refreshView()}catch(e){toast('Could not update')}
 }
-async function editGuest(row){
-  const g=cache[row];const n=await askText('Guest first name',g.name);if(n===null)return;
-  const ft=confirm('Is '+(n||g.name)+' a first timer?\nOK = FT (first timer), Cancel = RG (returning guest)');
-  const pj=await askText('How many projects (labels)?',g.projects||1);if(pj===null)return;
-  try{await call('updateGuest',row,cap(n||g.name),ft?'FT':'RG',parseInt(pj)||1);toast('Updated');refreshView()}catch(e){toast('Could not update')}
-}
-/* someone checked in who isn't coming after all (or checked in by mistake): take them off the party */
-async function removeGuest(row){
+/* Edit one checked-in guest: name, FT/RG, own phone, labels, or take them off the party */
+function editGuest(row){
   const g=cache[row];if(!g)return;const party=parties[g.partyId]||[];
-  const pj=(g.details||[]).length?`\n\nHeads up: ${g.name} already has projects entered. Those are removed too.`:'';
-  if(!confirm(`Remove ${g.name} from ${g.reservation}'s party?\n\nUse this when someone isn't coming after all. The party goes from ${party.length} to ${party.length-1} guests and the booking is updated. No fee is charged.${pj}`))return;
-  try{const r=await call('removeGuest',row,g.partyId,ME&&!ME.device?ME.name:'Staff',g.name);
-    toast(`Removed ${r.name}. Party is now ${r.left} guest${r.left===1?'':'s'}`+(r.booking&&r.booking.size<r.booking.was?` · booking ${r.booking.was} to ${r.booking.size}`:''),5000);refreshView()}
-  catch(e){toast(e.message||'Could not remove',5000);refreshView()}
+  const m=document.createElement('div');m.className='modal';m.id='egModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:440px">
+    <div class="mhead"><b style="font-size:20px">EDIT GUEST</b><button class="btn ghost small" onclick="$('egModal').remove()" aria-label="Close">✕</button></div>
+    <p class="muted" style="margin:0 0 12px">${esc(g.reservation)}'s party · ${party.length} guest${party.length===1?'':'s'}</p>
+    <label class="l" for="egName">First name</label>
+    <div style="display:flex;gap:8px;align-items:center"><input id="egName" value="${esc(g.name)}" autocapitalize="words" style="flex:1;min-width:0">
+      <div class="seg" id="egType"><button type="button" class="ft${g.type==='FT'?' on':''}" data-t="FT">FT</button><button type="button" class="rg${g.type==='RG'?' on':''}" data-t="RG">RG</button></div></div>
+    <label class="l" for="egPh" style="margin-top:12px">Their phone <span class="muted">(optional)</span></label>
+    <input id="egPh" type="tel" inputmode="tel" value="${esc(g.guestPhone||'')}" placeholder="Phone" onblur="this.value=this.value.trim()?fmtPhone(this.value):''">
+    <label class="l" for="egPj" style="margin-top:12px">Labels (projects)</label>
+    <select id="egPj">${[1,2,3,4,5,6,7,8,9].map(n=>`<option${n===(+g.projects||1)?' selected':''}>${n}</option>`).join('')}</select>
+    <button class="btn main" style="margin-top:16px" id="egSave">Save</button>
+    <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:14px" id="egRm">
+      <button class="btn ghost" style="width:100%;color:#c0392b" id="egRmBtn">Remove ${esc(g.name)} from the party</button>
+      <p class="muted" style="margin:6px 0 0;font-size:13px;text-align:center">For someone who isn't coming after all. The party and booking go down by one. No fee.</p></div></div>`;
+  m.onclick=e=>{if(e.target===m)softClose(m)};document.body.appendChild(m);
+  m.querySelectorAll('#egType button').forEach(b=>b.onclick=()=>{m.querySelectorAll('#egType button').forEach(x=>x.classList.toggle('on',x===b))});
+  $('egSave').onclick=async()=>{
+    const n=cap($('egName').value.trim()),t=(m.querySelector('#egType .on')||{}).dataset,ph=$('egPh').value.trim();
+    if(!n)return $('egName').focus();
+    if(ph&&ph.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').length!==10){$('egPh').focus();return toast('Check the phone number (10 digits)')}
+    const btn=$('egSave');btn.disabled=true;btn.textContent='Saving…';
+    try{await call('updateGuest',row,n,t?t.t:g.type,+$('egPj').value||1,ph?fmtPhone(ph):'');m.remove();toast('Updated');refreshView()}
+    catch(e){btn.disabled=false;btn.textContent='Save';toast('Could not update')}
+  };
+  $('egRmBtn').onclick=()=>{
+    const pj=(g.details||[]).length?`<p style="margin:0 0 8px;font-size:14px"><b>Heads up:</b> ${esc(g.name)} already has projects entered. Those are removed too.</p>`:'';
+    $('egRm').innerHTML=`${pj}<p style="margin:0 0 10px;font-size:15px">Remove <b>${esc(g.name)}</b>? The party goes from ${party.length} to ${party.length-1} guest${party.length-1===1?'':'s'}.</p>
+      <div style="display:flex;gap:8px"><button class="btn ghost" style="flex:1" onclick="$('egModal').remove()">Keep</button>
+      <button class="btn main" style="flex:1;background:#c0392b" id="egRmYes">Yes, remove</button></div>`;
+    $('egRmYes').onclick=async()=>{const y=$('egRmYes');y.disabled=true;y.textContent='Removing…';
+      try{const r=await call('removeGuest',row,g.partyId,ME&&!ME.device?ME.name:'Staff',g.name);m.remove();
+        toast(`Removed ${r.name}. Party is now ${r.left} guest${r.left===1?'':'s'}`+(r.booking&&r.booking.size<r.booking.was?` · booking ${r.booking.was} to ${r.booking.size}`:''),5000);refreshView()}
+      catch(e){m.remove();toast(e.message||'Could not remove',5000);refreshView()}};
+  };
 }
 function refreshView(){if(!$('vToday').classList.contains('hide'))loadDay();else if(!$('vFind').classList.contains('hide'))find()}
 let dayData=[];
@@ -1514,7 +1538,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192043';
+const BUILD='202611192046';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
