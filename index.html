@@ -394,6 +394,10 @@
   .isbusy{pointer-events:none;position:relative;opacity:.75}
   .isbusy::after{content:'';display:inline-block;vertical-align:-3px;margin-left:8px;border-color:currentColor;border-top-color:transparent;opacity:.8}
   @keyframes spin{to{transform:rotate(360deg)}}
+  /* Settings: a big window (it holds a lot now): nearly full screen, two columns on iPad/laptop */
+  #setModal .setbox{max-width:1100px;height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+  @media(min-width:900px){#setModal .setbox{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:32px;align-content:start;align-items:start}
+    #setModal .setbox>.mhead,#setModal .setbox>#ownerSet,#setModal .setbox>.setclose{grid-column:1/-1}#setModal #ownerSet:empty{display:none}}
 </style>
 </head>
 <body>
@@ -539,17 +543,17 @@
   <button class="btn main" onclick="sendToPrinter()">Print</button>
   <button class="btn ghost" style="width:100%;margin-top:10px" onclick="$('printModal').classList.add('hide')">Cancel</button>
 </div></div>
-<div id="setModal" class="modal hide"><div class="mbox" style="text-align:left">
+<div id="setModal" class="modal hide"><div class="mbox setbox" style="text-align:left">
+  <div class="mhead"><b style="font-size:20px">SETTINGS</b><button class="btn ghost small" onclick="$('setModal').classList.add('hide')" aria-label="Close">✕</button></div>
   <div id="teamBox"></div>
   <div id="projBox"></div>
   <div id="gtBox"></div>
   <div id="gfBox"></div>
-  <div id="ownerSet">
-  </div>
-  <h2 style="margin:26px 0 6px">Guest booking link</h2>
+  <div id="ownerSet"></div>
+  <div><h2 style="margin:26px 0 6px">Guest booking link</h2>
   <p class="muted" style="margin:0 0 8px">Send this when a guest asks how to book.</p>
-  <button class="btn ghost" style="width:100%" onclick="copyBookLink()">🔗 Copy booking link</button>
-  <button class="btn ghost" style="width:100%;margin-top:14px" onclick="$('setModal').classList.add('hide')">Close</button>
+  <button class="btn ghost" style="width:100%" onclick="copyBookLink()">🔗 Copy booking link</button></div>
+  <button class="btn ghost setclose" style="width:100%;margin-top:18px" onclick="$('setModal').classList.add('hide')">Close</button>
 </div></div>
 <div id="toast" class="toast"></div>
 
@@ -1578,7 +1582,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192112';
+const BUILD='202611192207';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
