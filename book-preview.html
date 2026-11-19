@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book Your Class | Abstract Orlando</title>
+<meta name="description" content="Book your fluid art class at Abstract Orlando. $0 today. Projects start at $50.">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+<script>if(window.parent!==window||/[?&]embed/.test(location.search))document.documentElement.classList.add('embed')</script>
+<script>
+/* PREVIEW ONLY: real open days and times, but nothing is booked and no card is charged */
+window.AO_DEMO=true;
+window.Stripe=()=>({elements:()=>({create:()=>({mount:s=>{document.querySelector(s).innerHTML='<div style="border:2px dashed #cfc9e3;border-radius:12px;padding:22px;text-align:center;color:#6b6878;font-size:14px;line-height:1.5"><b style="color:#1d1b26">Card form goes here</b><br>Apple Pay / Google Pay / card (Stripe).<br>Preview only, nothing is charged.</div>'}})}),
+  confirmSetup:async()=>({setupIntent:{id:'seti_demo'}})});
+document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement('div');b.textContent='PREVIEW · nothing is booked or charged';
+  b.style.cssText='position:sticky;top:0;z-index:50;background:#1d1b26;color:#fff;text-align:center;font:700 12px Poppins,sans-serif;letter-spacing:.08em;padding:7px';document.body.prepend(b)});
+</script>
+<style>
+  :root{--mag:#ff009d;--teal:#0093ad;--purp:#4e3aa2;--ink:#1d1b26;--muted:#6b6878;--line:#e6e3ee;--soft:#f6f4fb}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--soft)}
+  .top{padding:44px 18px 22px;text-align:center;font-family:'Plus Jakarta Sans',Poppins,sans-serif}
+  .brand{font-weight:700;letter-spacing:.28em;font-size:13px;color:var(--purp)}
+  .top h1{margin:14px auto 10px;font-size:clamp(28px,7vw,44px);line-height:1.1;font-weight:800;color:#17151f;max-width:900px;text-wrap:balance}
+  .top p{margin:0 auto;font-size:16px;line-height:1.45;color:var(--muted);max-width:560px;text-wrap:balance}
+  .pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+  .pill{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
+  main{max-width:600px;margin:0 auto;padding:0 16px 60px}
+  /* inside the website: no purple banner, transparent background */
+  html.embed body{background:transparent}html.embed .top{display:none}html.embed main{margin-top:0;padding:4px 4px 8px}
+  .card{background:#fff;border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:0 6px 24px rgba(78,58,162,.08)}
+  .step{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+  .num{width:28px;height:28px;border-radius:50%;background:var(--purp);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
+  .step h2{margin:0;font-size:18px}
+  .muted{color:var(--muted);font-size:14px}
+  .stepper{display:flex;align-items:center;gap:18px}
+  .stepper button{width:52px;height:52px;border-radius:50%;border:2px solid var(--line);background:#fff;font:700 24px Poppins;color:var(--purp);cursor:pointer}
+  .stepper button:disabled{opacity:.35;cursor:default}
+  .stepper .v{font-size:34px;font-weight:800;min-width:40px;text-align:center}
+  .days{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory}
+  .day{flex:none;width:74px;border:2px solid var(--line);border-radius:16px;background:#fff;padding:10px 4px;text-align:center;cursor:pointer;scroll-snap-align:start;font-family:Poppins;color:var(--ink)}
+  .day .dw{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase}
+  .day .dn{font-size:24px;font-weight:800;line-height:1.2}
+  .day .dm{font-size:12px;font-weight:600}
+  .day.on{border-color:var(--mag);background:#fff0f8}
+  .times{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+  .time{border:2px solid var(--line);border-radius:14px;background:#fff;padding:12px;cursor:pointer;font-family:Poppins;text-align:left;color:var(--ink)}
+  .time b{display:block;font-size:17px}
+  .time span{font-size:13px;color:var(--teal);font-weight:600}
+  .time.low span{color:var(--mag)}
+  .time:disabled{opacity:.4;cursor:default}
+  .time:disabled span{color:var(--muted)}
+  .time.on{border-color:var(--mag);background:#fff0f8}
+  label.l{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
+  input,textarea{width:100%;font:500 17px Poppins;padding:13px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+  textarea{min-height:96px;resize:vertical}
+  input:focus,textarea:focus{outline:none;border-color:var(--teal)}
+  select.gt{width:100%;font:500 16px Poppins;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+  select.gt.bad,input.bad{border-color:#c40056;background:#fff0f6}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .walkin{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:13.5px;line-height:1.5}
+  .policy{background:var(--soft);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.5;margin:16px 0}
+  .policy b{color:var(--purp)}
+  .chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;font-weight:500;line-height:1.45;cursor:pointer}
+  .chk input{width:22px;height:22px;flex:none;margin-top:2px}
+  .go{width:100%;border:0;border-radius:999px;background:var(--mag);color:#fff;font:800 19px Poppins;min-height:60px;cursor:pointer;margin-top:16px}
+  .go:disabled{opacity:.55;cursor:default}
+  .ghost{width:100%;border:2px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);font:700 16px Poppins;min-height:52px;cursor:pointer;margin-top:10px}
+  .err{color:#c40056;font-weight:600;font-size:14px;min-height:20px;margin-top:10px}
+  .sum{display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:6px 0;border-bottom:1px solid var(--line)}
+  .sum:last-child{border:0}
+  .done{text-align:center;padding:10px 0}
+  .done .big{font-size:56px}
+  .done h2{font-size:26px;margin:6px 0}
+  .hide{display:none!important}
+  .lock{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
+  #pay{min-height:120px}
+  .phonerow{display:flex;gap:8px}.phonerow select{flex:none;width:118px;font:500 16px Poppins;padding:0 8px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+  .hint{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--purp)}
+  .addon{display:flex;gap:12px;align-items:flex-start;border:2px solid var(--line);border-radius:14px;padding:14px;margin:16px 0 0;cursor:pointer}
+  .addon input{width:22px;height:22px;flex:none;margin-top:2px}.addon:has(input:checked){border-color:var(--mag);background:#fff0f8}
+  .addon .price{background:#e8f6ec;color:#0b7a3e;font-weight:700;border-radius:8px;padding:1px 8px;margin-right:6px}
+  .addon small{display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.4}
+  #sizeCard.off .stepper{opacity:.35;pointer-events:none}
+  .pol{margin:10px 0 0;padding-left:18px}.pol li{margin:4px 0}
+  .timer{background:#fff0f8;color:#b8006f;border-radius:12px;padding:10px 14px;font-weight:700;font-size:15px;margin:0 0 12px;text-align:center}
+  .timer.out{background:#fff5e6;color:#8a5a00}
+  .closed{padding:14px;border-radius:14px;background:#fff5e6;font-size:14px}
+  input.bad{border-color:#c40056!important;background:#fff0f5}
+  /* new flow: progress, deal line, calendar, bottom bar */
+  .prog{margin:0 2px 12px}.prog .pt{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--muted)}
+  .prog .pb{display:flex;gap:6px;margin-top:8px}.prog .pb i{flex:1;height:6px;border-radius:3px;background:var(--line)}.prog .pb i.on{background:var(--purp)}
+  .deal{background:#ede9f8;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;font-weight:500;margin-bottom:14px}
+  .deal svg{flex:none;margin-top:2px}
+  .calnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.calnav b{font-size:16px}
+  .calnav button{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .calnav button:disabled{opacity:.3;cursor:default}
+  .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+  .cal .wd{text-align:center;font-size:12px;font-weight:600;color:var(--muted);padding-bottom:2px}
+  .cal button{height:44px;border:0;border-radius:12px;background:transparent;font:500 15px Poppins;color:#8f8ca0;padding:0}
+  .cal button.op{border:2px solid var(--teal);background:#e3f5f8;font-weight:700;color:var(--ink);cursor:pointer}
+  .cal button.on{border:2px solid var(--mag);background:#fff0f8;font-weight:800;color:var(--ink);cursor:pointer}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:14px;font-size:13px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:6px}.legend i{width:14px;height:14px;border-radius:4px;display:inline-block}
+  .time.no{border-style:dashed;background:transparent;opacity:1;color:var(--muted)}.time.no span{color:var(--muted)}
+  .bar{position:sticky;bottom:0;z-index:5;background:#fff;border-top:1px solid var(--line);margin:14px -16px 0;padding:12px 16px calc(14px + env(safe-area-inset-bottom));box-shadow:0 -6px 20px rgba(78,58,162,.08)}
+  .bar .go{margin-top:0}.bsum{font-size:14px;font-weight:600;text-align:center;margin:0 0 10px}
+  html.embed .bar{position:static;margin:14px 0 0;border-radius:20px;border:0}
+  .chip{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:15px;font-weight:600}
+  .chip a{font-size:14px;color:var(--purp);flex:none}
+  .bigbox{margin:14px 0 0;background:#fff0f8;border:2px solid var(--mag);border-radius:14px;padding:14px 16px;font-size:15px;line-height:1.45}
+  .bigbox a.go{display:flex;align-items:center;justify-content:center;text-decoration:none;min-height:50px;font-size:17px;margin-top:12px}
+  .opt{color:var(--purp);font-weight:600;font-size:14px;text-decoration:none;display:inline-block;margin-top:14px}
+  .calrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:12px 0 4px;font-size:14px}.calrow span{color:var(--muted);font-weight:600}
+  .calrow a{display:inline-block;padding:8px 14px;border:1.5px solid var(--line);border-radius:999px;font-weight:700;color:var(--purp);text-decoration:none;background:#fff}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand" id="heroEyebrow">BOOK YOUR EXPERIENCE</div>
+  <h1 id="heroTitle">Pick your day. We'll handle the rest.</h1>
+  <p id="heroSub">$0 to book · Free changes up to 24 hours before · Projects from $50, paid at the studio</p>
+  <div class="pills" id="heroPills"></div>
+</div>
+
+<main>
+  <!-- ============ BOOKING FLOW: 3 short screens ============ -->
+  <section id="flow">
+    <!-- 1 · pick your visit -->
+    <div id="s1">
+      <div class="prog"><div class="pt"><span>Step 1 of 3</span><span>Pick your visit</span></div><div class="pb"><i class="on"></i><i></i><i></i></div></div>
+      <div class="card" id="sizeCard">
+        <h2 style="margin:0 0 14px;font-size:18px">How many artists?</h2>
+        <div class="stepper">
+          <button type="button" id="minus" aria-label="Fewer guests">−</button>
+          <div class="v" id="size">2</div>
+          <button type="button" id="plus" aria-label="More guests">+</button>
+          <div class="muted" id="sizeNote">artists</div>
+        </div>
+        <div class="bigbox hide" id="bigParty"></div>
+      </div>
+      <div class="card">
+        <h2 style="margin:0 0 10px;font-size:18px">Pick a day</h2>
+        <div id="calWrap"><p class="muted">Loading open days…</p></div>
+      </div>
+      <div class="card" id="timeCard">
+        <h2 style="margin:0 0 4px;font-size:18px" id="dayTitle">Pick a time</h2>
+        <p class="muted" id="timeNote" style="margin:0 0 14px"></p>
+        <div class="times" id="times"><p class="muted">Pick a day first.</p></div>
+      </div>
+      <div class="bar"><p class="bsum" id="sum1">Pick a day and time</p><button class="go" id="next1" disabled>Continue</button></div>
+    </div>
+
+    <!-- 2 · your details -->
+    <div id="s2" class="hide">
+      <div class="prog"><div class="pt"><span>Step 2 of 3</span><span>Your details</span></div><div class="pb"><i class="on"></i><i class="on"></i><i></i></div></div>
+      <div class="card" style="padding:14px 16px"><div class="chip"><span id="chip2"></span><a href="#" id="chg2">Change</a></div></div>
+      <div class="card" id="detailsCard">
+        <h2 style="margin:0;font-size:18px">Your details</h2>
+        <label class="l" for="name">Full name</label><input id="name" autocomplete="name" autocapitalize="words" placeholder="First and last name">
+        <label class="l" for="phone">Mobile number</label>
+        <div class="phonerow"><select id="cc" aria-label="Country code"></select>
+          <input id="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(407) 555-1234"></div>
+        <p class="hint">Your confirmation and reminders are texted to this number.</p>
+        <label class="l" for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" autocapitalize="off" placeholder="you@email.com">
+        <div id="gfBox"></div>
+        <div id="guestNames"></div>
+        <a href="#" class="opt" id="noteLink">+ Add a note (optional)</a>
+        <div id="noteBox" class="hide"><label class="l" for="note">Anything we should know? <span class="muted">(optional)</span></label>
+        <textarea id="note" placeholder="Celebrating something? Bringing someone special? Tell us here."></textarea></div>
+        <p class="err" id="err1"></p>
+      </div>
+      <p class="muted" style="text-align:center;margin:0" id="lockLine">Next: a card holds your spot. Nothing is charged today.</p>
+      <div class="bar"><button class="go" id="toPay">Continue</button></div>
+    </div>
+
+    <!-- 3 · hold with a card -->
+    <div id="s3" class="hide">
+      <div class="prog"><div class="pt"><span>Step 3 of 3</span><span>Hold your spot</span></div><div class="pb"><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+      <div class="card"><div class="timer" id="timer"></div><div id="summary"></div></div>
+      <div class="card hide" id="addonCard"><div id="addons" style="margin-top:-16px"></div></div>
+      <div class="card" id="payCard">
+        <div id="pay"></div>
+        <p class="lock" style="text-align:left">🔒 Card secured by Stripe. We never see your card number.</p>
+        <div class="policy" id="policyText"></div>
+        <label class="chk"><input type="checkbox" id="agree"> <span id="agreeText"></span></label>
+        <p class="err" id="err2"></p>
+      </div>
+      <div class="bar"><button class="go" id="book">Confirm my reservation</button><button class="ghost" id="back">Back</button></div>
+    </div>
+  </section>
+
+  <!-- ============ CONFIRMED ============ -->
+  <section id="confirmed" class="hide">
+    <div class="card done">
+      <div style="width:64px;height:64px;border-radius:50%;background:#ede9f8;display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4e3aa2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <h2 id="cTitle">You're booked!</h2>
+      <p id="cWhen" style="font-size:18px;font-weight:700;margin:4px 0"></p>
+      <p class="muted" id="cParty"></p>
+      <div id="cCal"></div>
+      <p style="margin:18px 0 0" id="cText"></p>
+      <p style="margin:12px 0 0">Please arrive about 10 minutes early to settle in and pick your project and colors.</p>
+      <p class="hide" id="cWine" style="margin:12px 0 0"></p>
+    </div>
+    <div class="card">
+      <p style="margin:0 0 8px"><b>12211 Regency Village Dr, Suite 11</b><br>Orlando, FL 32821</p>
+      <p class="muted" style="margin:0">Questions? Text us at <a href="sms:+16893488239">(689) 348-8239</a></p>
+    </div>
+  </section>
+
+  <!-- ============ MANAGE ============ -->
+  <section id="manage" class="hide">
+    <div class="card" id="mCard"><p class="muted">Loading your booking…</p></div>
+    <div class="card hide" id="moveCard">
+      <div class="step"><div class="num">↻</div><h2>Pick a new day and time</h2></div>
+      <div class="days" id="mDays"></div>
+      <div class="times" id="mTimes" style="margin-top:12px"></div>
+      <p class="err" id="mErr"></p>
+      <button class="go" id="mSave" disabled>Confirm new time</button>
+    </div>
+    <div class="card hide" id="mSizeCard">
+      <div class="step"><div class="num">👥</div><h2>How many guests?</h2></div>
+      <div class="stepper" style="justify-content:center;margin:6px 0 4px">
+        <button type="button" id="sMinus" aria-label="Fewer guests">−</button>
+        <div class="v" id="sNum">1</div>
+        <button type="button" id="sPlus" aria-label="More guests">+</button>
+      </div>
+      <p class="muted" id="sNote" style="text-align:center;margin:8px 0 0"></p>
+      <p class="err" id="sErr"></p>
+      <button class="go" id="sSave" disabled>Update party size</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ====== YOUR APPS SCRIPT WEB APP LINK (same as the check-in app) ====== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwvba_1OZKz5alSsEVV8pXWKUQJN5wmur6ACjaUD1grRUbJoFN0zJJ5verK4omhuygcKw/exec';
+
+/* ====== TRACKING ======
+ * Inside the website (iframe): tells abstractorlando.com, whose own GA4 / Google Ads / Meta tags record it.
+ * Opened on its own (direct link): loads GA4 + Meta Pixel here. */
+const GA4_ID='G-HWWX6TQXWG', META_PIXEL='917533327429371', AVG_SPEND_PER_GUEST=100;
+const EMBEDDED=window.parent!==window;
+if(!EMBEDDED){
+  const s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+GA4_ID;document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag('js',new Date());gtag('config',GA4_ID);
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init',META_PIXEL);fbq('track','PageView');
+}
+function track(name,d){
+  try{
+    if(EMBEDDED){parent.postMessage({ao:'track',name,d},'*');return}
+    const v={currency:'USD',value:d.value,party_size:d.size};
+    if(name==='checkout'){gtag('event','begin_checkout',v);fbq('track','InitiateCheckout',{currency:'USD',value:d.value})}
+    if(name==='booked'){gtag('event','purchase',Object.assign({transaction_id:d.id},v));
+      fbq('track','Schedule',{currency:'USD',value:d.value},{eventID:d.id});fbq('track','Purchase',{currency:'USD',value:d.value,num_items:d.size},{eventID:d.id+'-p'})}
+  }catch(e){}
+}
+/* keep the website's frame exactly as tall as this page */
+if(EMBEDDED){let last=0;const M=document.querySelector('main');
+  /* measure the form itself, not the window: the window grows with the frame, which made the frame grow forever */
+  const tell=()=>{const hh=Math.ceil(M.getBoundingClientRect().bottom+window.scrollY+(parseFloat(getComputedStyle(M).marginBottom)||0));if(Math.abs(hh-last)>1){last=hh;parent.postMessage({ao:'height',h:hh},'*')}};
+  new ResizeObserver(tell).observe(M);setInterval(tell,700);}
+
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function call(fn,...args){
+  if(window.AO_DEMO&&fn!=='availability'){const f=JSON.parse(sessionStorage.getItem('demo')||'{}');
+    if(fn==='startBooking'){const d=args[0];sessionStorage.setItem('demo',JSON.stringify(d));return new Promise(r=>setTimeout(()=>r({bookingId:'PREVIEW',clientSecret:'x'}),500))}
+    if(fn==='finishBooking'){const o=args[2]||{};return new Promise(r=>setTimeout(()=>r({id:'PREVIEW',name:f.name,date:f.date,time:f.time,size:f.size,phone:f.phone,
+      addons:(o.addons||[]).join(','),paid:!!(o.addons||[]).length,manageUrl:''}),600))}
+    return Promise.reject(new Error('Not available in the preview.'))}
+  return fetch(API_URL,{method:'POST',body:JSON.stringify({public:true,fn,args}),redirect:'follow',credentials:'omit'})
+    .then(r=>r.json(),()=>{throw new Error('Connection problem. Please try again.')})
+    .then(j=>{if(!j.ok){if(j.error==='LATE_FEE_REQUIRED'){if(mine){mine.late=true;renderMine()}throw new Error('Your class is now less than 24 hours away, so a late-change fee applies. Please try again to see the amount.')}throw new Error(j.error)}return j.data});
+}
+function dObj(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function niceDate(s){return dObj(s).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
+
+let AV=null,size=2,sel={date:null,time:null},booking=null,stripe=null,elements=null;
+/* Giftory link (?g=KEY): their team books gift recipients with voucher numbers instead of a card */
+const GKEY=new URLSearchParams(location.search).get('g')||'';let GF=null;
+
+/* ---------- phone: country code ---------- */
+const CC=[['US','🇺🇸','+1'],['CA','🇨🇦','+1'],['PR','🇵🇷','+1'],['GB','🇬🇧','+44'],['MX','🇲🇽','+52'],['BR','🇧🇷','+55'],['CO','🇨🇴','+57'],
+  ['AR','🇦🇷','+54'],['DE','🇩🇪','+49'],['FR','🇫🇷','+33'],['ES','🇪🇸','+34'],['IT','🇮🇹','+39'],['NL','🇳🇱','+31'],['IE','🇮🇪','+353'],['AU','🇦🇺','+61'],['IN','🇮🇳','+91']];
+$('cc').innerHTML=CC.map(([c,f,d],i)=>`<option value="${i}">${f} ${d}</option>`).join('');
+$('cc').onchange=()=>{$('phone').placeholder=CC[$('cc').value][2]==='+1'?'(407) 555-1234':'Mobile number'};
+/** Number as we store it: US/Canada "(407) 555-1234", everyone else "+44 7700900123". */
+function fullPhone(){const raw=$('phone').value.trim(),d=raw.replace(/\D/g,''),code=CC[$('cc').value][2];
+  if(raw.startsWith('+'))return '+'+d;
+  if(code==='+1'){const n=d.replace(/^1(?=\d{10}$)/,'');return n.length===10?`(${n.slice(0,3)}) ${n.slice(3,6)}-${n.slice(6)}`:''}
+  return d.length>=6?code+' '+d.replace(/^0/,''):'';}
+
+/* ---------- moving between the 3 screens ---------- */
+let step=1;
+function go(n){step=n;[1,2,3].forEach(i=>$('s'+i).classList.toggle('hide',i!==n));window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*')}
+function shortDay(s){return dObj(s).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+function visitLine(){return sel.date&&sel.time?`${shortDay(sel.date)} · ${sel.time} · ${size} guest${size>1?'s':''}`:''}
+
+/* ---------- add-ons (picked on the card screen, charged when you book) ---------- */
+function renderAddons(){
+  if(GF){$('addonCard').classList.add('hide');return}
+  const box=$('addons');if(!AV||!AV.addOns||!AV.addOns.length){box.innerHTML='';$('addonCard').classList.add('hide');return}
+  const on=new Set([...box.querySelectorAll('input:checked')].map(i=>i.value));
+  box.innerHTML=AV.addOns.map(a=>`<label class="addon"><input type="checkbox" value="${esc(a.id)}"${on.has(a.id)?' checked':''} onchange="payText()">
+    <span><span class="price">$${a.price}</span><b>${esc(a.label)}</b><small>${esc(a.blurb||'')} Charged when you book; refunded if you cancel 24+ hours ahead.</small></span></label>`).join('');
+  $('addonCard').classList.remove('hide');
+}
+function addons(){return [...$('addons').querySelectorAll('input:checked')].map(i=>i.value)}
+function addonTotal(){return addons().reduce((s,id)=>s+((AV.addOns||[]).find(a=>a.id===id)||{price:0}).price,0)}
+
+/* ---------- hold countdown ---------- */
+let holdTimer=null;
+function startHold(until){
+  clearInterval(holdTimer);const t=$('timer');t.classList.remove('out');$('book').disabled=false;
+  const tick=()=>{const s=Math.max(0,Math.round((until-Date.now())/1000));
+    if(s>0){t.textContent=`We're holding your spots for ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;return}
+    clearInterval(holdTimer);booking=null;t.classList.add('out');$('book').disabled=true;
+    t.innerHTML='Your hold ended. <a href="#" id="rehold">Hold my spots again</a>';
+    $('rehold').onclick=e=>{e.preventDefault();go(2);$('toPay').click()};
+  };tick();holdTimer=setInterval(tick,1000);
+}
+
+/* ---------- screen 1: group size first, then a calendar, then times that fit ---------- */
+function spotsLeft(){const d=AV&&AV.days.find(x=>x.date===sel.date),t=d&&d.times.find(x=>x.time===sel.time);return t?t.left:0}
+const BIG=12;   // more than this: text us
+function maxSize(){let m=0;(AV?AV.days:[]).forEach(d=>d.times.forEach(t=>m=Math.max(m,t.left)));m=Math.max(1,Math.min(BIG,m));return GF?Math.min(6,m):m}
+const fits=d=>d&&d.times.some(t=>t.left>=size);
+function setSize(n){
+  const max=maxSize();size=Math.max(1,Math.min(max,n));$('size').textContent=size;$('sizeNote').textContent=size>1?'artists':'artist';
+  $('minus').disabled=size<=1;$('plus').disabled=!!GF&&size>=max;
+  if(size<max)$('bigParty').classList.add('hide');
+  if(sel.time&&spotsLeft()<size)sel.time=null;
+  if(sel.date&&!fits(AV&&AV.days.find(d=>d.date===sel.date)))sel.time=null;
+  renderNames();renderCal();renderTimes();
+}
+$('minus').onclick=()=>setSize(size-1);
+$('plus').onclick=()=>{if(size<maxSize())return setSize(size+1);showBig()};
+/* tapping + past the biggest group we can book online: tell them what to do instead */
+function showBig(){const max=maxSize(),b=$('bigParty');
+  b.innerHTML=(max>=BIG?`<b>More than ${BIG} artists?</b> We'd love to host your group! Text us and we'll find the perfect time and set everything up for you.`
+    :`<b>${max} is the most we can book online right now.</b> Coming with more? Text us and we'll do our best to fit your whole group.`)+
+    `<a class="go" href="sms:+16893488239">Text us at (689) 348-8239</a>`;
+  b.classList.remove('hide');b.scrollIntoView({behavior:'smooth',block:'nearest'})}
+
+let calM=null;   // first day of the month on screen
+const ym=s=>s.slice(0,7);
+function renderCal(){
+  const W=$('calWrap');if(!AV)return;
+  if(!AV.days.length){W.innerHTML='<p class="closed">No open times right now. Text us at (689) 348-8239 and we\'ll find you a spot.</p>';return}
+  const map={};AV.days.forEach(d=>map[d.date]=d);
+  const first=ym(AV.days[0].date),last=ym(AV.days[AV.days.length-1].date);
+  if(!calM||calM<first||calM>last){const f=(sel.date&&ym(sel.date))||(AV.days.find(fits)||AV.days[0]).date.slice(0,7);calM=f}
+  const [Y,M]=calM.split('-').map(Number),start=new Date(Y,M-1,1).getDay(),n=new Date(Y,M,0).getDate();
+  const p2=v=>String(v).padStart(2,'0');let cells='';
+  for(let i=0;i<start;i++)cells+='<span></span>';
+  for(let dd=1;dd<=n;dd++){const ds=`${Y}-${p2(M)}-${p2(dd)}`,d=map[ds],ok=fits(d),label=new Date(Y,M-1,dd).toLocaleDateString('en-US',{month:'long',day:'numeric'});
+    cells+=ok?`<button type="button" class="${sel.date===ds?'on':'op'}" data-d="${ds}" aria-label="${label}${sel.date===ds?', selected':''}">${dd}</button>`
+      :`<button type="button" disabled aria-label="${label}, not available">${dd}</button>`}
+  const arrow=d=>`<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4e3aa2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  const none=!AV.days.some(fits);
+  W.innerHTML=`<div class="calnav"><button type="button" id="calP" aria-label="Previous month" ${calM<=first?'disabled':''}>${arrow('M15 6l-6 6 6 6')}</button>
+    <b>${new Date(Y,M-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b>
+    <button type="button" id="calN" aria-label="Next month" ${calM>=last?'disabled':''}>${arrow('M9 6l6 6-6 6')}</button></div>
+    <div class="cal">${['Su','Mo','Tu','We','Th','Fr','Sa'].map(x=>`<div class="wd">${x}</div>`).join('')}${cells}</div>
+    <div class="legend"><span><i style="border:2px solid var(--teal);background:#e3f5f8"></i>Open</span><span><i style="border:2px solid var(--mag);background:#fff0f8"></i>Your pick</span><span><i style="background:var(--line)"></i>Closed or full</span></div>
+    ${none?`<p class="closed" style="margin-top:12px">No open times for ${size} guests right now. Text us at <a href="sms:+16893488239">(689) 348-8239</a> and we'll find you a spot.</p>`:''}`;
+  const shift=k=>{const d=new Date(Y,M-1+k,1);calM=`${d.getFullYear()}-${p2(d.getMonth()+1)}`;renderCal()};
+  $('calP').onclick=()=>shift(-1);$('calN').onclick=()=>shift(1);
+  W.querySelectorAll('.cal button[data-d]').forEach(b=>b.onclick=()=>{sel.date=b.dataset.d;sel.time=null;renderCal();renderTimes();$('timeCard').scrollIntoView({behavior:'smooth',block:'start'})});
+}
+function renderTimes(){
+  const d=AV&&AV.days.find(x=>x.date===sel.date);
+  if(!d){$('dayTitle').textContent='Pick a time';$('timeNote').textContent='';$('times').innerHTML='<p class="muted">Pick a day first.</p>';bar1();return}
+  $('dayTitle').textContent=dObj(d.date).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  $('timeNote').textContent=`Showing times that fit ${size} guest${size>1?'s':''}.`;
+  $('times').innerHTML=d.times.map(t=>{const can=t.left>=size;
+    const note=!can?(t.left?`${t.left} spot${t.left>1?'s':''} left, you have ${size}`:'Full'):t.left<=3?`Only ${t.left} left`:`${t.left} spots open`;
+    return `<button type="button" class="time${sel.time===t.time?' on':''}${can&&t.left<=3?' low':''}${can?'':' no'}" data-t="${t.time}" ${can?'':'disabled'}><b>${t.time}</b><span>${note}</span></button>`}).join('')+
+    (d.times.some(t=>t.left>0&&t.left<size)?`<p class="hint" style="grid-column:1/-1">Need a few more spots than you see? Text us at <a href="sms:+16893488239">(689) 348-8239</a> and we'll do our best to fit your whole group.</p>`:'');
+  $('times').querySelectorAll('.time:not(:disabled)').forEach(b=>b.onclick=()=>{sel.time=b.dataset.t;renderTimes();if(EMBEDDED)$('next1').scrollIntoView({behavior:'smooth',block:'center'})});
+  bar1();
+}
+function bar1(){$('sum1').textContent=visitLine()||'Pick a day and time';$('next1').disabled=!(sel.date&&sel.time)}
+$('next1').onclick=()=>{if(!(sel.date&&sel.time))return;$('chip2').textContent=visitLine();$('err1').textContent='';go(2);
+  if(!$('name').value)setTimeout(()=>{try{$('name').focus({preventScroll:true})}catch(e){}},300)};
+$('chg2').onclick=e=>{e.preventDefault();go(1)};
+$('noteLink').onclick=e=>{e.preventDefault();$('noteLink').classList.add('hide');$('noteBox').classList.remove('hide');$('note').focus()};
+
+/* ---------- screen 2: your details ---------- */
+// Every artist's first name is required. Artist 1 starts as the booker's first name but can be changed
+// (a parent booking for their child, or someone booking for a friend).
+function renderNames(){
+  if(GF)return renderGfNames();
+  const box=$('guestNames'),old=[...box.querySelectorAll('.gn')].map(x=>({n:x.value,e:x.dataset.edited})),first=$('name').value.trim().split(/\s+/)[0]||'';
+  box.innerHTML=`<label class="l">Who is creating? <span class="muted">(first names)</span></label><div class="row">`+Array.from({length:size},(_,i)=>{const o=old[i]||{},n=i===0&&o.e!=='1'?first:(o.n||'');
+    return `<input class="gn" placeholder="Artist ${i+1}" value="${esc(n)}" data-edited="${i===0?(o.e||0):1}" autocapitalize="words" oninput="this.classList.remove('bad');this.dataset.edited='1'">`}).join('')+'</div>';
+}
+function renderGfNames(){
+  const box=$('guestNames'),old=[...box.querySelectorAll('.gn')].map(x=>({n:x.value,e:x.dataset.edited}));
+  const v=$('gfV')?$('gfV').value:'',t=$('gfT')?$('gfT').value:'',first=$('name').value.trim().split(/\s+/)[0]||'';
+  box.innerHTML=`<label class="l" for="gfV">Giftory voucher</label>
+    <div class="row" style="margin-bottom:12px"><input id="gfV" placeholder="Voucher #" value="${esc(v)}" autocapitalize="characters" oninput="this.classList.remove('bad')">
+    <select id="gfT" class="gt" onchange="this.classList.remove('bad')"><option value="">Project…</option>${GF.tiers.map(x=>`<option value="${x.id}"${t===x.id?' selected':''}>${esc(x.label)}</option>`).join('')}</select></div>
+    <label class="l">Artist names</label>`+Array.from({length:size},(_,i)=>{const o=old[i]||{},n=i===0&&o.e!=='1'?first:(o.n||'');
+    return `<input class="gn" style="margin-bottom:8px" placeholder="Artist ${i+1} first name" value="${esc(n)}" data-edited="${i===0?(o.e||0):1}" autocapitalize="words" oninput="this.classList.remove('bad');this.dataset.edited='1'">`}).join('');
+}
+// keep artist 1 in step with the booker's first name until someone changes it by hand
+document.addEventListener('input',e=>{if(e.target.id!=='name')return;const a=$('guestNames').querySelector('.gn');if(a&&a.dataset.edited!=='1')a.value=e.target.value.trim().split(/\s+/)[0]||''});
+function fullName(){return $('name').value.trim().replace(/\s+/g,' ')}
+function checkDetails(who){
+  const name=fullName(),phone=fullPhone(),email=$('email').value.trim();
+  if(!sel.date||!sel.time){go(1);return null}
+  if(name.split(' ').length<2){$('name').classList.add('bad');$('name').focus();$('err1').textContent=`Please add ${who} first and last name.`;return null}
+  if(!phone){$('phone').classList.add('bad');$('phone').focus();$('err1').textContent=`Please check ${who} mobile number. The confirmation is texted there.`;return null}
+  if(!/^\S+@\S+\.\S+$/.test(email)){$('email').classList.add('bad');$('email').focus();$('err1').textContent=`Please check ${who} email.`;return null}
+  return {name,phone,email};
+}
+['name','phone','email'].forEach(k=>$(k).addEventListener('input',()=>{$(k).classList.remove('bad');$('err1').textContent=''}));
+function payText(){const x=addonTotal();$('book').textContent=x?`Confirm & pay $${x}`:'Confirm my reservation';
+  const due=$('dueToday');if(due)due.textContent='$'+x;
+  const h=AV.lateHours,fee=AV.feePerGuest;
+  $('policyText').innerHTML=`<b>A card holds your spot.</b> ${x?`Your sparkling wine ($${x}) is charged now. Nothing else is charged today.`:'Nothing is charged today.'}
+    <ul class="pol"><li><b>Free changes</b> up to ${h} hours before your experience.</li>
+    <li><b>Within ${h} hours or no-show: $${fee} per guest.</b> This includes cancelling, rescheduling and changing your party size.</li>
+    <li>You'll pick your project at the studio (from $50 per guest). <a href="https://www.abstractorlando.com/#Radio-2" target="_blank" rel="noopener">See project options</a></li></ul>
+    <p class="walkin"><b>Not sure about your plans yet?</b> You can change your day or time for free from your confirmation text, up to ${h} hours before. And walk-ins are always welcome when we have open spots. Booking guarantees your spot.</p>`}
+$('toPay').onclick=async()=>{
+  if(GF)return gfBook();
+  $('err1').textContent='';
+  const d=checkDetails('your');if(!d)return;
+  const nb=[...$('guestNames').querySelectorAll('.gn')],missing=nb.filter(i=>!i.value.trim());
+  if(missing.length){missing.forEach(i=>i.classList.add('bad'));missing[0].focus();return $('err1').textContent=`Please add the first name of everyone creating (${missing.length} missing).`}
+  const guests=nb.map(i=>i.value.trim()),note=$('note').value.trim();
+  const fee=AV.feePerGuest,h=AV.lateHours;
+  $('summary').innerHTML=`<div class="sum"><span>When</span><b>${esc(shortDay(sel.date))} · ${esc(sel.time)}</b></div>
+    <div class="sum"><span>Party</span><b>${size} guest${size>1?'s':''}</b></div><div class="sum"><span>Due today</span><b id="dueToday">$0</b></div>`;
+  $('agreeText').textContent=`I understand and agree to the cancellation policy. I authorize Abstract Orlando to charge my card $${fee} per guest if I cancel or reschedule within ${h} hours of my experience, or if I don't show up.`;
+  const btn=$('toPay');btn.disabled=true;btn.textContent='Holding your spot…';
+  try{
+    const key=JSON.stringify([sel,size,d.phone,d.name,d.email,guests,note]);
+    if(booking&&booking.key!==key)booking=null;
+    if(!booking){
+      const r=await call('startBooking',{date:sel.date,time:sel.time,size,name:d.name,phone:d.phone,email:d.email,guests,note,addons:[],code:(AV.private&&AV.private.code)||'',policy:true});
+      booking={id:r.bookingId,secret:r.clientSecret,key};
+      startHold(Date.now()+(AV.holdMinutes||10)*60000);
+      try{sessionStorage.setItem('ao_booking',booking.id)}catch(e){}
+      mountCard();
+      track('checkout',{size,value:size*AVG_SPEND_PER_GUEST});
+    }
+    renderAddons();payText();go(3);
+  }catch(e){$('err1').textContent=e.message;if(/filled|left/.test(e.message))loadAvailability()}
+  btn.disabled=false;btn.textContent='Continue';
+};
+/* Giftory: confirmed right away, no card */
+async function gfBook(){
+  $('err1').textContent='';
+  const d=checkDetails('the guest\'s');if(!d)return;
+  const voucher=$('gfV').value.trim(),tier=$('gfT').value,bad=[];
+  if(!voucher){$('gfV').classList.add('bad');bad.push(1)}
+  if(!tier){$('gfT').classList.add('bad');bad.push(1)}
+  const artists=[...$('guestNames').querySelectorAll('.gn')].map(x=>{const n=x.value.trim();if(!n){x.classList.add('bad');bad.push(1)}return{name:n,voucher,tier}});
+  if(bad.length)return $('err1').textContent='Please add the voucher #, the project and every artist\'s first name.';
+  const code=$('gfCode').value.trim();if(!code){$('gfCode').classList.add('bad');return $('err1').textContent='Please enter the passcode.'}
+  const btn=$('toPay');btn.disabled=true;btn.textContent='Booking…';
+  try{const b=await call('partnerBook',{key:GKEY,date:sel.date,time:sel.time,name:d.name,phone:d.phone,email:d.email,artists,code,wine:($('gfWine')&&$('gfWine').value.trim())||'',note:$('note').value});
+    $('flow').classList.add('hide');$('confirmed').classList.remove('hide');
+    $('heroTitle').textContent='Booked for Giftory';$('heroSub').textContent='The guest gets a confirmation text and email.';$('heroPills').innerHTML='';
+    $('cTitle').textContent=`${b.name} is booked!`;$('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;$('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;
+    $('cCal').innerHTML='';$('cText').innerHTML=`<a href="${esc(location.pathname+'?g='+encodeURIComponent(GKEY))}" class="go" style="display:flex;align-items:center;justify-content:center;text-decoration:none">Book another guest</a>`;
+    $('cWine').classList.toggle('hide',!/wine/.test(b.addons||''));$('cWine').textContent='Bottle of wine included with their Giftory gift.';
+    window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*')}
+  catch(e){$('err1').textContent=e.message;if(/passcode/.test(e.message))$('gfCode').classList.add('bad');if(/filled|left/.test(e.message))loadAvailability()}
+  btn.disabled=false;btn.textContent='Book with vouchers';
+}
+function gfSetup(){
+  $('heroTitle').textContent='Giftory booking';$('heroSub').textContent='Book a gift recipient with their voucher numbers. No card needed.';$('heroPills').innerHTML='';
+  document.querySelectorAll('#s2 .prog .pt span:first-child').forEach(x=>x.textContent='Step 2 of 2');
+  document.querySelectorAll('#s1 .prog .pt span:first-child').forEach(x=>x.textContent='Step 1 of 2');
+  document.querySelectorAll('#s1 .prog .pb i:last-child,#s2 .prog .pb i:last-child').forEach(x=>x.remove());
+  $('detailsCard').querySelector('h2').textContent='Guest details';
+  $('detailsCard').querySelector('.hint').textContent='The guest receiving the gift. Their confirmation and reminders are texted here.';
+  $('email').placeholder='guest@email.com';
+  $('gfBox').innerHTML=`<label class="l" for="gfCode">Passcode</label><input id="gfCode" inputmode="numeric" autocomplete="off" style="margin-bottom:4px" oninput="this.classList.remove('bad')">
+    <label class="l" for="gfWine">Wine add-on voucher # <span class="muted">(only if their gift includes a bottle of wine)</span></label><input id="gfWine" placeholder="Leave blank if none">`;
+  $('noteLink').classList.add('hide');$('noteBox').classList.remove('hide');$('note').placeholder='Anything we should know? (optional)';
+  $('toPay').textContent='Book with vouchers';$('lockLine').textContent='No card needed. Free to reschedule or cancel up to 24 hours before.';
+}
+function mountCard(){
+  if(!stripe)stripe=Stripe(AV.publishable);
+  elements=stripe.elements({clientSecret:booking.secret,appearance:{theme:'stripe',variables:{colorPrimary:'#4e3aa2',fontFamily:'Poppins, system-ui, sans-serif',borderRadius:'12px'}},
+    fonts:[{cssSrc:'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap'}]});
+  // Apple Pay / Google Pay show first when the phone has them
+  $('pay').innerHTML='';elements.create('payment',{layout:'tabs',wallets:{applePay:'auto',googlePay:'auto'}}).mount('#pay');
+}
+$('back').onclick=()=>go(2);
+
+/* ---------- screen 3: save card + confirm ---------- */
+$('book').onclick=async()=>{
+  $('err2').textContent='';
+  if(!$('agree').checked)return $('err2').textContent='Please check the box to agree to the cancellation policy.';
+  const btn=$('book');btn.disabled=true;btn.textContent='Booking…';
+  try{sessionStorage.setItem('ao_addons',JSON.stringify(addons()))}catch(e){}
+  try{
+    const {error,setupIntent}=await stripe.confirmSetup({elements,redirect:'if_required',
+      confirmParams:{return_url:location.origin+location.pathname+'?done='+booking.id}});
+    if(error)throw new Error(error.message);
+    await finish(booking.id,setupIntent.id,{addons:addons()});
+  }catch(e){
+    btn.disabled=false;payText();
+    if(/ADDON_DECLINED/.test(e.message))return showDecline();
+    if(/PREPAID/.test(e.message)){startHold(Date.now()+(AV.holdMinutes||10)*60000);
+      $('err2').textContent='This card can\'t be used to hold a reservation. Please try a different credit or debit card.';
+      try{const r=await call('newCardFor',booking.id);booking.secret=r.clientSecret;mountCard()}catch(x){}return}
+    $('err2').textContent=e.message}
+};
+/* card declined for the wine: try another card, or book without it */
+function showDecline(){
+  startHold(Date.now()+(AV.holdMinutes||10)*60000);
+  $('err2').innerHTML=`Your card was declined for the $${addonTotal()} sparkling wine, so your reservation isn't confirmed yet.
+    <span style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button type="button" class="ghost" style="flex:1;margin:0" id="dNew">Use a different card</button>
+    <button type="button" class="ghost" style="flex:1;margin:0" id="dSkip">Book without the wine</button></span>`;
+  $('dNew').onclick=async()=>{try{const r=await call('newCardFor',booking.id);booking.secret=r.clientSecret;mountCard();$('err2').textContent='Enter a different card, then tap Confirm.'}catch(e){$('err2').textContent=e.message}};
+  $('dSkip').onclick=async()=>{$('err2').textContent='Booking…';
+    try{$('addons').querySelectorAll('input').forEach(i=>i.checked=false);await finish(booking.id,lastSI,{skipAddons:true})}catch(e){$('err2').textContent=e.message}};
+}
+let lastSI='';
+async function finish(id,siId,opts){
+  lastSI=siId;
+  const b=await call('finishBooking',id,siId,opts||{});
+  try{sessionStorage.removeItem('ao_booking');sessionStorage.removeItem('ao_addons')}catch(e){}
+  let seen=false;try{seen=sessionStorage.getItem('ao_tracked')===b.id;sessionStorage.setItem('ao_tracked',b.id)}catch(e){}
+  if(!seen)track('booked',{id:b.id,size:b.size,value:b.size*AVG_SPEND_PER_GUEST});
+  $('flow').classList.add('hide');$('confirmed').classList.remove('hide');
+  clearInterval(holdTimer);
+  $('heroTitle').textContent='We can\'t wait to see you!';$('heroSub').textContent='Your reservation is confirmed.';$('heroPills').innerHTML='';
+  const ph=b.phone||fullPhone();
+  $('cText').innerHTML=ph?`We texted your confirmation to <b>${esc(ph)}</b>. You can change your day, time or party size for free up to ${AV?AV.lateHours:24} hours before.`:'';
+  $('cWine').classList.toggle('hide',!/wine/.test(b.addons||''));
+  $('cWine').textContent=b.paid?'Your sparkling wine is paid and will be chilled and waiting for you.':'Your sparkling wine will be chilled and waiting for you.';
+  $('cTitle').textContent=`You're booked, ${b.name.split(' ')[0]}!`;
+  $('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;$('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;
+  $('cCal').innerHTML=calButtons(b.date,b.time,b.size,b.manageUrl||'');
+  window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
+}
+
+/* ---------- day and time buttons (manage: reschedule) ---------- */
+function dayButtons(el,days,current,onPick,need){
+  const ok=days.filter(d=>d.times.some(t=>t.left>=need));
+  if(!ok.length){el.innerHTML='<p class="closed">No open times for a party this size right now. Text us at (689) 348-8239 and we\'ll find you a spot.</p>';return}
+  el.innerHTML=ok.map(d=>{const o=dObj(d.date);return `<button type="button" class="day${current===d.date?' on':''}" data-d="${d.date}">
+    <div class="dw">${o.toLocaleDateString('en-US',{weekday:'short'})}</div><div class="dn">${o.getDate()}</div><div class="dm">${o.toLocaleDateString('en-US',{month:'short'})}</div></button>`}).join('');
+  el.querySelectorAll('.day').forEach(b=>b.onclick=()=>onPick(b.dataset.d));
+}
+function timeButtons(el,day,current,onPick,need,hideFull){
+  if(!day){el.innerHTML='<p class="muted">Pick a day first.</p>';return}
+  el.innerHTML=day.times.filter(t=>!hideFull||t.left>=need).map(t=>{const can=t.left>=need;return `<button type="button" class="time${current===t.time?' on':''}${can&&t.left<=3?' low':''}" data-t="${t.time}" ${can?'':'disabled'}>
+    <b>${t.time}</b><span>${!can?(t.left?'Only '+t.left+' left':'Full'):t.left<=3?'Only '+t.left+' left':t.left+' spots open'}</span></button>`}).join('')+
+    (!hideFull&&day.times.some(t=>t.left>0&&t.left<need)?`<p class="hint" style="grid-column:1/-1">Need a few more spots than you see? Text us at <a href="sms:+16893488239">(689) 348-8239</a> and we'll do our best to fit your whole group.</p>`:'');
+  el.querySelectorAll('.time').forEach(b=>b.onclick=()=>onPick(b.dataset.t));
+}
+
+/* ---------- add to calendar (Google, or a calendar file for Apple / Outlook) ---------- */
+function calButtons(date,time,size,link){
+  const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(time||'');if(!date||!m)return '';
+  let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;
+  const p=n=>String(n).padStart(2,'0'),d=date.replace(/-/g,''),st=`${d}T${p(h)}${p(m[2])}00`,en=`${d}T${p(h+1)}${p(m[2])}00`;
+  // studio time (Orlando) -> exact moment, so the calendar file shows the right time anywhere
+  const [Y,Mo,D]=date.split('-').map(Number),guess=Date.UTC(Y,Mo-1,D,h,+m[2]);
+  const ny=new Date(new Date(guess).toLocaleString('en-US',{timeZone:'America/New_York'})),utc=new Date(new Date(guess).toLocaleString('en-US',{timeZone:'UTC'}));
+  const t0=guess+(utc-ny),zt=t=>new Date(t).toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  const title='Abstract Orlando',loc='Abstract Orlando, 12211 Regency Village Dr, Suite 11, Orlando, FL 32821';
+  const det=`Party of ${size}. Please arrive about 10 minutes early.`+(link?`\nYour booking: ${link}`:'');
+  const g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+`&dates=${st}/${en}&ctz=America/New_York&location=`+encodeURIComponent(loc)+'&details='+encodeURIComponent(det);
+  const esc2=t=>t.replace(/\\/g,'\\\\').replace(/,/g,'\\,').replace(/;/g,'\;').replace(/\n/g,'\\n');
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Abstract Orlando//Booking//EN','BEGIN:VEVENT','UID:'+d+p(h)+p(m[2])+'-'+size+'@abstractorlando.com',
+    'DTSTAMP:'+zt(Date.now()),'DTSTART:'+zt(t0),'DTEND:'+zt(t0+36e5),
+    'SUMMARY:'+esc2(title),'LOCATION:'+esc2(loc),'DESCRIPTION:'+esc2(det),'BEGIN:VALARM','TRIGGER:-PT2H','ACTION:DISPLAY','DESCRIPTION:Abstract Orlando','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const ah='data:text/calendar;charset=utf-8,'+encodeURIComponent(ics);
+  return `<div class="calrow"><span>Add to calendar:</span><a href="${g}" target="_blank" rel="noopener">Google</a><a href="${ah}" download="abstract-orlando.ics">Apple / Outlook</a></div>`;
+}
+/* ---------- manage existing booking (?b=ID&t=TOKEN) ---------- */
+let mine=null,move={date:null,time:null};
+async function loadMine(){
+  const q=new URLSearchParams(location.search);
+  try{mine=await call('getMyBooking',q.get('b'),q.get('t'));renderMine()}
+  catch(e){$('mCard').innerHTML=`<p>${esc(e.message)}</p><p class="muted">Text us at (689) 348-8239 and we'll help.</p>`}
+}
+const FEE_TZ={timeZone:'America/New_York'};
+function deadlineText(b){const d=new Date(b.deadline);return d.toLocaleDateString('en-US',{...FEE_TZ,weekday:'long',month:'long',day:'numeric'})+' at '+d.toLocaleTimeString('en-US',{...FEE_TZ,hour:'numeric',minute:'2-digit'})}
+function renderMine(){
+  const b=mine,q=new URLSearchParams(location.search),fee=b.feePerGuest||AV.feePerGuest,h=AV.lateHours;
+  if(b.status==='Needs card')return renderNeedCard();
+  $('heroTitle').textContent='Your booking';$('heroSub').textContent='Confirmation '+b.id;$('heroPills').innerHTML='';
+  const active=b.status==='Confirmed'&&!b.past;
+  $('mCard').innerHTML=`<div class="sum"><span>Name</span><b>${esc(b.name)}</b></div>
+    <div class="sum"><span>Day</span><b>${esc(niceDate(b.date))}</b></div><div class="sum"><span>Time</span><b>${esc(b.time)}</b></div>
+    <div class="sum"><span>Party</span><b>${b.size} guest${b.size>1?'s':''}</b></div>
+    <div class="sum"><span>Status</span><b>${b.status==='Confirmed'?(b.past?'Done':'Confirmed ✓'):esc(b.status==='Late cancel'?'Cancelled':b.status)}</b></div>
+    ${active?calButtons(b.date,b.time,b.size,location.href):''}
+    ${b.deposit?`<div class="sum"><span>${b.fareharbor?'Deposit paid':'Credit'}</span><b>$${b.deposit} · comes off your bill</b></div>`:''}
+    ${active&&b.depositOnly?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> If you cancel or reschedule now, your $${b.deposit} deposit can't be carried over. Nothing else is charged.</div>`
+      :`<div class="policy"><b>Free changes anytime before ${esc(deadlineText(b))}.</b> Reschedule and your $${b.deposit} deposit moves with you. Cancel before then and we'll save it as credit for your next visit. After that, cancelling or not showing up means the deposit can't be carried over.</div>`)
+      +`<button class="go" id="mMove">Reschedule</button>
+       <button class="ghost" id="mSize">Change party size</button>
+       <button class="ghost" id="mCancel">Cancel my booking</button>`:''}
+    ${active&&b.giftory?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> To make a change, please text us at <a href="sms:+16893488239">(689) 348-8239</a>.</div>`
+      :`<div class="policy"><b>Free changes anytime before ${esc(deadlineText(b))}.</b> After that, please text us at <a href="sms:+16893488239">(689) 348-8239</a> to make a change. To add or remove artists, text us anytime.</div>
+       <button class="go" id="mMove">Reschedule</button>
+       <button class="ghost" id="mCancel">Cancel my booking</button>`):''}
+    ${active&&!b.depositOnly&&!b.giftory?(b.late?`<div class="policy"><b>Your class is less than ${h} hours away.</b> You can still reschedule, change your party size or cancel here. A late-change fee of $${fee} per guest applies and goes on the card you saved. We'll show you the exact amount before anything is final.</div>`
+      :`<div class="policy"><b>Free changes anytime before ${esc(deadlineText(b))}.</b> After that, rescheduling, removing guests, cancelling or not showing up is $${fee} per guest.</div>`)
+      +`<button class="go" id="mMove">Reschedule</button>
+       <button class="ghost" id="mSize">Change party size</button>
+       <button class="ghost" id="mCancel">Cancel my booking</button>`:''}`;
+  if(!active||(b.giftory&&b.late))return;
+  const open=id=>{['moveCard','mSizeCard'].forEach(c=>$(c).classList.toggle('hide',c!==id));$(id).scrollIntoView({behavior:'smooth'})};
+  $('mMove').onclick=()=>{move={date:null,time:null};renderMove();open('moveCard')};
+  if($('mSize'))$('mSize').onclick=()=>{newSize=b.size;renderSize();open('mSizeCard')};
+  $('mCancel').onclick=async()=>{
+    if(b.depositOnly){if(!confirm(b.late?`Cancel your booking?\n\nYour class is less than ${h} hours away, so your $${b.deposit} deposit can't be carried over. Nothing else is charged.`:`Cancel your booking?\n\nYour $${b.deposit} deposit will be saved as credit for your next visit.`))return}
+    else if(b.giftory){if(!confirm('Cancel your booking?\n\nYour Giftory gift isn\'t lost. Contact support@giftory.com to use it for another visit.'))return}
+    else if(!confirm(b.late?`Cancel your booking?\n\nYour class is less than ${h} hours away, so a late-cancel fee of $${b.fee} ($${fee} x ${b.size} guest${b.size>1?'s':''}) will be charged to the card you saved.`:'Cancel your booking? Nothing will be charged.'))return;
+    try{mine=await call('cancelMyBooking',q.get('b'),q.get('t'),!!b.late);['moveCard','mSizeCard'].forEach(c=>$(c).classList.add('hide'));renderMine()}catch(e){alert(e.message)}
+  };
+}
+let newSize=1;
+function renderSize(){
+  const b=mine,fee=b.feePerGuest||AV.feePerGuest,less=b.size-newSize;
+  $('sNum').textContent=newSize;$('sMinus').disabled=newSize<=1;$('sPlus').disabled=newSize>=20;
+  $('sNote').textContent=newSize===b.size?'Your party is '+b.size+' now.':less>0&&b.late&&!b.depositOnly?`Removing ${less} guest${less>1?'s':''}: late-change fee of $${less*fee}.`:less>0?`Removing ${less} guest${less>1?'s':''}. No charge.`:`Adding ${-less} guest${-less>1?'s':''}, if there's room. No charge.`;
+  $('sSave').disabled=newSize===b.size;$('sErr').textContent='';
+}
+$('sMinus').onclick=()=>{if(newSize>1){newSize--;renderSize()}};
+$('sPlus').onclick=()=>{if(newSize<20){newSize++;renderSize()}};
+$('sSave').onclick=async()=>{
+  const b=mine,q=new URLSearchParams(location.search),fee=b.feePerGuest||AV.feePerGuest,less=b.size-newSize,late=b.late&&less>0;
+  if(late&&!b.depositOnly&&!confirm(`Change your party to ${newSize}?\n\nYour class is less than ${AV.lateHours} hours away, so a late-change fee of $${less*fee} ($${fee} x ${less} guest${less>1?'s':''}) will be charged to the card you saved.`))return;
+  $('sSave').disabled=true;
+  try{mine=await call('changeMySize',q.get('b'),q.get('t'),newSize,late);$('mSizeCard').classList.add('hide');renderMine();window.scrollTo(0,0);loadAvailability()}
+  catch(e){$('sErr').textContent=e.message;$('sSave').disabled=false}
+};
+/* the team booked this for them: save a card to lock it in */
+function renderNeedCard(){
+  const b=mine,q=new URLSearchParams(location.search),fee=AV.feePerGuest,h=AV.lateHours;
+  $('heroTitle').textContent='Lock in your spot';$('heroSub').textContent='Save a card to confirm your reservation.';$('heroPills').innerHTML='';
+  const until=b.cardDue?new Date(b.cardDue).toLocaleString('en-US',{weekday:'long',hour:'numeric',minute:'2-digit'}):'';
+  $('mCard').innerHTML=`<div class="sum"><span>Name</span><b>${esc(b.name)}</b></div>
+    <div class="sum"><span>Day</span><b>${esc(niceDate(b.date))}</b></div><div class="sum"><span>Time</span><b>${esc(b.time)}</b></div>
+    <div class="sum"><span>Party</span><b>${b.size} guest${b.size>1?'s':''}</b></div>
+    <div class="policy"><b>A card holds your spot.</b> Nothing is charged today.${until?` We're holding your spot until ${esc(until)}.`:''}
+      <ul class="pol"><li><b>Free changes</b> up to ${h} hours before your experience.</li>
+      <li><b>Within ${h} hours or no-show: $${fee} per guest.</b> This includes cancelling, rescheduling and changing your party size.</li>
+      <li>You'll pick your project at the studio (from $50 per guest). <a href="https://www.abstractorlando.com/#Radio-2" target="_blank" rel="noopener">See project options</a></li></ul></div>
+    <div id="mPay"><p class="muted">Loading secure card form…</p></div>
+    <label class="chk" style="margin-top:14px"><input type="checkbox" id="mAgree"> <span>I understand and agree to the cancellation policy. I authorize Abstract Orlando to charge my card $${fee} per guest if I cancel or reschedule within ${h} hours of my experience, or if I don't show up.</span></label>
+    <p class="err" id="mErr2"></p>
+    <button class="go" id="mSaveCard">Confirm my reservation</button>
+    <p class="lock">🔒 Card secured by Stripe. We never see your card number.</p>`;
+  let el=null;
+  const mount=async()=>{try{const r=await call('cardSetup',q.get('b'),q.get('t'));if(!stripe)stripe=Stripe(AV.publishable);
+      el=stripe.elements({clientSecret:r.clientSecret,appearance:{theme:'stripe',variables:{colorPrimary:'#4e3aa2',fontFamily:'Poppins, system-ui, sans-serif',borderRadius:'12px'}},
+        fonts:[{cssSrc:'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap'}]});
+      $('mPay').innerHTML='';el.create('payment',{layout:'tabs'}).mount('#mPay')}
+    catch(e){$('mSaveCard').classList.add('hide');if(/HOLD_EXPIRED/.test(e.message))return holdExpired();$('mPay').innerHTML=`<p class="err">${esc(e.message)}</p>`}};
+  mount();
+  $('mSaveCard').onclick=async()=>{
+    $('mErr2').textContent='';if(!$('mAgree').checked)return $('mErr2').textContent='Please check the box to agree to the cancellation policy.';
+    const btn=$('mSaveCard');btn.disabled=true;btn.textContent='Saving…';
+    try{const {error,setupIntent}=await stripe.confirmSetup({elements:el,redirect:'if_required',confirmParams:{return_url:location.href.split('#')[0]}});
+      if(error)throw new Error(error.message);
+      mine=await call('saveCard',q.get('b'),q.get('t'),setupIntent.id);cardDone()}
+    catch(e){btn.disabled=false;btn.textContent='Confirm my reservation';
+      if(/HOLD_EXPIRED/.test(e.message))return holdExpired();
+      if(/PREPAID/.test(e.message)){$('mErr2').textContent='This card can\'t be used to hold a reservation. Please try a different credit or debit card.';mount()}
+      else $('mErr2').textContent=e.message}
+  };
+}
+/* hold ran out and the class filled up: send them to pick another time themselves */
+function holdExpired(){
+  const q=new URLSearchParams(location.search),u=location.pathname+(q.get('embed')?'?embed=1':'');
+  $('heroTitle').textContent='Let\'s find you a new time';$('heroSub').textContent='Your hold ran out and that class filled up.';
+  $('mCard').innerHTML=`<p style="margin:0 0 14px">So sorry! We could only hold your spot for 15 minutes, and that class filled up in the meantime. Other times are still open, and it only takes a minute to book.</p>
+    <a class="go" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="${u}">Pick a new time</a>`;
+  window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
+}
+function cardDone(){
+  const b=mine;$('manage').classList.add('hide');$('confirmed').classList.remove('hide');
+  $('heroTitle').textContent='We can\'t wait to see you!';$('heroSub').textContent='Your reservation is confirmed.';
+  $('cTitle').textContent=`You're booked, ${b.name.split(' ')[0]}!`;$('cWhen').textContent=`${niceDate(b.date)} · ${b.time}`;
+  $('cParty').textContent=`Party of ${b.size} · Confirmation ${b.id}`;$('cCal').innerHTML=calButtons(b.date,b.time,b.size,location.href);$('cText').innerHTML=b.phone?`We'll text your booking details to <b>${esc(b.phone)}</b>.`:'';
+  $('cWine').classList.add('hide');window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*');
+}
+function renderMove(){
+  const need=mine.size;
+  dayButtons($('mDays'),AV.days,move.date,d=>{move.date=d;move.time=null;renderMove()},need);
+  timeButtons($('mTimes'),AV.days.find(d=>d.date===move.date),move.time,t=>{move.time=t;renderMove()},need,true);
+  $('mSave').disabled=!(move.date&&move.time);
+}
+$('mSave').onclick=async()=>{
+  const q=new URLSearchParams(location.search),b=mine,fee=b.feePerGuest||AV.feePerGuest;$('mErr').textContent='';
+  if(b.late&&b.depositOnly&&!confirm(`Reschedule to ${niceDate(move.date)} at ${move.time}?\n\nYour current class is less than ${AV.lateHours} hours away, so your $${b.deposit} deposit can't be carried over to the new time.`))return;
+  if(b.late&&!b.depositOnly&&!confirm(`Reschedule to ${niceDate(move.date)} at ${move.time}?
+
+Your current class is less than ${AV.lateHours} hours away, so a late-change fee of $${b.fee} ($${fee} x ${b.size} guest${b.size>1?'s':''}) will be charged to the card you saved.`))return;
+  $('mSave').disabled=true;
+  try{mine=await call('rescheduleMyBooking',q.get('b'),q.get('t'),move.date,move.time,!!b.late);$('moveCard').classList.add('hide');renderMine();window.scrollTo(0,0);loadAvailability()}
+  catch(e){$('mErr').textContent=e.message;$('mSave').disabled=false}
+};
+
+/* ---------- start ---------- */
+async function loadAvailability(){
+  const pcode=new URLSearchParams(location.search).get('p')||'';
+  try{AV=pcode?await call('availability',pcode):await call('availability');}catch(e){$('calWrap').innerHTML=`<p class="closed">${esc(e.message)}</p>`;return}
+  if(AV.private){$('heroTitle').textContent=AV.private.name?`Book your private experience`:'Book your private experience';
+    $('heroSub').textContent=AV.private.name?`This class is reserved for ${AV.private.name}.`:'This class is reserved for your group.';
+    if(!sel.date&&AV.days[0]){sel.date=AV.days[0].date;sel.time=AV.days[0].times[0].time}}
+  setSize(size);renderAddons();if(!$('moveCard').classList.contains('hide'))renderMove();
+}
+(async()=>{
+  const q=new URLSearchParams(location.search);
+  if(GKEY&&!q.get('b')){try{GF=await call('partnerInfo',GKEY);gfSetup()}catch(e){$('flow').innerHTML=`<div class="card"><p>${esc(e.message)}</p></div>`;return}}
+  if(q.get('b')&&q.get('t')){$('flow').classList.add('hide');$('manage').classList.remove('hide')}
+  await loadAvailability();
+  // link to one class (?d=2026-11-07&t=2:00 PM): open with that day and time picked
+  if(q.get('d')&&!q.get('b')&&AV&&AV.days){const d=AV.days.find(x=>x.date===q.get('d'));
+    if(d){sel.date=d.date;const t=d.times.find(x=>x.time===q.get('t')&&x.left>0);sel.time=t?t.time:null;calM=d.date.slice(0,7);setSize(size);
+      setTimeout(()=>{const c=$(sel.time?'next1':'timeCard');if(c)c.scrollIntoView({behavior:'smooth',block:'center'})},300)}}
+  if(q.get('b')&&q.get('t')){
+    // back from a bank check while saving a card
+    if(q.get('setup_intent')){try{mine=await call('saveCard',q.get('b'),q.get('t'),q.get('setup_intent'));return cardDone()}catch(e){}}
+    return loadMine();
+  }
+  // returning from a bank verification page
+  const si=q.get('setup_intent'),id=q.get('done');
+  if(si&&id){$('flow').classList.add('hide');let ad;try{ad=JSON.parse(sessionStorage.getItem('ao_addons')||'null')}catch(e){}
+    try{await finish(id,si,Array.isArray(ad)?{addons:ad}:{})}catch(e){$('flow').classList.remove('hide');go(1);$('sum1').textContent=e.message}}
+})();
+</script>
+</body>
+</html>
