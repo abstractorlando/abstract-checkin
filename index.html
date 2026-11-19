@@ -590,6 +590,7 @@ const demo = {rows:[],st:{},
   storeParty(s){const o=this.st[s.partyId]||{};this.st[s.partyId]={location:s.location.toUpperCase(),pieceType:s.pieceType,pieces:+s.pieces,emailSent:o.emailSent||s.notify,textSent:o.textSent||s.notify,pickedUp:o.pickedUp||false};return {email:s.notify?'sent':'skipped',text:s.notify?'sent':'skipped'}},
   addGuestToParty(pid,name,type){const party=this.rows.filter(r=>r.partyId===pid);const f=party[0];const size=party.length+1;party.forEach(r=>r.size=size);
     const g=Object.assign({},f,{row:this.rows.length+2,num:size,size,name,type,projects:1,printed:0});this.rows.push(g);return this.wrap(g)},
+  removeGuest(row,pid){const i=this.rows.findIndex(x=>x.row===row);const g=this.rows.splice(i,1)[0];const left=this.rows.filter(r=>r.partyId===pid);left.forEach(r=>r.size=left.length);return {name:g.name,left:left.length,booking:null}},
   markPickedUp(pid){this.st[pid].pickedUp=true;return true}};
 function call(fn,...args){
   return new Promise((res,rej)=>{
@@ -1252,7 +1253,7 @@ function renderParties(list,el,byClass){
       <div id="pjf_${f.partyId}"></div>
       <div id="sf_${f.partyId}"></div>
       ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b>${g.guestPhone?` <a class="muted" href="tel:${esc(g.guestPhone)}" style="color:var(--teal);text-decoration:none">${esc(g.guestPhone)}</a>`:''} <span class="muted">${g.printed?'printed '+g.printed+'×':'not printed'}</span>${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
-        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button><button class="btn ghost small" onclick="goldenTicket(${g.row})" title="Prints the expiration sticker for the gold card">Issue golden ticket</button></div></div>`).join('')}
+        <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" style="color:var(--red,#c0392b)" onclick="removeGuest(${g.row})">Remove</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button><button class="btn ghost small" onclick="goldenTicket(${g.row})" title="Prints the expiration sticker for the gold card">Issue golden ticket</button></div></div>`).join('')}
       ${waitingHtml(p)}
       <div id="ap_${f.partyId}"></div>
       <button class="btn ghost small" style="margin-top:10px" onclick="addToParty('${f.partyId}')">+ Add guest to this party</button>
@@ -1449,6 +1450,15 @@ async function editGuest(row){
   const pj=await askText('How many projects (labels)?',g.projects||1);if(pj===null)return;
   try{await call('updateGuest',row,cap(n||g.name),ft?'FT':'RG',parseInt(pj)||1);toast('Updated');refreshView()}catch(e){toast('Could not update')}
 }
+/* someone checked in who isn't coming after all (or checked in by mistake): take them off the party */
+async function removeGuest(row){
+  const g=cache[row];if(!g)return;const party=parties[g.partyId]||[];
+  const pj=(g.details||[]).length?`\n\nHeads up: ${g.name} already has projects entered. Those are removed too.`:'';
+  if(!confirm(`Remove ${g.name} from ${g.reservation}'s party?\n\nUse this when someone isn't coming after all. The party goes from ${party.length} to ${party.length-1} guests and the booking is updated. No fee is charged.${pj}`))return;
+  try{const r=await call('removeGuest',row,g.partyId,ME&&!ME.device?ME.name:'Staff',g.name);
+    toast(`Removed ${r.name}. Party is now ${r.left} guest${r.left===1?'':'s'}`+(r.booking&&r.booking.size<r.booking.was?` · booking ${r.booking.was} to ${r.booking.size}`:''),5000);refreshView()}
+  catch(e){toast(e.message||'Could not remove',5000);refreshView()}
+}
 function refreshView(){if(!$('vToday').classList.contains('hide'))loadDay();else if(!$('vFind').classList.contains('hide'))find()}
 let dayData=[];
 let ciT;function debCi(){clearTimeout(ciT);ciT=setTimeout(ciSearch,300)}
@@ -1504,7 +1514,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611182239';
+const BUILD='202611192043';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
