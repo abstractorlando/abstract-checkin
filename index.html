@@ -1582,7 +1582,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192235';
+const BUILD='202611192301';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -2323,7 +2323,7 @@ function viewBooking(row){
   const [cxWho,cxAt]=(b.cancelBy||'').split('|');
   const cards=card('Booking',F('Cancelled',/cancel/i.test(b.status)?(cxWho?'By '+esc(cxWho==='Guest online'?'the guest online':cxWho)+(cxAt?' on '+exactTime(cxAt).replace(/, (\d)/,' at $1'):''):'Yes (before we tracked who and when)'):'')+F(artistsLabel(b.guests),artistList(b.guests))+F('Booked',`${src}${b.created&&exactTime(b.created)?' · '+exactTime(b.created):''}`)+F('Confirmation',b.bookingId?esc(b.bookingId):'')+F('Add-on',wine)
       +F('Already paid',depText(b)?`<b>${esc(depText(b))}</b>`:''))
-    +card('Contact',F('Phone',ph)+F('Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—'))
+    +card('Contact',F('Phone',ph)+F('Email',b.email?`<a href="mailto:${esc(b.email)}">${esc(b.email)}</a>`:'—')+(!b.partyId&&b.status!=='Cancelled'?`<button class="btn ghost small" style="margin-top:10px" onclick="editParty('${k}')">Edit phone or email</button>`:''))
     +card('Notes for this booking',F('From the guest',b.note?`“${esc(b.note)}”`:'')+F('Team note',b.staffNote?'📝 '+esc(b.staffNote):''))
     +card('Payment',F('Card',b.card?'Saved for no-show protection':needCard?'Not saved yet':'')+F('Late change fees',b.guestFee?b.guestFee.split(' | ').map(f=>esc(f.replace(/ · pi_\w+/,''))).join('<br>'):''))
     +card('Guest profile',F('History',`${g.visits?g.visits+' past visit'+(g.visits>1?'s':''):'First visit'}${g.noShows?` · ${g.noShows} no-show${g.noShows>1?'s':''}`:''}`)
