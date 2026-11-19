@@ -291,7 +291,13 @@ function busyEnd(btn){
   const k=(+btn.dataset.busy||1)-1;if(k>0)btn.dataset.busy=k;else{delete btn.dataset.busy;btn.classList.remove('isbusy')}
   if(--BUSY.n<=0){BUSY.n=0;clearTimeout(BUSY.t);const p=document.getElementById('busyPill');if(p)p.classList.remove('on')}
 }
-function call(fn,...args){const _b=busyStart();return call0(fn,...args).finally(()=>busyEnd(_b))}
+/* speed log: time every server call on this device; send them in one batch every few minutes */
+const SPD={q:[],t:null};
+function spdAdd(fn,ms,ok){if(fn==='speedLog')return;SPD.q.push({fn,ms:Math.round(ms),ok,at:Date.now()});
+  if(SPD.q.length>=25)spdFlush();else if(!SPD.t)SPD.t=setTimeout(spdFlush,180000)}
+function spdFlush(){clearTimeout(SPD.t);SPD.t=null;if(!SPD.q.length)return;const items=SPD.q.splice(0,50);call0('speedLog',items).catch(()=>{})}
+addEventListener('pagehide',()=>{if(SPD.q.length)spdFlush()});
+function call(fn,...args){const _b=busyStart(),t0=performance.now();return call0(fn,...args).then(v=>{spdAdd(fn,performance.now()-t0,true);return v},e=>{spdAdd(fn,performance.now()-t0,false);throw e}).finally(()=>busyEnd(_b))}
 function call0(fn,...args){
   if(window.AO_DEMO&&fn!=='availability'){const f=JSON.parse(sessionStorage.getItem('demo')||'{}');
     if(fn==='startBooking'){const d=args[0];sessionStorage.setItem('demo',JSON.stringify(d));return new Promise(r=>setTimeout(()=>r({bookingId:'PREVIEW',clientSecret:'x'}),500))}

@@ -618,7 +618,13 @@ function busyEnd(btn){
   const k=(+btn.dataset.busy||1)-1;if(k>0)btn.dataset.busy=k;else{delete btn.dataset.busy;btn.classList.remove('isbusy')}
   if(--BUSY.n<=0){BUSY.n=0;clearTimeout(BUSY.t);const p=document.getElementById('busyPill');if(p)p.classList.remove('on')}
 }
-function call(fn,...args){const _b=busyStart();return call0(fn,...args).finally(()=>busyEnd(_b))}
+/* speed log: time every server call on this device; send them in one batch every few minutes */
+const SPD={q:[],t:null};
+function spdAdd(fn,ms,ok){if(fn==='speedLog')return;SPD.q.push({fn,ms:Math.round(ms),ok,at:Date.now()});
+  if(SPD.q.length>=25)spdFlush();else if(!SPD.t)SPD.t=setTimeout(spdFlush,180000)}
+function spdFlush(){clearTimeout(SPD.t);SPD.t=null;if(!SPD.q.length)return;const items=SPD.q.splice(0,50);call0('speedLog',items).catch(()=>{})}
+addEventListener('pagehide',()=>{if(SPD.q.length)spdFlush()});
+function call(fn,...args){const _b=busyStart(),t0=performance.now();return call0(fn,...args).then(v=>{spdAdd(fn,performance.now()-t0,true);return v},e=>{spdAdd(fn,performance.now()-t0,false);throw e}).finally(()=>busyEnd(_b))}
 function call0(fn,...args){
   return new Promise((res,rej)=>{
     if(!hasGAS){try{res(demo[fn](...args))}catch(e){rej(e)}return}
@@ -1249,7 +1255,7 @@ async function saveProjects(id){
       if(!project&&!w)return;if(!project)bad='Add the project name';else if(!w)bad=`Pick Storage, Shipping or Took home for ${project}`;items.push({project,where:w&&w.w})});
     list.push({row:+gEl.dataset.row,items})});
   if(bad)return toast(bad,4000);
-  try{const upd=await call('setPartyProjects',id,list);upd.forEach(g=>cache[g.row]=g);toast('Projects saved ✓');refreshView()}
+  try{const upd=await call('setPartyProjects',id,list);upd.forEach(g=>cache[g.row]=g);toast('Projects saved ✓');patchView(swapGuests(upd))}
   catch(e){toast('Could not save: '+(e.message||e),5000)}
 }
 function renderParties(list,el,byClass){
@@ -1469,7 +1475,7 @@ async function confirmPickup(id,how){
 }
 async function editContact(id){
   const f=parties[id][0];const ph=await askText('Phone',f.phone);if(ph===null)return;const em=await askText('Email',f.email);if(em===null)return;
-  try{await call('updateContact',id,ph.trim(),em.trim());toast('Updated');refreshView()}catch(e){toast('Could not update')}
+  try{await call('updateContact',id,ph.trim(),em.trim());toast('Updated');patchView(l=>l.forEach(g=>{if(g.partyId===id){g.phone=ph.trim();g.email=em.trim()}}))}catch(e){toast('Could not update')}
 }
 /* Edit one checked-in guest: name, FT/RG, own phone, labels, or take them off the party */
 function editGuest(row){
@@ -1494,7 +1500,7 @@ function editGuest(row){
     if(!n)return $('egName').focus();
     if(ph&&ph.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').length!==10){$('egPh').focus();return toast('Check the phone number (10 digits)')}
     const btn=$('egSave');btn.disabled=true;btn.textContent='Saving…';
-    try{await call('updateGuest',row,n,t?t.t:g.type,null,ph?fmtPhone(ph):'');m.remove();toast('Updated');refreshView()}
+    try{const u=await call('updateGuest',row,n,t?t.t:g.type,null,ph?fmtPhone(ph):'');m.remove();toast('Updated');patchView(swapGuests([u]))}
     catch(e){btn.disabled=false;btn.textContent='Save';toast('Could not update')}
   };
   $('egRmBtn').onclick=()=>{
@@ -1504,10 +1510,19 @@ function editGuest(row){
       <button class="btn main" style="flex:1;background:#c0392b" id="egRmYes">Yes, remove</button></div>`;
     $('egRmYes').onclick=async()=>{const y=$('egRmYes');y.disabled=true;y.textContent='Removing…';
       try{const r=await call('removeGuest',row,g.partyId,ME&&!ME.device?ME.name:'Staff',g.name);m.remove();
-        toast(`Removed ${r.name}. Party is now ${r.left} guest${r.left===1?'':'s'}`+(r.booking&&r.booking.size<r.booking.was?` · booking ${r.booking.was} to ${r.booking.size}`:''),5000);refreshView()}
+        toast(`Removed ${r.name}. Party is now ${r.left} guest${r.left===1?'':'s'}`+(r.booking&&r.booking.size<r.booking.was?` · booking ${r.booking.was} to ${r.booking.size}`:''),5000);patchView(l=>{const i=l.findIndex(x=>x.row===row);if(i>=0)l.splice(i,1);
+          l.forEach(x=>{if(x.row>row)x.row--;if(x.partyId===g.partyId)x.size=r.left})})}
       catch(e){m.remove();toast(e.message||'Could not remove',5000);refreshView()}};
   };
 }
+/* faster: show the change on screen right away, then check the server quietly in the background
+   (before: the screen waited for a second full reload after every save) */
+function patchView(mut){
+  if($('vToday').classList.contains('hide')||!Array.isArray(dayData)||!dayData.length)return refreshView();
+  try{mut(dayData);cset('day_'+$('dayPick').value,{list:dayData,bk:DAYBK});renderParties(dayData,$('dayList'),true)}catch(e){return refreshView()}
+  loadDay(true);
+}
+const swapGuests=up=>list=>(up||[]).forEach(u=>{const i=list.findIndex(g=>g.row===u.row);if(i>=0)list[i]=Object.assign({},list[i],u)});
 function refreshView(){if(!$('vToday').classList.contains('hide'))loadDay();else if(!$('vFind').classList.contains('hide'))find()}
 let dayData=[];
 let ciT;function debCi(){clearTimeout(ciT);ciT=setTimeout(ciSearch,300)}
@@ -1563,7 +1578,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192108';
+const BUILD='202611192112';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
