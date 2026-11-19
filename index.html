@@ -1582,7 +1582,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192207';
+const BUILD='202611192235';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1828,7 +1828,7 @@ function openAddBooking(date,time){
       <p class="muted" style="font-size:13px;margin:4px 0 0">The guest count updates to match the list.</p></div>
     <div id="abNames" class="abn"></div>
     <label class="l" style="margin-top:10px">Email</label><input id="abEmail" type="email" autocapitalize="off" placeholder="name@email.com">
-    <label class="l" style="margin-top:10px">Note <span class="muted">(optional, only staff see this)</span></label><input id="abNote" placeholder="e.g. Booked their next visit at checkout">
+    <label class="l" style="margin-top:10px">Note <span class="muted">(optional, only staff see this)</span></label><textarea id="abNote" rows="3" placeholder="e.g. Booked their next visit at checkout" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight+4,320)+'px'" style="width:100%;font:500 17px/1.45 Poppins;padding:12px 14px;border:2px solid var(--line);border-radius:12px;resize:vertical;min-height:90px"></textarea>
     <div id="abCardRow" class="hide" style="margin-top:12px"></div>
     <label class="chk" id="abNotifyRow" style="margin-top:12px"><input type="checkbox" id="abNotify" checked> Text them a confirmation</label>
     <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('addModal').remove()">Cancel</button>
