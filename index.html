@@ -1460,7 +1460,7 @@ function editGuest(row){
     <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:14px" id="egRm">
       <button class="btn ghost" style="width:100%;color:#c0392b" id="egRmBtn">Remove ${esc(g.name)} from the party</button>
       <p class="muted" style="margin:6px 0 0;font-size:13px;text-align:center">For someone who isn't coming after all. The party and booking go down by one. No fee.</p></div></div>`;
-  m.onclick=e=>{if(e.target===m)softClose(m)};document.body.appendChild(m);
+  document.body.appendChild(m);   // taps outside the box do nothing: close with ✕ only
   m.querySelectorAll('#egType button').forEach(b=>b.onclick=()=>{m.querySelectorAll('#egType button').forEach(x=>x.classList.toggle('on',x===b))});
   $('egSave').onclick=async()=>{
     const n=cap($('egName').value.trim()),t=(m.querySelector('#egType .on')||{}).dataset,ph=$('egPh').value.trim();
@@ -1536,7 +1536,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192049';
+const BUILD='202611192056';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
