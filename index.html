@@ -1454,10 +1454,8 @@ function editGuest(row){
     <label class="l" for="egName">First name</label>
     <div style="display:flex;gap:8px;align-items:center"><input id="egName" value="${esc(g.name)}" autocapitalize="words" style="flex:1;min-width:0">
       <div class="seg" id="egType"><button type="button" class="ft${g.type==='FT'?' on':''}" data-t="FT">FT</button><button type="button" class="rg${g.type==='RG'?' on':''}" data-t="RG">RG</button></div></div>
-    <label class="l" for="egPh" style="margin-top:12px">Their phone <span class="muted">(optional)</span></label>
+    <label class="l" for="egPh" style="margin-top:12px">Their phone</label>
     <input id="egPh" type="tel" inputmode="tel" value="${esc(g.guestPhone||'')}" placeholder="Phone" onblur="this.value=this.value.trim()?fmtPhone(this.value):''">
-    <label class="l" for="egPj" style="margin-top:12px">Labels (projects)</label>
-    <select id="egPj">${[1,2,3,4,5,6,7,8,9].map(n=>`<option${n===(+g.projects||1)?' selected':''}>${n}</option>`).join('')}</select>
     <button class="btn main" style="margin-top:16px" id="egSave">Save</button>
     <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:14px" id="egRm">
       <button class="btn ghost" style="width:100%;color:#c0392b" id="egRmBtn">Remove ${esc(g.name)} from the party</button>
@@ -1469,7 +1467,7 @@ function editGuest(row){
     if(!n)return $('egName').focus();
     if(ph&&ph.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').length!==10){$('egPh').focus();return toast('Check the phone number (10 digits)')}
     const btn=$('egSave');btn.disabled=true;btn.textContent='Saving…';
-    try{await call('updateGuest',row,n,t?t.t:g.type,+$('egPj').value||1,ph?fmtPhone(ph):'');m.remove();toast('Updated');refreshView()}
+    try{await call('updateGuest',row,n,t?t.t:g.type,null,ph?fmtPhone(ph):'');m.remove();toast('Updated');refreshView()}
     catch(e){btn.disabled=false;btn.textContent='Save';toast('Could not update')}
   };
   $('egRmBtn').onclick=()=>{
@@ -1538,7 +1536,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192046';
+const BUILD='202611192049';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
