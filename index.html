@@ -597,7 +597,7 @@ const demo = {rows:[],st:{},
   search(q){q=q.toLowerCase();return this.rows.filter(r=>r.name.toLowerCase().includes(q)||r.reservation.toLowerCase().includes(q)).slice().reverse().map(r=>this.wrap(r))},
   markPrinted(rows){rows.forEach(n=>{const r=this.rows.find(x=>x.row===n);if(r)r.printed++});return true},
   updateGuest(row,n,t,pj,ph){const r=this.rows.find(x=>x.row===row);r.name=n;r.type=t;if(pj)r.projects=pj;if(ph!=null)r.guestPhone=ph;return this.wrap(r)},
-  updateContact(pid,ph,em){this.rows.filter(r=>r.partyId===pid).forEach(r=>{r.phone=ph;r.email=em});return true},
+  updateContact(pid,ph,em,nm){this.rows.filter(r=>r.partyId===pid).forEach(r=>{r.phone=ph;r.email=em;if(nm)r.reservation=nm});return true},
   storeParty(s){const o=this.st[s.partyId]||{};this.st[s.partyId]={location:s.location.toUpperCase(),pieceType:s.pieceType,pieces:+s.pieces,emailSent:o.emailSent||s.notify,textSent:o.textSent||s.notify,pickedUp:o.pickedUp||false};return {email:s.notify?'sent':'skipped',text:s.notify?'sent':'skipped'}},
   addGuestToParty(pid,name,type){const party=this.rows.filter(r=>r.partyId===pid);const f=party[0];const size=party.length+1;party.forEach(r=>r.size=size);
     const g=Object.assign({},f,{row:this.rows.length+2,num:size,size,name,type,projects:1,printed:0});this.rows.push(g);return this.wrap(g)},
@@ -1486,10 +1486,27 @@ async function confirmPickup(id,how){
     toast(how==='ship'?`Moved to shipping ✓${r.left?` · ${r.left} piece${r.left>1?'s':''} still on the shelf`:''} · Add them to the shipping sheet as usual`:r.all?'All picked up ✓':`Picked up ✓ · ${r.left} piece${r.left>1?'s':''} still on the shelf`,6000);refreshView();if($('usModal'))usRun()}
   catch(e){toast('Could not update: '+(e.message||e),5000)}
 }
-async function editContact(id){
-  const f=parties[id][0];const ph=await askText('Phone',f.phone);if(ph===null)return;const em=await askText('Email',f.email);if(em===null)return;
-  try{await call('updateContact',id,ph.trim(),em.trim());toast('Updated');patchView(l=>l.forEach(g=>{if(g.partyId===id){g.phone=ph.trim();g.email=em.trim()}}))}catch(e){toast('Could not update')}
+function editContact(id){
+  const f=parties[id][0],m=document.createElement('div');m.className='modal';m.id='ecModal';
+  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:460px">
+    <div class="mhead"><b style="font-size:20px">EDIT RESERVATION</b><button class="btn ghost small" onclick="$('ecModal').remove()" aria-label="Close">✕</button></div>
+    <p class="muted" style="margin:0 0 12px">Changes here also update their booking on the manifest, storage and guest profile.</p>
+    <label class="l" for="ecName">Reservation name</label><input id="ecName" value="${esc(f.reservation)}" autocapitalize="words" placeholder="First and last name">
+    <label class="l" for="ecPh" style="margin-top:12px">Phone</label><input id="ecPh" type="tel" inputmode="tel" value="${esc(f.phone||'')}">
+    <label class="l" for="ecEm" style="margin-top:12px">Email</label><input id="ecEm" type="email" autocapitalize="off" value="${esc(f.email||'')}">
+    <button class="btn main" style="margin-top:16px" id="ecSave">Save</button></div>`;
+  document.body.appendChild(m);   // taps outside do nothing: close with ✕
+  $('ecSave').onclick=async()=>{
+    const n=$('ecName').value.trim().replace(/\s+/g,' '),ph=$('ecPh').value.trim(),em=$('ecEm').value.trim();
+    if(n.split(' ').length<2){$('ecName').focus();return toast('Add their first and last name')}
+    const btn=$('ecSave');btn.disabled=true;btn.textContent='Saving…';
+    try{await call('updateContact',id,ph,em,n);m.remove();toast('Updated everywhere');
+      const nn=n.replace(/\b\w/g,c=>c.toUpperCase());
+      patchView(l=>l.forEach(g=>{if(g.partyId===id){g.phone=ph;g.email=em;g.reservation=nn}}));loadArrivals(true)}
+    catch(e){btn.disabled=false;btn.textContent='Save';toast('Could not update')}
+  };
 }
+
 /* Edit one checked-in guest: name, FT/RG, own phone, labels, or take them off the party */
 function editGuest(row){
   const g=cache[row];if(!g)return;const party=parties[g.partyId]||[];
@@ -1600,7 +1617,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611202152';
+const BUILD='202611202155';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -2071,7 +2088,7 @@ function renderDaySum(d,s){
   const box=(l,v,hint)=>`<div><span>${l}</span><b>${v}</b>${hint?`<small>${hint}</small>`:''}</div>`;
   const dn=(d===today()?'Today\'s':niceDate(d).split(',')[0]+'\'s')+' numbers';
   $('daySum').innerHTML=`<button type="button" class="dsbar" onclick="$('daySum').classList.toggle('open')"><span>📊 <b>${dn}</b> <span class="muted">for the Team Scorecard</span></span><span class="chev">▸</span></button><div class="dsum"><div class="dsh"><b>${dn}</b><span class="muted">for the Team Scorecard</span></div>
-    <div class="dsg">${box('Guests booked',s.booked)}${box('Checked in',s.guests,'incl. walk-ins')}${box('First timers (FT)',s.ft,pct(s.ft))}${box('Returning (RG)',s.rg,pct(s.rg))}${box('Walk-ins',s.walkIns)}${box('No-shows',s.noShows)}${s.plus1!=null?box('PLUS1 free projects',s.plus1Free!=null?s.plus1Free:s.plus1,'from '+s.plus1+' booking'+(s.plus1===1?'':'s')):''}</div>
+    <div class="dsg">${box('Guests booked',s.booked)}${box('Checked in',s.guests,'incl. walk-ins')}${box('First timers (FT)',s.ft,pct(s.ft))}${box('Returning (RG)',s.rg,pct(s.rg))}${box('Walk-ins',s.walkIns)}${box('No-shows',s.noShows)}${s.plus1!=null?box('PLUS1 booked',s.plus1Free!=null?s.plus1Free:s.plus1):''}</div>
     ${s.expected?`<p class="muted" style="margin:8px 0 0;font-size:13px">${s.expected} booked guest${s.expected>1?'s':''} not checked in yet</p>`:''}</div>`;
 }
 /* FareHarbor-style class headers: booked · open spots · checked in (every class of the day, even empty ones) */
