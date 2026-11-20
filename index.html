@@ -1600,7 +1600,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611201832';
+const BUILD='202611202128';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -2072,6 +2072,9 @@ function renderDaySum(d,s){
   const dn=(d===today()?'Today\'s':niceDate(d).split(',')[0]+'\'s')+' numbers';
   $('daySum').innerHTML=`<button type="button" class="dsbar" onclick="$('daySum').classList.toggle('open')"><span>📊 <b>${dn}</b> <span class="muted">for the Team Scorecard</span></span><span class="chev">▸</span></button><div class="dsum"><div class="dsh"><b>${dn}</b><span class="muted">for the Team Scorecard</span></div>
     <div class="dsg">${box('Guests booked',s.booked)}${box('Checked in',s.guests,'incl. walk-ins')}${box('First timers (FT)',s.ft,pct(s.ft))}${box('Returning (RG)',s.rg,pct(s.rg))}${box('Walk-ins',s.walkIns)}${box('No-shows',s.noShows)}</div>
+    ${s.plus1!=null?`<div style="margin-top:10px;background:#fff0f8;border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+      <span><b>PLUS1 bookings</b> <span class="muted" style="font-size:13px">(note says PLUS1)</span>${s.plus1?`<br><small class="muted">${s.plus1Names.map(esc).join(', ')}</small>`:''}</span>
+      <b style="font-size:20px;color:#b8006f">${s.plus1} <span style="font-size:13px;font-weight:600">booking${s.plus1===1?'':'s'} · ${s.plus1Guests} guest${s.plus1Guests===1?'':'s'}</span></b></div>`:''}
     ${s.expected?`<p class="muted" style="margin:8px 0 0;font-size:13px">${s.expected} booked guest${s.expected>1?'s':''} not checked in yet</p>`:''}</div>`;
 }
 /* FareHarbor-style class headers: booked · open spots · checked in (every class of the day, even empty ones) */
