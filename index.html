@@ -1099,7 +1099,10 @@ async function printLabels(list,opts){
       if(opts.direct&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});shown=true}catch(e){if(e.name==='AbortError')shown=true}}
       if(!shown){$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
     }
-    else sendToPrinter();
+    // Mac (Safari web app): printing only opens right after a tap. Straight from a tap = print now;
+    // after a save (check-in from the manifest) the tap has "expired", so show the Print box: one tap and it opens
+    else if(opts.direct)sendToPrinter();
+    else{$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
   }
   if(!opts.noMark&&list[0].row){list.forEach(g=>g.printed=(g.printed||0)+1);call('markPrinted',list.map(g=>g.row)).then(()=>{if(!$('vToday').classList.contains('hide'))loadDay(true)}).catch(()=>{})}
 }
@@ -1582,7 +1585,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611192301';
+const BUILD='202611201742';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
