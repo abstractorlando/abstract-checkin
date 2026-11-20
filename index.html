@@ -465,7 +465,6 @@
       <button class="btn ghost small add" onclick="addGuest()">+ Add guest</button>
     </div>
     <button id="saveBtn" class="btn main" onclick="saveAndPrint()">Check in &amp; print labels</button>
-    <p class="muted" style="text-align:center">Saves to the Google Sheet, then opens the print dialog.</p>
     </div>
     <p class="muted" id="ciHint" style="text-align:center;font-size:14px">Tap a booking to check it in. Walk-in? Tap <b>+ Add booking</b>.</p>
   </section>
@@ -1287,7 +1286,8 @@ function renderParties(list,el,byClass){
     <div class="party${p.every(g=>!g.printed)?' isnew':''}" id="p_${f.partyId}">
       <div class="ph"><div>${p.every(g=>!g.printed)?'<span class="tag NEW">NEW</span> ':''}${f.source==='Guest'?'<span class="muted">(self check-in)</span><br>':''}<b>${esc(f.reservation)}</b><br><span>${esc(niceDate(f.date))} · ${esc(f.time)} · ${f.size} guest${f.size>1?'s':''}</span><br>
         <span>${esc(f.phone||'no phone')} · ${esc(f.email||'no email')}</span> <a href="#" onclick="editContact('${f.partyId}');return false" style="color:var(--teal);font-size:13px;font-weight:600">edit</a></div>
-        <button class="btn ghost small" onclick='reprint(${JSON.stringify(p.map(g=>g.row))})'>Print all</button></div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;flex:none"><button class="btn ghost small" onclick='reprint(${JSON.stringify(p.map(g=>g.row))})'>Print all</button>
+        <button class="btn ghost small" style="color:#c0392b" onclick="undoCheckIn('${f.partyId}')">Undo check-in</button></div></div>
       ${projectsLine(p)}
       ${storageLine(p)}
       <div id="pjf_${f.partyId}"></div>
@@ -1530,6 +1530,15 @@ function patchView(mut){
   loadDay(true);
 }
 const swapGuests=up=>list=>(up||[]).forEach(u=>{const i=list.findIndex(g=>g.row===u.row);if(i>=0)list[i]=Object.assign({},list[i],u)});
+/* checked in by mistake (or a test booking): take the whole party back out of Visits */
+async function undoCheckIn(id){
+  const p=parties[id]||[],f=p[0];if(!f)return;
+  if(!confirm(`Undo ${f.reservation}'s check-in?\n\nAll ${p.length} guest${p.length===1?'':'s'} come off Visits. If they have a booking, it goes back to the manifest as not checked in, so you can check them in again or cancel it.\n\nUse this for a test or a check-in done by mistake.`))return;
+  try{const r=await call('undoCheckIn',id,ME&&!ME.device?ME.name:'Staff');
+    toast(`${f.reservation}'s check-in was undone`+(r.booking?'. The booking is back on the manifest':''),5000);
+    patchView(l=>{for(let i=l.length-1;i>=0;i--)if(l[i].partyId===id)l.splice(i,1)});loadArrivals(true)}
+  catch(e){toast(e.message||'Could not undo',6000);refreshView()}
+}
 function refreshView(){if(!$('vToday').classList.contains('hide'))loadDay();else if(!$('vFind').classList.contains('hide'))find()}
 let dayData=[];
 let ciT;function debCi(){clearTimeout(ciT);ciT=setTimeout(ciSearch,300)}
@@ -1585,7 +1594,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611201742';
+const BUILD='202611201822';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
