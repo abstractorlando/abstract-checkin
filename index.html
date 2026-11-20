@@ -1600,7 +1600,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611201830';
+const BUILD='202611201832';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1825,7 +1825,7 @@ function softClose(m){if(m.dataset.dirty&&!confirm(m.id==='invModal'?'Leave the 
 function openAddBooking(date,time){
   date=date||$('dt').value||today();AB_G=null;
   const ts=timesFor(date),m=document.createElement('div');m.className='modal';m.id='addModal';
-  m.innerHTML=`<div class="mbox" style="text-align:left;max-width:460px">
+  m.innerHTML=`<div class="mbox abbox" style="text-align:left;max-width:680px">
     <b style="font-size:20px">Add a booking</b><p class="muted" id="abSub" style="margin:4px 0 12px"></p>
     <label class="l">Day</label><input type="date" id="abDate" value="${date}" min="${today()}" onchange="AB_T='';abMode();abSlots()">
     <label class="l" style="margin-top:10px">Time</label><input type="hidden" id="abTime" value="${time||''}"><div id="abSlots" class="abs"><p class="muted">Loading open spots…</p></div>
@@ -1874,10 +1874,23 @@ async function abSlots(quick){
   if($('abDate').value!==date)return;
   const day=AB_W[ws].find(d=>d.date===date),need=Math.max(1,+$('abSize').value||1),now=Date.now();
   const cls=(day&&day.open?day.classes:[]).filter(c=>dateTime(date,c.time)>now-15*6e4);
-  if(!cls.length){box.innerHTML='<p class="muted">No classes left on this day. Pick another day.</p>';$('abTime').value='';return}
+  const own=!!(ME&&ME.owner);
+  // an owner's own class time (team event paid through Toast, etc.) shows as its own button
+  if(AB_T&&!cls.some(c=>c.time===AB_T)&&own)cls.push({time:AB_T,cap:0,booked:0,custom:true,mine:true});
+  if(!cls.length&&!own){box.innerHTML='<p class="muted">No classes left on this day. Pick another day.</p>';$('abTime').value='';return}
   if(!cls.some(c=>c.time===AB_T))AB_T='';$('abTime').value=AB_T;
-  box.innerHTML=cls.map(c=>{const open=Math.max(0,c.cap-c.booked),fits=open>=need&&c.cap>0;
-    return `<button type="button" class="mvs ${c.time===AB_T?'cur':fits?'':'full'}" onclick="AB_T='${c.time}';abSlots(true)">${c.private?'🔒 ':''}<b>${esc(c.time)}</b><span>${c.cap===0?'Closed':open?open+' open':'Full'}</span></button>`}).join('');
+  box.innerHTML=(cls.length?'':'<p class="muted" style="grid-column:1/-1;margin:0 0 6px">No classes left on this day.</p>')+cls.map(c=>{const open=Math.max(0,c.cap-c.booked),fits=c.custom||open>=need&&c.cap>0;
+    return `<button type="button" class="mvs ${c.time===AB_T?'cur':fits?'':'full'}" onclick="AB_T='${c.time}';abSlots(true)">${c.private?'🔒 ':''}<b>${esc(c.time)}</b><span>${c.custom?(c.booked?c.booked+' booked · owner class':'Owner class'):c.cap===0?'Closed':open?open+' open':'Full'}</span></button>`}).join('')
+    +(own?`<button type="button" class="mvs" style="border-style:dashed" onclick="abCustomTime()"><b>+ Other time</b><span>Owners only</span></button>`:'');
+}
+/* owners: book a class at any time (a team event, a private class paid through Toast, etc.) */
+async function abCustomTime(){
+  const v=await askText('Class time\nType it like 6:30 PM or 10:00 AM. It becomes its own class on this day.','');if(v===null)return;
+  const m=String(v).trim().toUpperCase().replace(/\./g,'').match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM|A|P)?$/);
+  if(!m)return toast('Type the time like 6:30 PM',4000);
+  let h=+m[1],mi=m[2]||'00',ap=m[3]?m[3].charAt(0)+'M':(h>=8&&h<=11?'AM':'PM');
+  if(h>12)h-=12,ap='PM';if(h<1||h>12||+mi>59)return toast('Type the time like 6:30 PM',4000);
+  AB_T=h+':'+mi+' '+ap;abSlots(true);
 }
 /* past guests: the whole list is downloaded once (in the background) and searched right here, so results show as you type */
 let GIDX=null,GIDX_AT=0,GIDX_P=null;
