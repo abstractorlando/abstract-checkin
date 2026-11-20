@@ -243,7 +243,7 @@
   .evb{display:block}.evl{display:block;font-size:14px;margin-top:3px;color:var(--ink);font-weight:500}.evl em{font-style:normal;display:inline-block;min-width:44px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--purp);margin-right:6px}.evt{display:block;font-size:12px;color:var(--muted);margin-top:4px}
   .dsum{margin-top:14px;border:2px solid var(--line);border-radius:14px;padding:12px 14px;background:#faf9fd}
   .dsh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}.dsh b{font-size:16px}.dsh span{font-size:13px}
-  .dsg{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}@media(max-width:760px){.dsg{grid-template-columns:repeat(3,1fr)}}@media(max-width:420px){.dsg{grid-template-columns:1fr 1fr}}
+  .dsg{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}@media(max-width:760px){.dsg{grid-template-columns:repeat(3,1fr)}}@media(max-width:420px){.dsg{grid-template-columns:1fr 1fr}}
   .dsg div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}.dsg span{display:block;font-size:12px;color:var(--muted);font-weight:600}.dsg b{font-size:24px;color:var(--purp)}.dsg small{display:block;color:var(--muted);font-size:11px}
   .slh{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:12px 2px 6px;padding-bottom:4px;border-bottom:2px solid var(--line)}.slh:first-child{margin-top:2px}.slh b{font-size:15px;color:var(--purp);margin-right:2px}.cp{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;border:1.5px solid}.cp.cpb{color:#1a8f5a;border-color:#9fd8bd;background:#eefaf4}.cp.op{color:var(--muted);border-color:var(--line);background:#fff}.cp.ov{color:#c40056;border-color:#f3a9c6;background:#fff0f5}.cp.ck{color:var(--purp);border-color:#d9cff5;background:#f6f3fe}
   .slh{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px 10px;width:100%;margin:0 0 8px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;font:inherit;text-align:left;cursor:pointer;color:var(--ink)}
@@ -1600,7 +1600,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611202128';
+const BUILD='202611202135';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -2071,10 +2071,7 @@ function renderDaySum(d,s){
   const box=(l,v,hint)=>`<div><span>${l}</span><b>${v}</b>${hint?`<small>${hint}</small>`:''}</div>`;
   const dn=(d===today()?'Today\'s':niceDate(d).split(',')[0]+'\'s')+' numbers';
   $('daySum').innerHTML=`<button type="button" class="dsbar" onclick="$('daySum').classList.toggle('open')"><span>📊 <b>${dn}</b> <span class="muted">for the Team Scorecard</span></span><span class="chev">▸</span></button><div class="dsum"><div class="dsh"><b>${dn}</b><span class="muted">for the Team Scorecard</span></div>
-    <div class="dsg">${box('Guests booked',s.booked)}${box('Checked in',s.guests,'incl. walk-ins')}${box('First timers (FT)',s.ft,pct(s.ft))}${box('Returning (RG)',s.rg,pct(s.rg))}${box('Walk-ins',s.walkIns)}${box('No-shows',s.noShows)}</div>
-    ${s.plus1!=null?`<div style="margin-top:10px;background:#fff0f8;border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
-      <span><b>PLUS1 bookings</b> <span class="muted" style="font-size:13px">(note says PLUS1)</span>${s.plus1?`<br><small class="muted">${s.plus1Names.map(esc).join(', ')}</small>`:''}</span>
-      <b style="font-size:20px;color:#b8006f">${s.plus1} <span style="font-size:13px;font-weight:600">booking${s.plus1===1?'':'s'} · ${s.plus1Guests} guest${s.plus1Guests===1?'':'s'}</span></b></div>`:''}
+    <div class="dsg">${box('Guests booked',s.booked)}${box('Checked in',s.guests,'incl. walk-ins')}${box('First timers (FT)',s.ft,pct(s.ft))}${box('Returning (RG)',s.rg,pct(s.rg))}${box('Walk-ins',s.walkIns)}${box('No-shows',s.noShows)}${s.plus1!=null?box('PLUS1 bookings',s.plus1,s.plus1Guests+' guest'+(s.plus1Guests===1?'':'s')):''}</div>
     ${s.expected?`<p class="muted" style="margin:8px 0 0;font-size:13px">${s.expected} booked guest${s.expected>1?'s':''} not checked in yet</p>`:''}</div>`;
 }
 /* FareHarbor-style class headers: booked · open spots · checked in (every class of the day, even empty ones) */
