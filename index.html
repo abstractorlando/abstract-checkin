@@ -1600,7 +1600,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611202135';
+const BUILD='202611202140';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -2071,7 +2071,7 @@ function renderDaySum(d,s){
   const box=(l,v,hint)=>`<div><span>${l}</span><b>${v}</b>${hint?`<small>${hint}</small>`:''}</div>`;
   const dn=(d===today()?'Today\'s':niceDate(d).split(',')[0]+'\'s')+' numbers';
   $('daySum').innerHTML=`<button type="button" class="dsbar" onclick="$('daySum').classList.toggle('open')"><span>📊 <b>${dn}</b> <span class="muted">for the Team Scorecard</span></span><span class="chev">▸</span></button><div class="dsum"><div class="dsh"><b>${dn}</b><span class="muted">for the Team Scorecard</span></div>
-    <div class="dsg">${box('Guests booked',s.booked)}${box('Checked in',s.guests,'incl. walk-ins')}${box('First timers (FT)',s.ft,pct(s.ft))}${box('Returning (RG)',s.rg,pct(s.rg))}${box('Walk-ins',s.walkIns)}${box('No-shows',s.noShows)}${s.plus1!=null?box('PLUS1 bookings',s.plus1,s.plus1Guests+' guest'+(s.plus1Guests===1?'':'s')):''}</div>
+    <div class="dsg">${box('Guests booked',s.booked)}${box('Checked in',s.guests,'incl. walk-ins')}${box('First timers (FT)',s.ft,pct(s.ft))}${box('Returning (RG)',s.rg,pct(s.rg))}${box('Walk-ins',s.walkIns)}${box('No-shows',s.noShows)}${s.plus1!=null?box('PLUS1 bookings',s.plus1):''}</div>
     ${s.expected?`<p class="muted" style="margin:8px 0 0;font-size:13px">${s.expected} booked guest${s.expected>1?'s':''} not checked in yet</p>`:''}</div>`;
 }
 /* FareHarbor-style class headers: booked · open spots · checked in (every class of the day, even empty ones) */
