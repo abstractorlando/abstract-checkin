@@ -627,6 +627,12 @@ function spdAdd(fn,ms,ok){if(fn==='speedLog')return;SPD.q.push({fn,ms:Math.round
   if(SPD.q.length>=25)spdFlush();else if(!SPD.t)SPD.t=setTimeout(spdFlush,180000)}
 function spdFlush(){clearTimeout(SPD.t);SPD.t=null;if(!SPD.q.length)return;const items=SPD.q.splice(0,50);call0('speedLog',items).catch(()=>{})}
 addEventListener('pagehide',()=>{if(SPD.q.length)spdFlush()});
+/* several reads in one trip to Google (each trip costs ~2 seconds just to start). Falls back to one-by-one on an older server. */
+async function callBatch(items){
+  try{return (await call('batch',items)).map(r=>r.ok?{ok:true,data:r.data}:{ok:false,error:r.error})}
+  catch(e){if(!/Unknown action/.test(e.message||''))throw e;
+    return Promise.all(items.map(([f,a])=>call(f,...(a||[])).then(d=>({ok:true,data:d}),x=>({ok:false,error:x.message||String(x)}))))}
+}
 function call(fn,...args){const _b=busyStart(),t0=performance.now();return call0(fn,...args).then(v=>{spdAdd(fn,performance.now()-t0,true);return v},e=>{spdAdd(fn,performance.now()-t0,false);throw e}).finally(()=>busyEnd(_b))}
 function call0(fn,...args){
   return new Promise((res,rej)=>{
@@ -1552,7 +1558,7 @@ async function loadDay(quiet){
   const d0=$('dayPick').value;
   if(!quiet){const c=cget('day_'+d0);if(c){dayData=c.list;DAYBK=c.bk;renderParties(c.list,$('dayList'),true)}else $('dayList').innerHTML='<p class="muted">Loading…</p>'}
   try{
-    const [list,bk]=await Promise.all([call('getDay',d0),call('getBookings',d0).catch(()=>DAYBK)]);   // both at once
+    const [r1,r2]=await callBatch([['getDay',[d0]],['getBookings',[d0]]]);if(!r1.ok)throw new Error(r1.error);const list=r1.data,bk=r2&&r2.ok?r2.data:DAYBK;   // one trip
     if(d0!==$('dayPick').value)return;
     cset('day_'+d0,{list,bk});
     if(JSON.stringify(list)===JSON.stringify(dayData)&&JSON.stringify(bk)===JSON.stringify(DAYBK)&&document.querySelector('#dayList .party'))return;
@@ -1594,7 +1600,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611201822';
+const BUILD='202611201830';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1782,12 +1788,12 @@ function shrinkPhoto(file){return new Promise((ok,no)=>{const r=new FileReader()
   const max=1100;let w=img.width,h=img.height;if(w>h&&w>max){h=Math.round(h*max/w);w=max}else if(h>max){w=Math.round(w*max/h);h=max}
   const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);ok(c.toDataURL('image/jpeg',0.6))};img.src=e.target.result};r.readAsDataURL(file)})}
 /* every minute: new requests show a pink count on the Shipping tab (the team email still goes out as a backup) */
-async function pollShip(){
-  try{const r=await call('shipCount');shipBadge(r.count);
-    if(SHIPN>=0&&r.latest&&r.latest!==SHIPLATEST&&r.count>0){toast('📦 New shipping request: '+r.latest.split('|')[1],5000);if(!$('vShip').classList.contains('hide'))loadShip(true);else SHIPS=null}
-    SHIPN=r.count;SHIPLATEST=r.latest;setTimeout(pollShip,60000)}
-  catch(e){if(!/not connected/i.test(e.message||''))setTimeout(pollShip,120000)}
+function handleShip(r){
+  shipBadge(r.count);
+  if(SHIPN>=0&&r.latest&&r.latest!==SHIPLATEST&&r.count>0){toast('📦 New shipping request: '+r.latest.split('|')[1],5000);if(!$('vShip').classList.contains('hide'))loadShip(true);else SHIPS=null}
+  SHIPN=r.count;SHIPLATEST=r.latest;
 }
+async function pollShip(){try{handleShip(await call('shipCount'))}catch(e){}}
 
 /* ---------- Toast bookings: arriving today ---------- */
 let arrivals=[],picked=null;
@@ -2036,13 +2042,17 @@ async function loadArrivals(quiet){
   if($('bkFilter')&&$('bkFilter').value.trim().length>=2){doSearch();return}
   const d0=$('dt').value;
   if(!quiet&&!arrivals.length){const c=cget('bk_'+d0);if(c){arrivals=c;renderArrivals()}else $('arrivals').innerHTML='<p class="muted">Loading bookings…</p>'}
-  loadDaySum();
-  try{const fresh=await call('getBookings',d0);if(d0!==$('dt').value)return;const same=JSON.stringify(fresh)===JSON.stringify(arrivals);arrivals=fresh;cset('bk_'+d0,fresh);if(!same||!quiet)renderArrivals()}
+  let sum=null;
+  try{const [b,ds]=await callBatch([['getBookings',[d0]],['daySummary',[d0]]]);if(ds&&ds.ok)sum=ds.data;if(!b.ok)throw new Error(b.error);const fresh=b.data;
+    if(sum)renderDaySum(d0,sum);if(d0!==$('dt').value)return;const same=JSON.stringify(fresh)===JSON.stringify(arrivals);arrivals=fresh;cset('bk_'+d0,fresh);if(!same||!quiet)renderArrivals()}
   catch(e){$('arrivals').innerHTML=`<p class="muted">Could not load bookings: ${esc(e.message||e)} <a href="#" onclick="loadArrivals();return false" style="color:var(--teal)">Try again</a></p>`}
 }
 let DSUM=null;
 async function loadDaySum(){
   const d=$('dt').value;let s;try{s=await call('daySummary',d)}catch(e){return}
+  renderDaySum(d,s);
+}
+function renderDaySum(d,s){
   if(d!==$('dt').value||!$('daySum'))return;const had=DSUM&&DSUM.date===d;DSUM=s;if(!had)renderArrivals();
   const pct=n=>s.guests?' ('+Math.round(n*100/s.guests)+'%)':'';
   const box=(l,v,hint)=>`<div><span>${l}</span><b>${v}</b>${hint?`<small>${hint}</small>`:''}</div>`;
@@ -2624,7 +2634,7 @@ async function setCap(time,n){
 }
 
 /* ---------- init ---------- */
-$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();syncDates();setTimeout(()=>loadGuestIndex().catch(()=>{}),4000);setTimeout(pollShip,2500);try{['800','700','500'].forEach(w=>document.fonts.load(`${w} 40px Poppins`))}catch(e){}
+$('dt').value=today();fillTimes($('tm'),today(),'');$('arrDay').value=today();$('dayPick').value=today();syncDates();setTimeout(()=>loadGuestIndex().catch(()=>{}),4000);try{['800','700','500'].forEach(w=>document.fonts.load(`${w} 40px Poppins`))}catch(e){}
 
 /* ---------- 🔔 new bookings bell ---------- */
 let ACT=[],ACT_SEEN='',ACT_FIRST=true,AUDIO=null;
@@ -2636,7 +2646,7 @@ function chime(){try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioCo
 document.addEventListener('pointerdown',()=>{try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioContext)();AUDIO.resume()}catch(e){}},{once:true});
 async function pollActivity(){
   if(!PIN||document.hidden&&!ACT_FIRST)return;
-  let list;try{list=await call('getActivity')}catch(e){return}
+  let list;try{const [a,sc]=await callBatch([['getActivity',[]],['shipCount',[]]]);if(sc&&sc.ok)handleShip(sc.data);if(!a.ok)return;list=a.data}catch(e){return}
   const before=new Set(ACT.map(a=>a.at+a.key+a.kind));const fresh=ACT_FIRST?[]:list.filter(a=>!before.has(a.at+a.key+a.kind));
   ACT=list;ACT_FIRST=false;
   if(!ACT_SEEN&&list.length){ACT_SEEN=list[0].at;try{localStorage.setItem('abs_seen',ACT_SEEN)}catch(e){}}
