@@ -420,7 +420,7 @@ function renderTimes(){
   $('dayTitle').textContent=dObj(d.date).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
   $('timeNote').textContent=`Showing times that fit ${size} guest${size>1?'s':''}.`;
   $('times').innerHTML=d.times.map(t=>{const can=t.left>=size;
-    const note=!can?(t.left?`${t.left} spot${t.left>1?'s':''} left, you have ${size}`:'Full'):t.left<=3?`Only ${t.left} left`:`${t.left} spots open`;
+    const note=!can?(t.left?`Only ${t.left} spot${t.left>1?'s':''} open`:'Full'):t.left<=3?`Only ${t.left} spot${t.left>1?'s':''} open`:`${t.left} spots open`;
     return `<button type="button" class="time${sel.time===t.time?' on':''}${can&&t.left<=3?' low':''}${can?'':' no'}" data-t="${t.time}" ${can?'':'disabled'}><b>${t.time}</b><span>${note}</span></button>`}).join('')+
     (d.times.some(t=>t.left>0&&t.left<size)?`<p class="hint" style="grid-column:1/-1">Need a few more spots than you see? Text us at <a href="sms:+16893488239">(689) 348-8239</a> and we'll do our best to fit your whole group.</p>`:'');
   $('times').querySelectorAll('.time:not(:disabled)').forEach(b=>b.onclick=()=>{sel.time=b.dataset.t;renderTimes();if(EMBEDDED)$('next1').scrollIntoView({behavior:'smooth',block:'center'})});
@@ -607,7 +607,7 @@ function dayButtons(el,days,current,onPick,need){
 function timeButtons(el,day,current,onPick,need,hideFull){
   if(!day){el.innerHTML='<p class="muted">Pick a day first.</p>';return}
   el.innerHTML=day.times.filter(t=>!hideFull||t.left>=need).map(t=>{const can=t.left>=need;return `<button type="button" class="time${current===t.time?' on':''}${can&&t.left<=3?' low':''}" data-t="${t.time}" ${can?'':'disabled'}>
-    <b>${t.time}</b><span>${!can?(t.left?'Only '+t.left+' left':'Full'):t.left<=3?'Only '+t.left+' left':t.left+' spots open'}</span></button>`}).join('')+
+    <b>${t.time}</b><span>${!can?(t.left?'Only '+t.left+' spot'+(t.left>1?'s':'')+' open':'Full'):t.left<=3?'Only '+t.left+' spot'+(t.left>1?'s':'')+' open':t.left+' spots open'}</span></button>`}).join('')+
     (!hideFull&&day.times.some(t=>t.left>0&&t.left<need)?`<p class="hint" style="grid-column:1/-1">Need a few more spots than you see? Text us at <a href="sms:+16893488239">(689) 348-8239</a> and we'll do our best to fit your whole group.</p>`:'');
   el.querySelectorAll('.time').forEach(b=>b.onclick=()=>onPick(b.dataset.t));
 }
