@@ -367,6 +367,15 @@ function renderGfNames(){
 }
 // keep artist 1 in step with the booker's first name until someone changes it by hand
 document.addEventListener('input',e=>{if(e.target.id!=='first')return;const a=$('guestNames').querySelector(GF?'.gn':'input');if(a&&a.dataset.edited!=='1')a.value=e.target.value.trim()});
+/* PLUS1 (bring a friend, they paint free): only Wed/Thu/Fri, and only with 2 or more artists */
+function plus1Problem(note,date,size){
+  if(!/\bplus\s*-?\s*(1|one)\b/i.test(note||''))return '';
+  const wd=new Date(date+'T12:00:00').getDay();
+  if([3,4,5].indexOf(wd)<0)return 'The PLUS1 deal is only for Wednesday, Thursday and Friday visits. Please pick a Wednesday, Thursday or Friday, or take PLUS1 out of your note.';
+  if(size<2)return 'To use PLUS1, please book at least 2 guests: you and the friend you\'re bringing.';
+  return '';
+}
+document.addEventListener('input',e=>{if(e.target.id==='note')e.target.classList.remove('bad')});
 $('toPay').onclick=async()=>{
   if(GF)return gfBook();
   $('err1').textContent='';
@@ -377,6 +386,7 @@ $('toPay').onclick=async()=>{
   if(!/^\S+@\S+\.\S+$/.test(email))return $('err1').textContent='Please check your email.';
   const missing=[...$('guestNames').querySelectorAll('input')].filter(i=>!i.value.trim());
   if(missing.length){missing.forEach(i=>i.classList.add('bad'));missing[0].focus();return $('err1').textContent=`Please add the first name of everyone creating (${missing.length} missing).`}
+  const p1=plus1Problem($('note').value,sel.date,size);if(p1){$('note').classList.add('bad');$('note').focus();return $('err1').textContent=p1}
   const fee=AV.feePerGuest,h=AV.lateHours;
   $('summary').innerHTML=`<div class="sum"><span>Day</span><b>${esc(niceDate(sel.date))}</b></div>
     <div class="sum"><span>Time</span><b>${esc(sel.time)}</b></div><div class="sum"><span>Party</span><b>${size} guest${size>1?'s':''}</b></div>

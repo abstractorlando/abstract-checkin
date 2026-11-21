@@ -460,6 +460,15 @@ function payText(){const x=addonTotal();$('book').textContent=x?`Confirm & pay $
     <li><b>Within ${h} hours or no-show: $${fee} per guest.</b> This includes cancelling, rescheduling and changing your party size.</li>
     <li>You'll pick your project at the studio (from $50 per guest). <a href="https://www.abstractorlando.com/#Radio-2" target="_blank" rel="noopener">See project options</a></li></ul>
     <p class="walkin"><b>Not sure about your plans yet?</b> You can change your day or time for free from your confirmation text, up to ${h} hours before. And walk-ins are always welcome when we have open spots. Booking guarantees your spot.</p>`}
+/* PLUS1 (bring a friend, they paint free): only Wed/Thu/Fri, and only with 2 or more artists */
+function plus1Problem(note,date,size){
+  if(!/\bplus\s*-?\s*(1|one)\b/i.test(note||''))return '';
+  const wd=new Date(date+'T12:00:00').getDay();
+  if([3,4,5].indexOf(wd)<0)return 'The PLUS1 deal is only for Wednesday, Thursday and Friday visits. Please pick a Wednesday, Thursday or Friday, or take PLUS1 out of your note.';
+  if(size<2)return 'To use PLUS1, please book at least 2 guests: you and the friend you\'re bringing.';
+  return '';
+}
+document.addEventListener('input',e=>{if(e.target.id==='note')e.target.classList.remove('bad')});
 $('toPay').onclick=async()=>{
   if(GF)return gfBook();
   $('err1').textContent='';
@@ -467,6 +476,7 @@ $('toPay').onclick=async()=>{
   const nb=[...$('guestNames').querySelectorAll('.gn')],missing=nb.filter(i=>!i.value.trim());
   if(missing.length){missing.forEach(i=>i.classList.add('bad'));missing[0].focus();return $('err1').textContent=`Please add the first name of everyone creating (${missing.length} missing).`}
   const guests=nb.map(i=>i.value.trim()),note=$('note').value.trim();
+  const p1=plus1Problem(note,sel.date,size);if(p1){$('noteLink').classList.add('hide');$('noteBox').classList.remove('hide');$('note').classList.add('bad');$('note').focus();return $('err1').textContent=p1}
   const fee=AV.feePerGuest,h=AV.lateHours;
   $('summary').innerHTML=`<div class="sum"><span>When</span><b>${esc(shortDay(sel.date))} · ${esc(sel.time)}</b></div>
     <div class="sum"><span>Party</span><b>${size} guest${size>1?'s':''}</b></div><div class="sum"><span>Due today</span><b id="dueToday">$0</b></div>`;
