@@ -467,7 +467,7 @@
     </div>
     <div class="card">
       <label class="l">Guests · tap <b>FT</b> (first timer) or <b>RG</b> (returning) for each guest who's here</label>
-      <p class="muted" style="margin:-2px 0 8px;font-size:13px">Part of the party still on the way? Leave their FT/RG blank. They stay on the booking and you can check them in when they arrive. Every guest needs a phone. Kid on a parent's number: tap UNDER 18. Adult using someone else's number: tap SHARES #.</p>
+      <p class="muted" style="margin:-2px 0 8px;font-size:13px">Part of the party still on the way? Leave their FT/RG blank. They stay on the booking and you can check them in when they arrive. Ask each guest for their phone. Kid on a parent's number: tap UNDER 18. Adult using someone else's number: tap SHARES #.</p>
       <div id="evBar" class="evbar hide"><button type="button" class="pt" id="evBtn" onclick="setEvent(!$('guests').classList.contains('ev'))">EVENT · SKIP PHONES</button>
         <span class="muted" id="evTxt">Team building or private event? Skip the phones for this party.</span></div>
       <div id="guests" class="gl"></div>
@@ -974,6 +974,8 @@ function showShopping(low,sub){const by={};low.forEach(x=>{const k=x.store||x.ca
    UNDER 18 = a kid on a parent's number. SHARES # = an adult who gave someone else's number.
    Tapping a tag fills in the reservation's number (staff can type a different one). */
 const PTAGS=['UNDER 18','SHARES #'];
+// Test period: phones are asked for but not required yet. Flip to true when the team is ready.
+const PHONES_REQUIRED=false;
 function phoneBlock(phone,tag,fb){
   return `<div class="gp"${fb?` data-fb="${esc(fb)}"`:''}><input class="gph" type="tel" inputmode="tel" placeholder="Their phone" autocomplete="off" value="${esc(phone?fmtPhone(phone):'')}" onblur="this.value=this.value.trim()?fmtPhone(this.value):''">`+
     PTAGS.map(t=>`<button type="button" class="pt${tag===t?' on':''}" data-tag="${t}">${t}</button>`).join('')+`</div>`}
@@ -990,6 +992,7 @@ const phoneOf=box=>({phone:box.querySelector('.gph').value.trim(),tag:(box.query
 const tenDigits=v=>String(v).replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').length===10;
 function phoneProblem(name,ph,tag){
   const who=name||'this guest';
+  if(!ph&&!PHONES_REQUIRED)return '';
   if(!ph)return tag?`Add the number ${who} uses`:`Add ${who}'s phone, or tap UNDER 18 or SHARES #`;
   if(!tenDigits(ph))return `Check ${who}'s phone number (10 digits)`;
   return ''}
@@ -1657,7 +1660,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611202313';
+const BUILD='202611210837';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
