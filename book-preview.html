@@ -21,8 +21,22 @@ document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement
   body{margin:0;font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--soft)}
   .top{padding:44px 18px 22px;text-align:center;font-family:'Plus Jakarta Sans',Poppins,sans-serif}
   .brand{font-weight:700;letter-spacing:.28em;font-size:13px;color:var(--purp)}
-  .top h1{margin:14px auto 10px;font-size:clamp(28px,7vw,44px);line-height:1.1;font-weight:800;color:#17151f;max-width:900px;text-wrap:balance}
-  .top p{margin:0 auto;font-size:16px;line-height:1.45;color:var(--muted);max-width:560px;text-wrap:balance}
+  .top h1{margin:10px auto 8px;font-size:clamp(26px,6.4vw,40px);line-height:1.15;font-weight:800;color:#17151f;max-width:900px;white-space:normal}
+  .top p{margin:0 auto 14px;font-size:16px;line-height:1.45;color:var(--muted);max-width:560px;text-wrap:balance}
+  #heroSub:empty{display:none}
+  .perks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:520px;margin:4px auto 0}
+  .perks div{background:#fff;border-radius:14px;padding:10px 8px;box-shadow:0 4px 16px rgba(78,58,162,.07);display:flex;flex-direction:column;align-items:center;gap:2px}
+  .perks b{font:800 20px 'Plus Jakarta Sans',Poppins,sans-serif;color:var(--purp);line-height:1.1}
+  .perks span{font-size:12.5px;line-height:1.3;color:var(--muted);font-family:Poppins,sans-serif}
+  .perks:empty{display:none}
+  .steps{list-style:none;display:flex;justify-content:space-between;max-width:520px;margin:20px auto 0;padding:0;position:relative;font-family:Poppins,sans-serif}
+  .steps:before{content:'';position:absolute;left:16%;right:16%;top:15px;height:2px;background:var(--line)}
+  .steps li{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1}
+  .steps i{flex:none;line-height:1;font-style:normal;width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid var(--line);color:var(--muted);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+  .steps span{font-size:13px;font-weight:600;color:var(--muted)}
+  .steps li.on i{background:var(--mag);border-color:var(--mag);color:#fff}.steps li.on span{color:var(--ink)}
+  .steps li.fin i{background:var(--purp);border-color:var(--purp);color:#fff}
+  .perks:empty~.steps{display:none}
   .pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
   .pill{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
   main{max-width:600px;margin:0 auto;padding:0 16px 60px}
@@ -125,10 +139,19 @@ document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement
 </head>
 <body>
 <div class="top">
-  <div class="brand" id="heroEyebrow">BOOK YOUR EXPERIENCE</div>
-  <h1 id="heroTitle">Pick your day. We'll handle the rest.</h1>
-  <p id="heroSub">$0 to book · Free changes up to 24 hours before · Projects from $50, paid at the studio</p>
-  <div class="pills" id="heroPills"></div>
+  <div class="brand" id="heroEyebrow">ABSTRACT ORLANDO</div>
+  <h1 id="heroTitle">Book your experience</h1>
+  <p id="heroSub"></p>
+  <div class="perks" id="heroPills">
+    <div><b>$0</b><span>to book</span></div>
+    <div><b>Free</b><span>changes up to 24 hrs before</span></div>
+    <div><b>$50+</b><span>projects, paid at the studio</span></div>
+  </div>
+  <ol class="steps" id="stepper" aria-label="Booking steps">
+    <li class="on" data-s="1"><i>1</i><span>Pick a day</span></li>
+    <li data-s="2"><i>2</i><span>Your details</span></li>
+    <li data-s="3"><i>3</i><span>Hold your spot</span></li>
+  </ol>
 </div>
 
 <main>
@@ -136,7 +159,6 @@ document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement
   <section id="flow">
     <!-- 1 · pick your visit -->
     <div id="s1">
-      <div class="prog"><div class="pt"><span>Step 1 of 3</span><span>Pick your visit</span></div><div class="pb"><i class="on"></i><i></i><i></i></div></div>
       <div class="card" id="sizeCard">
         <h2 style="margin:0 0 14px;font-size:18px">How many artists?</h2>
         <div class="stepper">
@@ -161,7 +183,6 @@ document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement
 
     <!-- 2 · your details -->
     <div id="s2" class="hide">
-      <div class="prog"><div class="pt"><span>Step 2 of 3</span><span>Your details</span></div><div class="pb"><i class="on"></i><i class="on"></i><i></i></div></div>
       <div class="card" style="padding:14px 16px"><div class="chip"><span id="chip2"></span><a href="#" id="chg2">Change</a></div></div>
       <div class="card" id="detailsCard">
         <h2 style="margin:0;font-size:18px">Your details</h2>
@@ -185,7 +206,6 @@ document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement
 
     <!-- 3 · hold with a card -->
     <div id="s3" class="hide">
-      <div class="prog"><div class="pt"><span>Step 3 of 3</span><span>Hold your spot</span></div><div class="pb"><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
       <div class="card"><div class="timer" id="timer"></div><div id="summary"></div></div>
       <div class="card hide" id="addonCard"><div id="addons" style="margin-top:-16px"></div></div>
       <div class="card" id="payCard">
@@ -328,7 +348,7 @@ function fullPhone(){const raw=$('phone').value.trim(),d=raw.replace(/\D/g,''),c
 
 /* ---------- moving between the 3 screens ---------- */
 let step=1;
-function go(n){step=n;[1,2,3].forEach(i=>$('s'+i).classList.toggle('hide',i!==n));window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*')}
+function go(n){step=n;[1,2,3].forEach(i=>$('s'+i).classList.toggle('hide',i!==n));document.querySelectorAll('#stepper li').forEach(li=>{const k=+li.dataset.s;li.classList.toggle('on',k===n);li.classList.toggle('fin',k<n);li.querySelector('i').innerHTML=k<n?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':k});window.scrollTo(0,0);if(EMBEDDED)parent.postMessage({ao:'top'},'*')}
 function shortDay(s){return dObj(s).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
 function visitLine(){return sel.date&&sel.time?`${shortDay(sel.date)} · ${sel.time} · ${size} guest${size>1?'s':''}`:''}
 
@@ -520,9 +540,7 @@ async function gfBook(){
 }
 function gfSetup(){
   $('heroTitle').textContent='Giftory booking';$('heroSub').textContent='Book a gift recipient with their voucher numbers. No card needed.';$('heroPills').innerHTML='';
-  document.querySelectorAll('#s2 .prog .pt span:first-child').forEach(x=>x.textContent='Step 2 of 2');
-  document.querySelectorAll('#s1 .prog .pt span:first-child').forEach(x=>x.textContent='Step 1 of 2');
-  document.querySelectorAll('#s1 .prog .pb i:last-child,#s2 .prog .pb i:last-child').forEach(x=>x.remove());
+  const st3=document.querySelector('#stepper li[data-s="3"]');if(st3)st3.remove();
   $('detailsCard').querySelector('h2').textContent='Guest details';
   $('detailsCard').querySelector('.hint').textContent='The guest receiving the gift. Their confirmation and reminders are texted here.';
   $('email').placeholder='guest@email.com';
