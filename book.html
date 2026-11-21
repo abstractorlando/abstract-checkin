@@ -398,8 +398,12 @@ function renderCal(){
   if(!calM||calM<first||calM>last){const f=(sel.date&&ym(sel.date))||(AV.days.find(fits)||AV.days[0]).date.slice(0,7);calM=f}
   const [Y,M]=calM.split('-').map(Number),start=new Date(Y,M-1,1).getDay(),n=new Date(Y,M,0).getDate();
   const p2=v=>String(v).padStart(2,'0');let cells='';
-  for(let i=0;i<start;i++)cells+='<span></span>';
-  for(let dd=1;dd<=n;dd++){const ds=`${Y}-${p2(M)}-${p2(dd)}`,d=map[ds],ok=fits(d),label=new Date(Y,M-1,dd).toLocaleDateString('en-US',{month:'long',day:'numeric'});
+  const now=new Date(),today=`${now.getFullYear()}-${p2(now.getMonth()+1)}-${p2(now.getDate())}`;
+  // hide past weeks: in the current month, start the grid at this week
+  let from=1;if(calM===today.slice(0,7)){const td=now.getDate();from=td-((start+td-1)%7)}
+  for(let i=0;i<(from<=1?start:0);i++)cells+='<span></span>';
+  for(let dd=Math.max(1,from);dd<=n;dd++){const ds=`${Y}-${p2(M)}-${p2(dd)}`,d=map[ds],ok=fits(d),label=new Date(Y,M-1,dd).toLocaleDateString('en-US',{month:'long',day:'numeric'});
+    if(ds<today){cells+='<span></span>';continue}
     cells+=ok?`<button type="button" class="${sel.date===ds?'on':'op'}" data-d="${ds}" aria-label="${label}${sel.date===ds?', selected':''}">${dd}</button>`
       :`<button type="button" disabled aria-label="${label}, not available">${dd}</button>`}
   const arrow=d=>`<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4e3aa2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
