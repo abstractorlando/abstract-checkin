@@ -938,7 +938,7 @@ async function openInv(kind){INV_KIND=kind==='sup'?'sup':'conc';
   // already counted today (saved earlier): fill those in so nothing looks lost
   const T=INV.today||{},nT=Object.keys(T).length;
   if(nT){$('invList').querySelectorAll('input').forEach(el=>{const v=T[INV.items[+el.dataset.i].item];if(v!==undefined){el.value=v;el.dataset.saved=v;el.classList.add('done');invMarkOnly(el)}});
-    $('invSub').textContent=`Saved so far today: ${nT} of ${INV.items.length} counted. Keep going and save again anytime.`}
+    $('invSub').textContent=`Saved this week: ${nT} of ${INV.items.length} counted. Keep going and save again anytime. Starts fresh on Friday.`}
   invRestore()}
 const INV_DRAFT='abs_inv_draft';
 function invMarkOnly(el){const x=INV.items[+el.dataset.i];el.classList.toggle('low',el.value!==''&&+el.value<x.par)}
@@ -1712,7 +1712,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611211622';
+const BUILD='202611211624';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
