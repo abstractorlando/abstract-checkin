@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement
   .pill{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
   main{max-width:600px;margin:0 auto;padding:0 16px 60px}
   /* inside the website: no purple banner, transparent background */
-  html.embed body{background:transparent}html.embed .top{display:none}html.embed main{margin-top:0;padding:4px 4px 8px}
+  html.embed body{background:transparent}html.embed .top{padding:8px 4px 6px}html.embed .top .brand,html.embed .top h1,html.embed #heroSub{display:none}html.embed .perks{margin-top:0}html.embed main{margin-top:0;padding:4px 4px 8px}
   .card{background:#fff;border-radius:20px;padding:20px;margin-bottom:14px;box-shadow:0 6px 24px rgba(78,58,162,.08)}
   .step{display:flex;align-items:center;gap:10px;margin:0 0 14px}
   .num{width:28px;height:28px;border-radius:50%;background:var(--purp);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement
   .err{color:#c40056;font-weight:600;font-size:14px;min-height:20px;margin-top:10px}
   .sum{display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:6px 0;border-bottom:1px solid var(--line)}
   .sum:last-child{border:0}
-  .done{text-align:center;padding:10px 0}
+  .done{text-align:center;padding:22px 18px}
   .done .big{font-size:56px}
   .done h2{font-size:26px;margin:6px 0}
   .hide{display:none!important}
@@ -127,8 +127,8 @@ document.addEventListener('DOMContentLoaded',()=>{const b=document.createElement
   .bigbox{margin:14px 0 0;background:#fff0f8;border:2px solid var(--mag);border-radius:14px;padding:14px 16px;font-size:15px;line-height:1.45}
   .bigbox a.go{display:flex;align-items:center;justify-content:center;text-decoration:none;min-height:50px;font-size:17px;margin-top:12px}
   .opt{color:var(--purp);font-weight:600;font-size:14px;text-decoration:none;display:inline-block;margin-top:14px}
-  .calrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:12px 0 4px;font-size:14px}.calrow span{color:var(--muted);font-weight:600}
-  .calrow a{display:inline-block;padding:8px 14px;border:1.5px solid var(--line);border-radius:999px;font-weight:700;color:var(--purp);text-decoration:none;background:#fff}
+  .calrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:12px 0 4px;font-size:14px}.calrow span{color:var(--muted);font-weight:600;flex-basis:100%;text-align:center}
+  .calrow a{flex:1 1 0;max-width:190px;text-align:center;display:inline-block;padding:10px 12px;border:1.5px solid var(--line);border-radius:999px;font-weight:700;color:var(--purp);text-decoration:none;background:#fff}
   #busyPill{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-20px);opacity:0;pointer-events:none;z-index:99;
     background:#1d1b26;color:#fff;border-radius:999px;padding:9px 16px 9px 12px;display:flex;align-items:center;gap:10px;font:700 14px Poppins,system-ui,sans-serif;
     box-shadow:0 8px 24px rgba(0,0,0,.25);transition:opacity .15s,transform .15s}
