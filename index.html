@@ -437,7 +437,8 @@
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
         <b style="font-size:17px" id="arrTitle">Arriving today</b>
         <span style="display:flex;gap:6px">
-        <button type="button" class="btn main small" style="width:auto" onclick="openAddBooking(null,SLOT)">+ Add booking</button>
+        <button type="button" class="btn main small" style="width:auto" onclick="startWalkIn()">+ WALK-IN</button>
+        <button type="button" class="btn ghost small" style="width:auto" onclick="openAddBooking(null,SLOT)">+ BOOKING</button>
 </span>
       </div>
       <div class="daynav">
@@ -455,9 +456,9 @@
     <div class="card" id="formTop">
       <div id="pickBar" class="pickbar hide"></div>
       <label class="l" for="res">Reservation name</label>
-      <input id="res" placeholder="e.g. Beatriz Castro Silva" autocomplete="off">
+      <input id="res" placeholder="e.g. Beatriz Castro Silva" autocomplete="off" onblur="walkFill()">
       <div class="row" style="margin-top:12px">
-        <div><label class="l" for="ph">Phone</label><input id="ph" type="tel" placeholder="(407) 555-1234" autocomplete="off"></div>
+        <div><label class="l" for="ph">Phone</label><input id="ph" type="tel" placeholder="(407) 555-1234" autocomplete="off" onblur="walkFill()"></div>
         <div><label class="l" for="em">Email</label><input id="em" type="email" placeholder="name@email.com" autocomplete="off" autocapitalize="off"></div>
       </div>
       <div class="row" style="margin-top:12px">
@@ -475,7 +476,7 @@
     </div>
     <button id="saveBtn" class="btn main" onclick="saveAndPrint()">Check in &amp; print labels</button>
     </div>
-    <p class="muted" id="ciHint" style="text-align:center;font-size:14px">Tap a booking to check it in. Walk-in? Tap <b>+ Add booking</b>.</p>
+    <p class="muted" id="ciHint" style="text-align:center;font-size:14px">Tap a booking to check it in. Walk-in? Tap <b>+ WALK-IN</b>.</p>
   </section>
 
   <!-- TODAY -->
@@ -1018,7 +1019,34 @@ function renum(){const r=[...$('guests').children];r.forEach((g,i)=>g.querySelec
 function setEvent(on){$('guests').classList.toggle('ev',on);$('evBtn').classList.toggle('on',on);
   $('evTxt').textContent=on?'Phones skipped. These guests won\'t earn punches this visit.':'Team building or private event? Skip the phones for this party.'}
 function showForm(on){$('ciForm').classList.toggle('hide',!on);$('ciHint').classList.toggle('hide',on)}
-function resetForm(){picked=null;showForm(false);if($('pickBar'))$('pickBar').classList.add('hide');['res','ph','em'].forEach(k=>$(k).value='');$('guests').innerHTML='';addGuest();$('tm').value=nearestTime()}
+/* ---------- + WALK-IN: they're standing here, so it's one form: their details + every guest's FT/RG and phone ----------
+   On "Check in" the booking is made first (same as + BOOKING with "they're here now"), then the party is checked in. */
+let WALKIN=false;
+function startWalkIn(){
+  resetForm();WALKIN=true;const d=today();$('dt').value=d;setArrDay(d);fillTimes($('tm'),d,nearestTime());
+  showForm(true);$('pickBar').innerHTML=`<span>Walk-in · they're here now</span><button class="tl" onclick="stopPick()">Not now ✕</button>`;$('pickBar').classList.remove('hide');
+  $('saveBtn').textContent='Check in walk-in & print';
+  $('formTop').scrollIntoView({behavior:'smooth'});setTimeout(()=>$('res').focus(),300);
+}
+// walk-in: the booker's first name and number fill guest 1 (staff can change them)
+function walkFill(){if(!WALKIN)return;const g1=$('guests').querySelector('.g');if(!g1)return;
+  const n=g1.querySelector('input'),ph=g1.querySelector('.gph');
+  if(!n.value.trim()||n.dataset.auto===n.value){const f=cap($('res').value.trim().split(/\s+/)[0]||'');n.value=f;n.dataset.auto=f}
+  if($('ph').value.trim()&&(!ph.value.trim()||ph.dataset.auto===ph.value)){ph.value=fmtPhone($('ph').value);ph.dataset.auto=ph.value}}
+async function walkBook(reservation,all,force){
+  const ph=$('ph').value.trim(),em=$('em').value.trim(),dg=ph.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'');
+  if(reservation.split(/\s+/).length<2){$('res').focus();toast('Add their first and last name');return null}
+  if(dg.length!==10){$('ph').focus();toast('Check their mobile number');return null}
+  if(!/^\S+@\S+\.\S+$/.test(em)){$('em').focus();toast('Add their email');return null}
+  const d={date:$('dt').value,time:$('tm').value,name:titleCase(reservation),phone:fmtPhone(ph),email:em,size:all.length,staffNote:'',walkIn:true,force:!!force,notify:true,
+    guests:all.map(g=>g.name).filter(Boolean).join(', ')};
+  const r=await call('staffBook',d);
+  if(r.owes){if(confirm(`${d.name} still owes $${r.owes} from a past no-show or late cancel.\n\nCheck them in anyway?`))return walkBook(reservation,all,true);return null}
+  if(r.needsForce){if(confirm(`That class only has ${Math.max(0,r.left)} spot(s) left for ${d.size}. Add them anyway?`))return walkBook(reservation,all,true);return null}
+  for(let t=0;t<4;t++){const L=await call('getBookings',d.date);const b=(L||[]).find(x=>x.bookingId===r.id);if(b)return b;await new Promise(z=>setTimeout(z,800))}
+  throw new Error('The booking was made but didn\'t show up yet. Tap it on the list to check them in.');
+}
+function resetForm(){picked=null;if(WALKIN){WALKIN=false;$('saveBtn').textContent='Check in & print labels'}showForm(false);if($('pickBar'))$('pickBar').classList.add('hide');['res','ph','em'].forEach(k=>$(k).value='');$('guests').innerHTML='';addGuest();$('tm').value=nearestTime()}
 
 async function saveAndPrint(){
   const reservation=$('res').value.trim();
@@ -1029,13 +1057,18 @@ async function saveAndPrint(){
   const noName=here.find(g=>!g.name);if(noName){noName.el.querySelector('input').focus();toast('Add a first name for each guest who\'s here');return}
   const ev=$('guests').classList.contains('ev');if(ev)here.forEach(g=>{g.phone='';g.tag='EVENT'});
   const badPh=!ev&&here.find(g=>phoneProblem(g.name,g.phone,g.tag));if(badPh){badPh.el.querySelector('.gph').focus();toast(phoneProblem(badPh.name,badPh.phone,badPh.tag),4000);return}
+  if(WALKIN&&!picked&&later.length){later.forEach(g=>g.el.classList.add('need'));toast('Tap FT or RG for every guest. Walk-ins are all here.',4000);return}
   if(later.length){later.forEach(g=>g.el.classList.add('need'));
     if(!confirm(`Check in ${here.length} of ${all.length} now?\n\n${later.length} guest${later.length>1?'s have':' has'} no FT/RG yet${later.some(g=>g.name)?' ('+later.map(g=>g.name).filter(Boolean).join(', ')+')':''}. ${picked?'They stay on the booking. When they arrive, check them in from the Visits tab.':'They won\'t be checked in.'}`))return}
   const guests=here.map(g=>({name:g.name,type:g.type,projects:g.projects,phone:g.phone?fmtPhone(g.phone):'',tag:g.tag}));
   const em=$('em').value.trim();
   if(em&&!/^\S+@\S+\.\S+$/.test(em)){toast('Check the email');$('em').focus();return}
-  const btn=$('saveBtn');if(btn.disabled)return;btn.disabled=true;btn.textContent='Saving…';
-  const quick=quickPrintOn();
+  const btn=$('saveBtn');if(btn.disabled)return;
+  btn.disabled=true;btn.textContent='Saving…';
+  const fresh=WALKIN&&!picked;   // booking made just now: the print box opens after (iPads block printing after a wait)
+  if(WALKIN&&!picked){try{const b=await walkBook(reservation,all);if(!b){btn.disabled=false;btn.textContent='Check in walk-in & print';return}picked=b}
+    catch(e){btn.disabled=false;btn.textContent='Check in walk-in & print';toast('Could not add: '+(e.message||e),5000);return}}
+  const quick=quickPrintOn()&&!fresh;
   if(quick)printLabels(guests.map((g,i)=>({reservation:titleCase(reservation),name:g.name,type:g.type,date:$('dt').value,time:$('tm').value,size:guests.length,num:i+1,projects:g.projects})),{direct:true,noMark:true});
   try{
     const saved=await call('saveParty',{date:$('dt').value,time:$('tm').value,reservation:titleCase(reservation),phone:$('ph').value.trim(),email:em,guests,bookingRow:picked?picked.row:0,expected:picked?all.length:0,allNames:picked?all.map(g=>g.name).filter(Boolean):[]});
@@ -1043,7 +1076,7 @@ async function saveAndPrint(){
     resetForm();toast(`Checked in ${saved.length} guest${saved.length>1?'s':''}`);
     if(quick){if(saved.length)call('markPrinted',saved.map(g=>g.row)).catch(()=>{})}else printLabels(saved);
   }catch(e){toast('Could not save: '+(e.message||e))}
-  btn.disabled=false;btn.textContent='Check in & print labels';
+  btn.disabled=false;btn.textContent=WALKIN?'Check in walk-in & print':'Check in & print labels';
 }
 
 /* ---------- labels: RESERVATION NAME biggest ---------- */
@@ -1673,7 +1706,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611211054';
+const BUILD='202611211332';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1902,7 +1935,7 @@ function openAddBooking(date,time){
     <b style="font-size:20px">Add a booking</b><p class="muted" id="abSub" style="margin:4px 0 12px"></p>
     <label class="l">Day</label><input type="date" id="abDate" value="${date}" min="${today()}" onchange="AB_T='';abMode();abSlots()">
     <label class="l" style="margin-top:10px">Time</label><input type="hidden" id="abTime" value="${time||''}"><div id="abSlots" class="abs"><p class="muted">Loading open spots…</p></div>
-    <label class="chk" id="abWalkRow" style="margin-top:12px"><input type="checkbox" id="abWalk" checked onchange="abMode()"> They're here now (walk-in, no card needed)</label>
+    <label class="chk" id="abWalkRow" style="margin-top:12px"><input type="checkbox" id="abWalk" onchange="abMode()"> They're here now (walk-in, no card needed)</label>
     <label class="chk hide" id="abPaidRow" style="margin-top:10px"><input type="checkbox" id="abPaid" onchange="abMode()"> 🔒 Event booked manually (no card needed) <span class="muted" style="font-size:12px">Owners only</span></label>
     <label class="l" style="margin-top:12px">Returning guest? <span class="muted">(optional)</span></label>
     <input id="abFind" type="search" placeholder="🔍 Name, phone or email" autocomplete="off" oninput="abSearch()">
