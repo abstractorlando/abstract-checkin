@@ -77,8 +77,13 @@
   .g{display:flex;gap:8px;align-items:center}
   .g .n{width:28px;font-weight:700;color:var(--muted);text-align:center}
   .g input{flex:1;min-width:0}
-  .g input.gph{flex:0 0 170px;font-size:15px}
-  @media(max-width:640px){.g{flex-wrap:wrap}.g input:not(.gph){flex:1 1 calc(100% - 200px)}.g input.gph{order:5;flex:1 1 100%;margin-left:36px}}
+  .g{flex-wrap:wrap}.g>.gp{flex:1 1 100%;margin-left:36px}
+  .gp{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.gp input.gph{flex:1 1 170px;max-width:240px;min-width:0;font-size:15px}
+  .pt{border:2px solid var(--line);border-radius:12px;background:#fff;font:700 13px Poppins;padding:0 12px;min-height:44px;cursor:pointer;color:var(--muted);flex:none}
+  .pt.on{background:var(--purp,#4e3aa2);border-color:var(--purp,#4e3aa2);color:#fff}
+  @media(max-width:640px){.g>.gp{margin-left:0}.gp{flex-wrap:nowrap;gap:6px}.gp input.gph{flex:1 1 auto;max-width:none;font-size:14px;padding-left:10px;padding-right:6px}.pt{padding:0 8px;font-size:12px}}
+  .gi .gp{margin-top:6px}.gi .gnm{display:flex;flex-direction:column;flex:1;min-width:0}
+  .ptag{font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;background:#ece8fb;color:var(--purp,#4e3aa2);margin-left:4px;vertical-align:1px}
   .seg{display:flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
   .seg button{border:0;background:#fff;font:800 15px Poppins;padding:0;width:48px;min-height:44px;cursor:pointer;color:var(--muted)}
   .pj{display:flex;align-items:center;border:2px solid var(--line);border-radius:12px;flex:none}
@@ -460,7 +465,7 @@
     </div>
     <div class="card">
       <label class="l">Guests · tap <b>FT</b> (first timer) or <b>RG</b> (returning) for each guest who's here</label>
-      <p class="muted" style="margin:-2px 0 8px;font-size:13px">Part of the party still on the way? Leave their FT/RG blank. They stay on the booking and you can check them in when they arrive. Ask each guest for their phone so they get their own "art is ready" text.</p>
+      <p class="muted" style="margin:-2px 0 8px;font-size:13px">Part of the party still on the way? Leave their FT/RG blank. They stay on the booking and you can check them in when they arrive. Every guest needs a phone. Kid on a parent's number: tap UNDER 18. Adult using someone else's number: tap SHARES #.</p>
       <div id="guests" class="gl"></div>
       <button class="btn ghost small add" onclick="addGuest()">+ Add guest</button>
     </div>
@@ -592,11 +597,11 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwvba_1OZKz5alSsEVV8pXW
 const hasGAS = !!API_URL;
 const demo = {rows:[],st:{},
   wrap(r){return Object.assign({},r,{storage:this.st[r.partyId]||null})},
-  saveParty(p){const id=Math.random().toString(36).slice(2,10).toUpperCase();const out=p.guests.map((g,i)=>({row:this.rows.length+2+i,ts:Date.now(),date:p.date,time:p.time,reservation:p.reservation,size:p.guests.length,num:i+1,name:g.name,type:g.type,projects:g.projects||1,partyId:id,printed:0,phone:p.phone,email:p.email}));this.rows.push(...out);return out.map(r=>this.wrap(r))},
+  saveParty(p){const id=Math.random().toString(36).slice(2,10).toUpperCase();const out=p.guests.map((g,i)=>({row:this.rows.length+2+i,ts:Date.now(),date:p.date,time:p.time,reservation:p.reservation,size:p.guests.length,num:i+1,name:g.name,type:g.type,projects:g.projects||1,partyId:id,printed:0,phone:p.phone,email:p.email,guestPhone:g.phone||"",phoneTag:g.tag||""}));this.rows.push(...out);return out.map(r=>this.wrap(r))},
   getDay(d){return this.rows.filter(r=>r.date===d).slice().reverse().map(r=>this.wrap(r))},
   search(q){q=q.toLowerCase();return this.rows.filter(r=>r.name.toLowerCase().includes(q)||r.reservation.toLowerCase().includes(q)).slice().reverse().map(r=>this.wrap(r))},
   markPrinted(rows){rows.forEach(n=>{const r=this.rows.find(x=>x.row===n);if(r)r.printed++});return true},
-  updateGuest(row,n,t,pj,ph){const r=this.rows.find(x=>x.row===row);r.name=n;r.type=t;if(pj)r.projects=pj;if(ph!=null)r.guestPhone=ph;return this.wrap(r)},
+  updateGuest(row,n,t,pj,ph,tag){const r=this.rows.find(x=>x.row===row);r.name=n;r.type=t;if(pj)r.projects=pj;if(ph!=null){r.guestPhone=ph;r.phoneTag=tag||''}return this.wrap(r)},
   updateContact(pid,ph,em,nm){this.rows.filter(r=>r.partyId===pid).forEach(r=>{r.phone=ph;r.email=em;if(nm)r.reservation=nm});return true},
   storeParty(s){const o=this.st[s.partyId]||{};this.st[s.partyId]={location:s.location.toUpperCase(),pieceType:s.pieceType,pieces:+s.pieces,emailSent:o.emailSent||s.notify,textSent:o.textSent||s.notify,pickedUp:o.pickedUp||false};return {email:s.notify?'sent':'skipped',text:s.notify?'sent':'skipped'}},
   addGuestToParty(pid,name,type){const party=this.rows.filter(r=>r.partyId===pid);const f=party[0];const size=party.length+1;party.forEach(r=>r.size=size);
@@ -961,18 +966,42 @@ function showShopping(low,sub){const by={};low.forEach(x=>{const k=x.store||x.ca
     <div style="display:flex;gap:8px;margin-top:16px"><button class="btn ghost" style="flex:1" onclick="$('shopModal').remove()">Close</button>${low.length?'<button class="btn main" style="flex:1" id="shopCopy">Copy list</button>':''}</div></div>`;
   document.body.appendChild(m);if($('shopCopy'))$('shopCopy').onclick=()=>navigator.clipboard.writeText(text).then(()=>toast('List copied ✓'),()=>toast('Could not copy'));}
 
+/* ---------- every guest's phone: their own number, or a tag that says why not ----------
+   UNDER 18 = a kid on a parent's number. SHARES # = an adult who gave someone else's number.
+   Tapping a tag fills in the reservation's number (staff can type a different one). */
+const PTAGS=['UNDER 18','SHARES #'];
+function phoneBlock(phone,tag,fb){
+  return `<div class="gp"${fb?` data-fb="${esc(fb)}"`:''}><input class="gph" type="tel" inputmode="tel" placeholder="Their phone" autocomplete="off" value="${esc(phone?fmtPhone(phone):'')}" onblur="this.value=this.value.trim()?fmtPhone(this.value):''">`+
+    PTAGS.map(t=>`<button type="button" class="pt${tag===t?' on':''}" data-tag="${t}">${t}</button>`).join('')+`</div>`}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.gp .pt');if(!b)return;
+  const box=b.closest('.gp'),inp=box.querySelector('.gph'),on=!b.classList.contains('on');
+  box.querySelectorAll('.pt').forEach(x=>x.classList.remove('on'));
+  if(on){b.classList.add('on');const f=box.dataset.fb||(box.closest('#guests')?$('ph').value.trim():'');
+    if(!inp.value.trim()&&f){inp.value=fmtPhone(f);inp.dataset.auto=inp.value}}
+  else if(inp.dataset.auto&&inp.value===inp.dataset.auto){inp.value='';delete inp.dataset.auto}
+  if(on&&!inp.value.trim())inp.focus();
+});
+const phoneOf=box=>({phone:box.querySelector('.gph').value.trim(),tag:(box.querySelector('.pt.on')||{dataset:{}}).dataset.tag||''});
+const tenDigits=v=>String(v).replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').length===10;
+function phoneProblem(name,ph,tag){
+  const who=name||'this guest';
+  if(!ph)return tag?`Add the number ${who} uses`:`Add ${who}'s phone, or tap UNDER 18 or SHARES #`;
+  if(!tenDigits(ph))return `Check ${who}'s phone number (10 digits)`;
+  return ''}
+
 /* ---------- check-in form ---------- */
 function addGuest(name='',type='',projects=1,phone=''){
   const wrap=document.createElement('div');wrap.className='g';
-  wrap.innerHTML=`<span class="n"></span><input placeholder="First name" value="${esc(name)}" autocomplete="off"><input class="gph" type="tel" inputmode="tel" placeholder="Phone (optional)" autocomplete="off" onblur="this.value=this.value.trim()?fmtPhone(this.value):''">
+  wrap.innerHTML=`<span class="n"></span><input placeholder="First name" value="${esc(name)}" autocomplete="off">
     <div class="seg"><button type="button" class="ft">FT</button><button type="button" class="rg">RG</button></div>
-    <button class="x" type="button" aria-label="Remove guest">×</button>`;
+    <button class="x" type="button" aria-label="Remove guest">×</button>${phoneBlock(phone,'')}`;
   const [ft,rg]=wrap.querySelectorAll('.seg button');
   const set=t=>{wrap.dataset.type=t;ft.classList.toggle('on',t==='FT');rg.classList.toggle('on',t==='RG');wrap.classList.remove('need')};
   ft.onclick=()=>set('FT');rg.onclick=()=>set('RG');set(type);
   wrap.dataset.projects=Math.min(Math.max(projects||1,1),9);
   wrap.querySelector('.x').onclick=()=>{wrap.remove();renum()};
-  wrap.querySelectorAll('input').forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addGuest();}}));if(phone)wrap.querySelector('.gph').value=fmtPhone(phone);
+  wrap.querySelectorAll('input').forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addGuest();}}));
   $('guests').appendChild(wrap);renum();wrap.querySelector('input').focus();
 }
 function addMany(){for(let i=0;i<4;i++)addGuest()}
@@ -982,15 +1011,15 @@ function resetForm(){picked=null;showForm(false);if($('pickBar'))$('pickBar').cl
 
 async function saveAndPrint(){
   const reservation=$('res').value.trim();
-  const rowsEl=[...$('guests').children],all=rowsEl.map(g=>({el:g,name:cap(g.querySelector('input').value),phone:g.querySelector('.gph').value.trim(),type:g.dataset.type,projects:+g.dataset.projects||1}));
+  const rowsEl=[...$('guests').children],all=rowsEl.map(g=>Object.assign({el:g,name:cap(g.querySelector('input').value),type:g.dataset.type,projects:+g.dataset.projects||1},phoneOf(g.querySelector('.gp'))));
   if(!reservation){toast('Add the reservation name');$('res').focus();return}
   const here=all.filter(g=>g.type),later=all.filter(g=>!g.type);
   if(!here.length){all.forEach(g=>g.el.classList.add('need'));toast('Tap FT or RG for each guest who\'s here',4000);return}
-  const badPh=here.find(g=>g.phone&&g.phone.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').length!==10);if(badPh){badPh.el.querySelector('.gph').focus();toast('Check '+(badPh.name||'that guest')+'\'s phone number (10 digits)');return}
   const noName=here.find(g=>!g.name);if(noName){noName.el.querySelector('input').focus();toast('Add a first name for each guest who\'s here');return}
+  const badPh=here.find(g=>phoneProblem(g.name,g.phone,g.tag));if(badPh){badPh.el.querySelector('.gph').focus();toast(phoneProblem(badPh.name,badPh.phone,badPh.tag),4000);return}
   if(later.length){later.forEach(g=>g.el.classList.add('need'));
     if(!confirm(`Check in ${here.length} of ${all.length} now?\n\n${later.length} guest${later.length>1?'s have':' has'} no FT/RG yet${later.some(g=>g.name)?' ('+later.map(g=>g.name).filter(Boolean).join(', ')+')':''}. ${picked?'They stay on the booking. When they arrive, check them in from the Visits tab.':'They won\'t be checked in.'}`))return}
-  const guests=here.map(g=>({name:g.name,type:g.type,projects:g.projects,phone:g.phone?fmtPhone(g.phone):''}));
+  const guests=here.map(g=>({name:g.name,type:g.type,projects:g.projects,phone:fmtPhone(g.phone),tag:g.tag}));
   const em=$('em').value.trim();
   if(em&&!/^\S+@\S+\.\S+$/.test(em)){toast('Check the email');$('em').focus();return}
   const btn=$('saveBtn');if(btn.disabled)return;btn.disabled=true;btn.textContent='Saving…';
@@ -1298,7 +1327,7 @@ function renderParties(list,el,byClass){
       ${storageLine(p)}
       <div id="pjf_${f.partyId}"></div>
       <div id="sf_${f.partyId}"></div>
-      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b>${g.guestPhone?` <a class="muted" href="tel:${esc(g.guestPhone)}" style="color:var(--teal);text-decoration:none">${esc(g.guestPhone)}</a>`:''}${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
+      ${p.map(g=>`<div class="gi"><div><span class="tag ${g.type}">${g.type}</span> <b>${esc(g.name)}</b>${g.guestPhone?` <a class="muted" href="tel:${esc(g.guestPhone)}" style="color:var(--teal);text-decoration:none">${esc(g.guestPhone)}</a>`:''}${g.phoneTag?`<span class="ptag">${esc(g.phoneTag)}</span>`:''}${(g.details||[]).length?'<br>'+g.details.map(d=>`<span class="pjt ${d.where}">${esc(d.project)} · ${WHERE[d.where]}</span>`).join(' '):''}</div>
         <div style="display:flex;gap:6px"><button class="btn ghost small" onclick="editGuest(${g.row})">Edit</button><button class="btn ghost small" onclick="reprint([${g.row}])">Print 1 sticker</button><button class="btn ghost small" onclick="goldenTicket(${g.row})" title="Prints the expiration sticker for the gold card">Issue golden ticket</button></div></div>`).join('')}
       ${waitingHtml(p)}
       <div id="ap_${f.partyId}"></div>
@@ -1331,7 +1360,7 @@ function waitingHtml(p){
   if(missing<=0)return nsHtml;
   const used=p.map(g=>g.name.toLowerCase()).concat(ns.map(n=>n.toLowerCase())),names=(f.bookedNames||'').split(/,\s*/).filter(n=>n&&!used.includes(n.toLowerCase()));
   return nsHtml+`<div class="wait"><b>${missing} of ${exp} not here yet</b>${Array.from({length:missing},(_,i)=>{const n=names[i]||'';
-    return `<div class="gi"><input id="wn_${f.partyId}_${i}" value="${esc(n)}" placeholder="First name" style="max-width:220px"><div style="display:flex;gap:6px"><span class="muted" style="align-self:center;font-size:13px">Arrived?</span>
+    return `<div class="gi"><div class="gnm"><input id="wn_${f.partyId}_${i}" value="${esc(n)}" placeholder="First name" style="max-width:220px">${phoneBlock('','',f.phone)}</div><div style="display:flex;gap:6px"><span class="muted" style="align-self:center;font-size:13px">Arrived?</span>
       <button class="btn ghost small" style="color:var(--teal)" onclick="arrive('${f.partyId}','wn_${f.partyId}_${i}','FT')">FT</button><button class="btn ghost small" style="color:var(--mag)" onclick="arrive('${f.partyId}','wn_${f.partyId}_${i}','RG')">RG</button>
       <button class="btn ghost small" style="color:#c40056" onclick="guestNoShow('${f.partyId}',$('wn_${f.partyId}_${i}').value)">No-show</button></div></div>`}).join('')}</div>`;
 }
@@ -1349,17 +1378,19 @@ async function guestNoShow(id,name,undo){
 const ARRIVING={};
 async function arrive(id,inp,type,extra){
   const n=cap(($(inp).value||'').trim());if(!n){$(inp).focus();return toast('Add their first name')}
+  const gp=$(inp).closest('.gi').querySelector('.gp'),{phone,tag}=gp?phoneOf(gp):{phone:'',tag:''};
+  if(gp){const bad=phoneProblem(n,phone,tag);if(bad){gp.querySelector('.gph').focus();return toast(bad,4000)}}
   const k=id+'|'+n.toLowerCase();if(ARRIVING[k])return;ARRIVING[k]=1;
   // lock this guest's buttons right away so extra taps don't check them in twice
   const row=$(inp).closest('.gi'),btns=row?[...row.querySelectorAll('button')]:[];btns.forEach(x=>x.disabled=true);
   const lbl=row&&row.querySelector('.muted');if(lbl)lbl.textContent='Checking in…';
-  try{const g=await call('addGuestToParty',id,n,type,!!extra);cache[g.row]=g;if(!g.dup)printLabels([g]);toast(g.dup?`${g.name} was already checked in`:`Checked in ${g.name} (${type})`);if(row)row.style.opacity=.5;setTimeout(refreshView,1500)}
+  try{const g=await call('addGuestToParty',id,n,type,!!extra,fmtPhone(phone),tag);cache[g.row]=g;if(!g.dup)printLabels([g]);toast(g.dup?`${g.name} was already checked in`:`Checked in ${g.name} (${type})`);if(row)row.style.opacity=.5;setTimeout(refreshView,1500)}
   catch(e){toast('Could not check in: '+(e.message||e));btns.forEach(x=>x.disabled=false);if(lbl)lbl.textContent='Arrived?'}
   finally{setTimeout(()=>delete ARRIVING[k],3000)}
 }
 function addToParty(id){
   const box=$('ap_'+id);if(box.innerHTML){box.innerHTML='';return}
-  box.innerHTML=`<div class="wait"><b>Someone new joined the party</b><div class="gi"><input id="an_${id}" placeholder="First name" style="max-width:220px">
+  box.innerHTML=`<div class="wait"><b>Someone new joined the party</b><div class="gi"><div class="gnm"><input id="an_${id}" placeholder="First name" style="max-width:220px">${phoneBlock('','',((parties[id]||[])[0]||{}).phone)}</div>
     <div style="display:flex;gap:6px"><button class="btn ghost small" style="color:var(--teal)" onclick="arrive('${id}','an_${id}','FT',1)">FT</button><button class="btn ghost small" style="color:var(--mag)" onclick="arrive('${id}','an_${id}','RG',1)">RG</button></div></div>
     <p class="muted" style="margin:6px 0 0;font-size:13px">Tap FT or RG to check them in and print. The booking's party size updates too.</p></div>`;
   $('an_'+id).focus();
@@ -1517,8 +1548,8 @@ function editGuest(row){
     <label class="l" for="egName">First name</label>
     <div style="display:flex;gap:8px;align-items:center"><input id="egName" value="${esc(g.name)}" autocapitalize="words" style="flex:1;min-width:0">
       <div class="seg" id="egType"><button type="button" class="ft${g.type==='FT'?' on':''}" data-t="FT">FT</button><button type="button" class="rg${g.type==='RG'?' on':''}" data-t="RG">RG</button></div></div>
-    <label class="l" for="egPh" style="margin-top:12px">Their phone</label>
-    <input id="egPh" type="tel" inputmode="tel" value="${esc(g.guestPhone||'')}" placeholder="Phone" onblur="this.value=this.value.trim()?fmtPhone(this.value):''">
+    <label class="l" style="margin-top:12px">Their phone</label>
+    <div id="egPh">${phoneBlock(g.guestPhone||'',g.phoneTag||'',g.phone)}</div>
     <button class="btn main" style="margin-top:16px" id="egSave">Save</button>
     <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:14px" id="egRm">
       <button class="btn ghost" style="width:100%;color:#c0392b" id="egRmBtn">Remove ${esc(g.name)} from the party</button>
@@ -1526,11 +1557,11 @@ function editGuest(row){
   document.body.appendChild(m);   // taps outside the box do nothing: close with ✕ only
   m.querySelectorAll('#egType button').forEach(b=>b.onclick=()=>{m.querySelectorAll('#egType button').forEach(x=>x.classList.toggle('on',x===b))});
   $('egSave').onclick=async()=>{
-    const n=cap($('egName').value.trim()),t=(m.querySelector('#egType .on')||{}).dataset,ph=$('egPh').value.trim();
+    const n=cap($('egName').value.trim()),t=(m.querySelector('#egType .on')||{}).dataset,{phone:ph,tag}=phoneOf(m.querySelector('#egPh .gp'));
     if(!n)return $('egName').focus();
-    if(ph&&ph.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'').length!==10){$('egPh').focus();return toast('Check the phone number (10 digits)')}
+    const bad=phoneProblem(n,ph,tag);if(bad){m.querySelector('#egPh .gph').focus();return toast(bad,4000)}
     const btn=$('egSave');btn.disabled=true;btn.textContent='Saving…';
-    try{const u=await call('updateGuest',row,n,t?t.t:g.type,null,ph?fmtPhone(ph):'');m.remove();toast('Updated');patchView(swapGuests([u]))}
+    try{const u=await call('updateGuest',row,n,t?t.t:g.type,null,fmtPhone(ph),tag);m.remove();toast('Updated');patchView(swapGuests([u]))}
     catch(e){btn.disabled=false;btn.textContent='Save';toast('Could not update')}
   };
   $('egRmBtn').onclick=()=>{
@@ -1617,7 +1648,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611202155';
+const BUILD='202611202258';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -2475,7 +2506,10 @@ function pick(row){
   if(![...$('tm').options].some(o=>o.value===b.time)){const o=document.createElement('option');o.textContent=b.time;$('tm').appendChild(o)}
   $('tm').value=b.time;
   const names=b.guests?b.guests.split(/,\s*/):[b.reservation.split(' ')[0]];
-  $('guests').innerHTML='';for(let i=0;i<b.size;i++)addGuest(names[i]||'');
+  $('guests').innerHTML='';
+  // the booker is usually guest 1: their number is already on the booking
+  const b1=(names[0]||'').toLowerCase(),own=b1&&b.reservation.toLowerCase().split(' ')[0]===b1;
+  for(let i=0;i<b.size;i++)addGuest(names[i]||'','',1,i===0&&own?b.phone:'');
   renderArrivals();$('formTop').scrollIntoView({behavior:'smooth'});
   const empty=[...$('guests').querySelectorAll('input:not(.gph)')].find(i=>!i.value);(empty||$('guests').querySelector('input')).focus();
 }
