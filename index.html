@@ -547,8 +547,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <div id="printModal" class="modal hide"><div class="mbox">
   <div style="font-size:44px">🏷️</div><h2 id="pmCount" style="margin:6px 0 4px">Stickers</h2>
-  <p class="muted" style="margin:0 0 18px">ready for the Rollo</p>
-  <button class="btn main" onclick="sendToPrinter()">Print</button>
+  <p class="muted" id="pmSub" style="margin:0 0 18px">ready for the Rollo</p>
+  <button class="btn main" id="pmGo" onclick="sendToPrinter()">Print</button>
   <button class="btn ghost" style="width:100%;margin-top:10px" onclick="$('printModal').classList.add('hide')">Cancel</button>
 </div></div>
 <div id="setModal" class="modal hide"><div class="mbox setbox" style="text-align:left">
@@ -1040,8 +1040,8 @@ async function saveAndPrint(){
   try{
     const saved=await call('saveParty',{date:$('dt').value,time:$('tm').value,reservation:titleCase(reservation),phone:$('ph').value.trim(),email:em,guests,bookingRow:picked?picked.row:0,expected:picked?all.length:0,allNames:picked?all.map(g=>g.name).filter(Boolean):[]});
     picked=null;$('bkFilter').value='';loadArrivals();
-    if(quick){if(saved.length)call('markPrinted',saved.map(g=>g.row)).catch(()=>{})}else printLabels(saved);
     resetForm();toast(`Checked in ${saved.length} guest${saved.length>1?'s':''}`);
+    if(quick){if(saved.length)call('markPrinted',saved.map(g=>g.row)).catch(()=>{})}else printLabels(saved);
   }catch(e){toast('Could not save: '+(e.message||e))}
   btn.disabled=false;btn.textContent='Check in & print labels';
 }
@@ -1130,14 +1130,27 @@ async function quickPrint(copies){
   window.print();
 }
 /* direct = called right from a tap, so the iPad print box can open straight away */
+/* jsPDF comes from a CDN: if it didn't load (spotty wifi), fetch it again before making stickers */
+function needPdfLib(){if(window.jspdf)return Promise.resolve();return new Promise((ok,no)=>{const sc=document.createElement('script');
+  sc.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';sc.onload=()=>window.jspdf?ok():no(new Error('PDF maker did not load'));sc.onerror=()=>no(new Error('No internet for the PDF maker'));document.head.appendChild(sc)})}
+let LAST_PRINT=null;
+function printFailed(list,e){
+  LAST_PRINT=list;spdAdd('printError'+String(e&&e.name||'').replace(/[^A-Za-z]/g,''),0,false);spdFlush();
+  $('pmCount').textContent='Stickers didn\'t open';$('pmSub').textContent='Tap Try again. Still stuck? Use Print all in Visits.';
+  $('pmGo').textContent='Try again';$('pmGo').onclick=()=>{$('printModal').classList.add('hide');resetPm();printLabels(LAST_PRINT,{direct:true,noMark:true})};
+  $('printModal').classList.remove('hide')}
+function resetPm(){$('pmSub').textContent='ready for the Rollo';$('pmGo').textContent='Print';$('pmGo').onclick=sendToPrinter}
 async function printLabels(list,opts){
-  opts=opts||{};if(!list.length)return;
+  opts=opts||{};if(!list||!list.length)return;resetPm();
+  try{await printLabels_(list,opts)}catch(e){printFailed(list,e)}
+}
+async function printLabels_(list,opts){
   const copies=stickerCopies(list);
   if(quickPrintOn()){
     if(opts.direct)quickPrint(copies);
     else{pendingCopies=copies;$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
   }else{
-    let blob;try{blob=await makePdf(copies)}catch(e){toast('Could not make stickers: '+(e.message||e),5000);return}
+    await needPdfLib();const blob=await makePdf(copies);
     pendingPdf={blob,count:copies.length};
     if(isTouch){
       // straight to the iPad's share sheet when the tap still counts; otherwise one "Print" tap first
@@ -1660,7 +1673,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611210837';
+const BUILD='202611211054';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
