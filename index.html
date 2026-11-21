@@ -85,6 +85,7 @@
   .gi .gp{margin-top:6px}.gi .gnm{display:flex;flex-direction:column;flex:1;min-width:0}
   .evbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;font-size:13px}
   .gl.ev .gp{display:none}
+  .invr input.done{background:#eef8f0;border-color:#9fd3ab}
   .ptag{font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;background:#ece8fb;color:var(--purp,#4e3aa2);margin-left:4px;vertical-align:1px}
   .seg{display:flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;flex:none}
   .seg button{border:0;background:#fff;font:800 15px Poppins;padding:0;width:48px;min-height:44px;cursor:pointer;color:var(--muted)}
@@ -934,12 +935,17 @@ async function openInv(kind){INV_KIND=kind==='sup'?'sup':'conc';
   $('invSub').textContent=(INV.lastAt?`Last count: ${new Date(INV.lastAt).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}${INV.lastBy?' by '+String(INV.lastBy).split(' ')[0]:''}. `:'')+'Type how many are on the shelf. Red means below PAR.';
   let cat='';$('invList').innerHTML=INV.items.map((x,i)=>{const h=x.cat!==cat?`<div class="ush" style="margin-top:12px">${esc(cat=x.cat)}</div>`:'';
     return h+`<div class="invr"><span><b>${esc(x.item)}</b><br><span class="muted" style="font-size:12px">PAR ${x.par}${x.last!==null?' · last '+x.last:''}${x.store?' · '+esc(x.store):''}</span></span><input type="number" inputmode="decimal" step="any" min="0" data-i="${i}" oninput="invMark(this)"></div>`}).join('');
+  // already counted today (saved earlier): fill those in so nothing looks lost
+  const T=INV.today||{},nT=Object.keys(T).length;
+  if(nT){$('invList').querySelectorAll('input').forEach(el=>{const v=T[INV.items[+el.dataset.i].item];if(v!==undefined){el.value=v;el.dataset.saved=v;el.classList.add('done');invMarkOnly(el)}});
+    $('invSub').textContent=`Saved so far today: ${nT} of ${INV.items.length} counted. Keep going and save again anytime.`}
   invRestore()}
 const INV_DRAFT='abs_inv_draft';
-function invDraft(){const d={};$('invList').querySelectorAll('input').forEach(el=>{if(el.value!=='')d[INV.items[+el.dataset.i].item]=el.value});
+function invMarkOnly(el){const x=INV.items[+el.dataset.i];el.classList.toggle('low',el.value!==''&&+el.value<x.par)}
+function invDraft(){const d={};$('invList').querySelectorAll('input').forEach(el=>{if(el.value!==''&&el.value!==el.dataset.saved)d[INV.items[+el.dataset.i].item]=el.value});
   try{Object.keys(d).length?localStorage.setItem(invDraftKey(),JSON.stringify({day:today(),d})):localStorage.removeItem(invDraftKey())}catch(e){}
   const m=$('invModal');if(m){if(Object.keys(d).length)m.dataset.dirty=1;else delete m.dataset.dirty}}
-function invMark(el){const x=INV.items[+el.dataset.i];el.classList.toggle('low',el.value!==''&&+el.value<x.par);invDraft()}
+function invMark(el){invMarkOnly(el);el.classList.toggle('done',el.dataset.saved!==undefined&&el.value===el.dataset.saved);invDraft()}
 function invRestore(){let r=null;try{r=JSON.parse(localStorage.getItem(invDraftKey())||'null')}catch(e){}
   if(!r||r.day!==today())return;let n=0;$('invList').querySelectorAll('input').forEach(el=>{const v=r.d[INV.items[+el.dataset.i].item];if(v!==undefined){el.value=v;invMark(el);n++}});
   if(n)toast(`Picked up where you left off (${n} counted)`,3500)}
@@ -953,8 +959,8 @@ function invClose(){const m=$('invModal');if(!m)return;if(!m.dataset.dirty){m.re
 function invDiscard(){try{localStorage.removeItem(invDraftKey())}catch(e){}const q=$('invAsk');if(q)q.remove();const m=$('invModal');if(m)m.remove()}
 window.addEventListener('beforeunload',e=>{const m=$('invModal');if(m&&m.dataset.dirty){e.preventDefault();e.returnValue=''}});
 async function saveInv(){const counts={};let n=0;
-  $('invList').querySelectorAll('input').forEach(el=>{if(el.value!==''){counts[INV.items[+el.dataset.i].item]=+el.value;n++}});
-  if(!n)return toast('Enter at least one count');
+  $('invList').querySelectorAll('input').forEach(el=>{if(el.value!==''&&el.value!==el.dataset.saved){counts[INV.items[+el.dataset.i].item]=+el.value;n++}});
+  if(!n){if(Object.keys(INV.today||{}).length){$('invModal').remove();return toast('Already saved ✓',2500)}return toast('Enter at least one count')}
   const btn=$('invSave');btn.disabled=true;
   try{INV=await call('invSave',counts,INV_KIND);try{localStorage.removeItem(invDraftKey())}catch(e){}$('invModal').remove();toast('Count saved ✓',3000);
     const low=INV.items.filter(x=>x.last!==null&&x.last<x.par);showShopping(low);if(INV_KIND==='sup'){SUP=INV;if(BSIDE==='inv')renderBar()}else loadConc()}
@@ -1706,7 +1712,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611211332';
+const BUILD='202611211622';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
