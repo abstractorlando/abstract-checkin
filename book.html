@@ -442,7 +442,7 @@ $('noteLink').onclick=e=>{e.preventDefault();$('noteLink').classList.add('hide')
 function renderNames(){
   if(GF)return renderGfNames();
   const box=$('guestNames'),old=[...box.querySelectorAll('.gn')].map(x=>({n:x.value,e:x.dataset.edited})),first=$('name').value.trim().split(/\s+/)[0]||'';
-  box.innerHTML=`<label class="l">Who is creating? <span class="muted">(first names)</span></label><div class="row">`+Array.from({length:size},(_,i)=>{const o=old[i]||{},n=i===0&&o.e!=='1'?first:(o.n||'');
+  box.innerHTML=`<label class="l">Who is creating? <span class="muted">(Names)</span></label><div class="row">`+Array.from({length:size},(_,i)=>{const o=old[i]||{},n=i===0&&o.e!=='1'?first:(o.n||'');
     return `<input class="gn" placeholder="Artist ${i+1}" value="${esc(n)}" data-edited="${i===0?(o.e||0):1}" autocapitalize="words" oninput="this.classList.remove('bad');this.dataset.edited='1'">`}).join('')+'</div>';
 }
 function renderGfNames(){
