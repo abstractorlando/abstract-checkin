@@ -1723,7 +1723,15 @@ const BUILD='202611221058';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
-    if(m&&m[1]!==BUILD&&!m[1].startsWith('__')){const b=$('updBar');b.classList.remove('hide');b.dataset.v=m[1]}}catch(e){}}
+    if(m&&m[1]!==BUILD&&!m[1].startsWith('__')){const b=$('updBar');b.classList.remove('hide');b.dataset.v=m[1];if(safeToReload())doUpdate()}}catch(e){}}
+// update on its own when nobody is in the middle of something (no form open, no box up, not typing, idle 2+ min)
+let LAST_TOUCH=Date.now();['pointerdown','keydown'].forEach(ev=>addEventListener(ev,()=>LAST_TOUCH=Date.now(),true));
+function safeToReload(){
+  if(Date.now()-LAST_TOUCH<120000)return false;
+  const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return false;
+  if(!$('ciForm').classList.contains('hide'))return false;
+  if([...document.querySelectorAll('.modal,.mback,[id$="Modal"]')].some(m=>!m.classList.contains('hide')&&m.offsetParent!==null))return false;
+  return true}
 function doUpdate(){location.replace(location.pathname+'?v='+($('updBar').dataset.v||Date.now()))}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
 /* saved copies so screens show instantly, then refresh in the background */
