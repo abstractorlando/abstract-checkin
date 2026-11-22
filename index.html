@@ -1075,7 +1075,7 @@ async function saveAndPrint(){
   if(WALKIN&&!picked){try{const b=await walkBook(reservation,all);if(!b){btn.disabled=false;btn.textContent='Check in walk-in & print';return}picked=b}
     catch(e){btn.disabled=false;btn.textContent='Check in walk-in & print';toast('Could not add: '+(e.message||e),5000);return}}
   const quick=quickPrintOn()&&!fresh;
-  if(quick)printLabels(guests.map((g,i)=>({reservation:titleCase(reservation),name:g.name,type:g.type,date:$('dt').value,time:$('tm').value,size:guests.length,num:i+1,projects:g.projects})),{direct:true,noMark:true});
+  if(quick)printLabels(guests.map((g,i)=>({reservation:titleCase(reservation),name:g.name,type:g.type,date:$('dt').value,time:$('tm').value,size:Math.max(guests.length,picked?Math.max(all.length,+picked.size||0):0),num:i+1,projects:g.projects})),{direct:true,noMark:true});
   try{
     const saved=await call('saveParty',{date:$('dt').value,time:$('tm').value,reservation:titleCase(reservation),phone:$('ph').value.trim(),email:em,guests,bookingRow:picked?picked.row:0,expected:picked?all.length:0,allNames:picked?all.map(g=>g.name).filter(Boolean):[]});
     picked=null;$('bkFilter').value='';loadArrivals();
@@ -1712,7 +1712,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611211626';
+const BUILD='202611211925';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
