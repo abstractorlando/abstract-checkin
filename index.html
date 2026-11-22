@@ -1132,8 +1132,10 @@ function drawGoldenLabel(ctx,g){
   if(g.issued){ctx.font=`500 ${pt(7)}px Poppins, Arial, sans-serif`;ctx.fillText('Issued '+g.issued,cx,LH-P-26)}
   ctx.textAlign='left';
 }
+const within=(p,ms,msg)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(Object.assign(new Error(msg||'Timed out'),{name:'Timeout'})),ms))]);
 async function makePdf(copies){
-  try{await Promise.all(['800','700','500'].map(w=>document.fonts.load(`${w} 40px Poppins`)))}catch(e){}
+  // fonts: wait at most 1.5 s (a stalled font download used to freeze printing with no message)
+  try{await within(Promise.all(['800','700','500'].map(w=>document.fonts.load(`${w} 40px Poppins`))),1500)}catch(e){}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF(ROTATE?{orientation:'portrait',unit:'in',format:[2,3]}:{orientation:'landscape',unit:'in',format:[2,3]});
   const c=document.createElement('canvas'),ctx=c.getContext('2d');
@@ -1170,8 +1172,12 @@ async function quickPrint(copies){
 }
 /* direct = called right from a tap, so the iPad print box can open straight away */
 /* jsPDF comes from a CDN: if it didn't load (spotty wifi), fetch it again before making stickers */
-function needPdfLib(){if(window.jspdf)return Promise.resolve();return new Promise((ok,no)=>{const sc=document.createElement('script');
-  sc.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';sc.onload=()=>window.jspdf?ok():no(new Error('PDF maker did not load'));sc.onerror=()=>no(new Error('No internet for the PDF maker'));document.head.appendChild(sc)})}
+function needPdfLib(){if(window.jspdf)return Promise.resolve();return within(new Promise((ok,no)=>{const sc=document.createElement('script');
+  sc.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';sc.onload=()=>window.jspdf?ok():no(new Error('PDF maker did not load'));sc.onerror=()=>no(new Error('No internet for the PDF maker'));document.head.appendChild(sc)}),10000,'PDF maker took too long')}
+// warm up when the app opens (and when it wakes up in the morning) so the first sticker of the day isn't the slow one
+function warmPrint(){try{needPdfLib().then(()=>within(Promise.all(['800','700','500'].map(w=>document.fonts.load(`${w} 40px Poppins`))),3000)).catch(()=>{})}catch(e){}}
+window.addEventListener('load',()=>setTimeout(warmPrint,1500));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)warmPrint()});
 let LAST_PRINT=null;
 function printFailed(list,e){
   LAST_PRINT=list;spdAdd('printError'+String(e&&e.name||'').replace(/[^A-Za-z]/g,''),0,false);spdFlush();
@@ -1181,7 +1187,8 @@ function printFailed(list,e){
 function resetPm(){$('pmSub').textContent='ready for the Rollo';$('pmGo').textContent='Print';$('pmGo').onclick=sendToPrinter}
 async function printLabels(list,opts){
   opts=opts||{};if(!list||!list.length)return;resetPm();
-  try{await printLabels_(list,opts)}catch(e){printFailed(list,e)}
+  const t0=Date.now();
+  try{await printLabels_(list,opts);spdAdd('printOk',Date.now()-t0,true)}catch(e){printFailed(list,e)}
 }
 async function printLabels_(list,opts){
   const copies=stickerCopies(list);
@@ -1712,7 +1719,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611211925';
+const BUILD='202611221058';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
