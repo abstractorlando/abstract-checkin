@@ -1,0 +1,13 @@
+name: Booking page tracking check
+# Runs on every change. A red X (and an email from GitHub) means the change would break
+# Google Ads / GA4 / Meta tracking on the booking page. Fix it before it costs ad data.
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tools/check-tracking.js
