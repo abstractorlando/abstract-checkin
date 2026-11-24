@@ -8,11 +8,13 @@
  *
  * GA4 event names are numbered so they sort in funnel order in any report:
  *   bk_10_form_loaded        form opened and open days were shown
- *   bk_20_day_picked         picked a day (bk_21_day_changed = picked a different day afterwards)
+ *   bk_20_day_picked         picked a day on the calendar (bk_21_day_changed = picked a different day afterwards)
  *   bk_30_time_picked        picked a time (bk_31_time_changed = picked a different time afterwards)
  *   bk_35_size_changed       used the + or - on party size
+ *   bk_38_visit_continue     tapped Continue on step 1 (new with the 3-step form, Nov 2026)
  *   bk_40_details_started    touched any field in "Your details"
- *   bk_41_first_name  bk_42_last_name  bk_43_phone  bk_44_email  bk_45_artist_names  bk_46_addon  bk_47_note
+ *   bk_41_name (full name field, 3-step form)  bk_43_phone  bk_44_email  bk_45_artist_names  bk_46_addon  bk_47_note
+ *   (bk_41_first_name / bk_42_last_name were the old form's separate name fields)
  *   bk_50_continue_tapped    tapped Continue
  *   bk_55_payment_shown      card form was shown (hold placed)
  *   payment_card_complete    card fields filled in           (existing event name)
@@ -20,8 +22,8 @@
  *   add_payment_info         tapped Confirm / Book            (existing event name)
  *   bk_65_back_to_details    tapped Back from the card step
  *   bk_99_booked_screen      saw the "You're booked" screen
- *   bk_err_*                 an error the guest was shown (no_day_time, name, phone, email, artist_names,
- *                            slot_filled, hold_failed, agree_missing, no_open_days, availability)
+ *   bk_err_*                 an error the guest was shown (no_day_time, name, phone, email, artist_names, plus1,
+ *                            giftory, slot_filled, hold_failed, agree_missing, no_open_days, availability)
  *   payment_error            card problem, with a "reason" parameter  (existing event name)
  *   hold_expired             the 10-minute hold ran out               (existing event name)
  *   bk_exit_after_<step>     the guest left or switched away after reaching <step> (a guest who comes back
@@ -72,32 +74,33 @@
       if (errCount[what] <= 3) send('bk_err_' + what);
     }
 
-    /* ---------- days and times ---------- */
-    var days = g('days'), times = g('times');
-
-    if (days) {
+    /* ---------- days and times (3-step form: month calendar in #calWrap, times in #times) ---------- */
+    var cal = g('calWrap');
+    if (cal) {
       var checkDays = function () {
-        if (days.querySelector('.day')) step('10_form_loaded');
-        var c = days.querySelector('.closed');
+        if (cal.querySelector('button[data-d]')) step('10_form_loaded');
+        var c = cal.querySelector('.closed');
         if (c) err(/No open times/i.test(c.textContent) ? 'no_open_days' : 'availability');
       };
-      new MutationObserver(checkDays).observe(days, { childList: true });
+      new MutationObserver(checkDays).observe(cal, { childList: true, subtree: true });
       checkDays();
-      days.addEventListener('click', function (e) {
-        if (!closest(e.target, '.day')) return;
-        if (seen['20_day_picked']) { var n = (errCount._dc = (errCount._dc || 0) + 1); if (n <= 5) { send('bk_21_day_changed'); } }
+    }
+    // day and time taps are caught on the document (capture phase), because the page redraws
+    // the calendar and the time buttons right after each tap
+    function dayOrTime(e) {
+      var d = closest(e.target, '#calWrap button[data-d]');
+      if (d && !d.disabled) {
+        if (seen['20_day_picked']) { var n = (errCount._dc = (errCount._dc || 0) + 1); if (n <= 5) send('bk_21_day_changed'); }
         else step('20_day_picked');
-      });
-    }
-
-    if (times) {
-      times.addEventListener('click', function (e) {
-        var b = closest(e.target, '.time');
-        if (!b || b.disabled) return;
-        if (seen['30_time_picked']) { var n = (errCount._tc = (errCount._tc || 0) + 1); if (n <= 5) { send('bk_31_time_changed'); } }
+        return;
+      }
+      var t = closest(e.target, '#times .time');
+      if (t && !t.disabled) {
+        if (seen['30_time_picked']) { var m = (errCount._tc = (errCount._tc || 0) + 1); if (m <= 5) send('bk_31_time_changed'); }
         else step('30_time_picked');
-      });
+      }
     }
+    document.addEventListener('click', dayOrTime, true);
 
     /* ---------- clicks (capture phase, so we see the button before the page's own handler disables it) ---------- */
     document.addEventListener('click', function (e) {
@@ -107,6 +110,7 @@
       if (b.id === 'plus' || b.id === 'minus') {
         setTimeout(function () { step('35_size_changed'); }, 0);   // wait so party_size shows the new number
       }
+      if (b.id === 'next1') step('38_visit_continue', { repeat: true });                       // step 1 Continue (day + time + size picked)
       if (b.id === 'toPay') { sweepFields(); step('50_continue_tapped', { repeat: true }); }
       if (b.id === 'back') step('65_back_to_details', { repeat: true });
       if (b.id === 'book') {
@@ -119,7 +123,7 @@
     }, true);
 
     /* ---------- details fields: first touch of each ---------- */
-    var FIELD = { first: '41_first_name', last: '42_last_name', cc: '43_phone', phone: '43_phone', email: '44_email', note: '47_note' };
+    var FIELD = { name: '41_name', first: '41_first_name', last: '42_last_name', cc: '43_phone', phone: '43_phone', email: '44_email', note: '47_note' };
     function touched(t) {
       if (!t) return;
       var k = t.id ? FIELD[t.id] : null;
@@ -155,17 +159,22 @@
       err(/pick a day and time/i.test(t) ? 'no_day_time'
         : /first and last name/i.test(t) ? 'name'
         : /mobile number/i.test(t) ? 'phone'
-        : /check your email/i.test(t) ? 'email'
+        : /email/i.test(t) ? 'email'
         : /first name of everyone/i.test(t) ? 'artist_names'
+        : /PLUS1/i.test(t) ? 'plus1'
+        : /voucher|passcode/i.test(t) ? 'giftory'
         : /filled|left|full/i.test(t) ? 'slot_filled'
         : 'hold_failed');
     }).observe(e1, { childList: true, characterData: true, subtree: true });
 
     /* ---------- card step ---------- */
-    var pc = g('payCard');
-    if (pc) new MutationObserver(function () {
-      if (!pc.classList.contains('hide')) step('55_payment_shown');
-    }).observe(pc, { attributes: true, attributeFilter: ['class'] });
+    // 3-step form: the card step is screen 3 (#s3). The old form showed/hid #payCard instead; both are watched.
+    ['s3', 'payCard'].forEach(function (id) {
+      var el = g(id);
+      if (el) new MutationObserver(function () {
+        if (!el.classList.contains('hide') && !el.closest('.hide')) step('55_payment_shown');
+      }).observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
 
     var agree = g('agree');
     if (agree) agree.addEventListener('change', function () { if (agree.checked) step('60_agree_checked'); });
