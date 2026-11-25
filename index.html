@@ -1721,7 +1721,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611251059';
+const BUILD='202611251216';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1735,7 +1735,11 @@ function safeToReload(){
   if([...document.querySelectorAll('.modal,.mback,[id$="Modal"]')].some(m=>!m.classList.contains('hide')&&m.offsetParent!==null))return false;
   return true}
 function doUpdate(){location.replace(location.pathname+'?v='+($('updBar').dataset.v||Date.now()))}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});setInterval(checkUpdate,5*60000);
+// start every day fresh: if the app has been open since a previous day, reload it as soon as nobody is using it
+// (an app left open overnight is what kept breaking the first prints each morning)
+const OPENED_DAY=new Date().toDateString();
+function freshDay(){if(new Date().toDateString()!==OPENED_DAY&&safeToReload())location.reload()}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){freshDay();checkUpdate()}});setInterval(()=>{freshDay();checkUpdate()},5*60000);
 /* saved copies so screens show instantly, then refresh in the background */
 const cget=k=>{try{const v=localStorage.getItem('c_'+k);return v?JSON.parse(v):null}catch(e){return null}};
 const cset=(k,v)=>{try{localStorage.setItem('c_'+k,JSON.stringify(v))}catch(e){}};
