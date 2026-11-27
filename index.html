@@ -1544,26 +1544,35 @@ function openGift(){
   const m=document.createElement('div');m.className='modal';m.id='giftModal';
   m.innerHTML=`<div class="mbox bk" style="max-width:560px"><button class="bkx" onclick="$('giftModal').remove()" aria-label="Close">×</button>
     <b style="font-size:21px">Check a gift card</b>
-    <p class="muted" style="margin:4px 0 12px;font-size:14px">Check <b>every</b> gift card here before redeeming: old FareHarbor codes and Toast gift cards. Black Friday cards are 50% off already, so no other promos.</p>
+    <p class="muted" style="margin:4px 0 12px;font-size:14px">Check <b>every</b> gift card here before redeeming: old FareHarbor codes and Toast gift cards (the full number or the last 4 digits). Black Friday cards: no other promos, and add 18% gratuity to the check.</p>
     <input id="giftQ" type="search" placeholder="Gift card code or number" autocomplete="off" autocapitalize="characters" oninput="clearTimeout(giftT);giftT=setTimeout(giftFind,350)" style="font-size:20px;letter-spacing:1px">
-    <div id="giftRes" style="margin-top:12px"></div></div>`;
+    <div id="giftRes" style="margin-top:12px"></div>
+    ${ME&&ME.owner?`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><label class="btn ghost small" style="width:auto;display:inline-block;cursor:pointer">UPLOAD TOAST GIFT CARD REPORT<input type="file" accept=".csv,text/csv" style="display:none" onchange="toastUpload(this)"></label>
+      <p class="muted" style="font-size:12px;margin:6px 0 0">Owners: Toast &gt; Reports &gt; Gift Cards &gt; export CSV. Replaces the list. Cards first used on Black Friday are marked automatically.</p></div>`:''}</div>`;
   m.onclick=e=>{if(e.target===m)softClose(m)};document.body.appendChild(m);$('giftQ').focus();
 }
 async function giftFind(){const q=$('giftQ').value.trim();if(q.replace(/[^a-z0-9]/gi,'').length<3){$('giftRes').innerHTML='';return}
   $('giftRes').innerHTML='<p class="muted">Searching…</p>';
   try{const r=await call('giftSearch',q);if($('giftQ').value.trim()!==q)return;GIFT=r;renderGift()}catch(e){$('giftRes').innerHTML=`<p class="muted">Could not search: ${esc(e.message||e)}</p>`}}
 const usd=n=>'$'+Number(n||0).toFixed(2);
+const BFWARN=`<div class="gbf">BLACK FRIDAY GIFT CARD<span>Already 50% OFF. CAN NOT be combined with any other discounts or promotions.</span><span style="color:#fff;font-size:16px;margin-top:6px">ADD 18% GRATUITY TO THE FULL CHECK</span></div>`;
 function renderGift(){
-  const {cards,zero}=GIFT,bf=GIFT.bf||[];
-  const bfBox=c=>`<div class="gcard"><div class="gbf">BLACK FRIDAY GIFT CARD<span>This gift card already gives 50% OFF. CAN NOT be combined with any other discounts or promotions.</span></div>
+  const {cards,zero}=GIFT,toast=GIFT.toast||[],inToast=new Set(toast.map(t=>t.card));
+  const bf=(GIFT.bf||[]).filter(c=>!inToast.has(String(c.card).replace(/\D/g,'')));
+  const toastBox=c=>`<div class="gcard${c.balance<=0?' empty':''}">${c.bf?BFWARN:`<div class="gok">NOT A BLACK FRIDAY CARD<span>Regular Toast gift card. Promos are OK.</span></div>`}
+      <div class="gtop" style="margin-top:10px"><div><span class="muted" style="font-size:12px;font-weight:700">TOAST GIFT CARD</span><br><b style="font-size:17px;color:var(--purp);letter-spacing:1px;overflow-wrap:anywhere">${esc(c.card)}</b></div>
+        <div style="text-align:right"><span class="muted" style="font-size:12px;font-weight:700">BALANCE</span><br><b class="gbal">${usd(c.balance)}</b></div></div>
+      <p class="muted" style="font-size:13px;margin:8px 0 0">Started with ${usd(c.start)}${c.first?' · bought '+esc(c.first):''}${c.report?' · balance as of '+esc(c.report):''}</p>
+      <p class="muted" style="font-size:13px;margin:6px 0 0">Redeem it in Toast as usual. Toast has the live balance.</p></div>`;
+  const bfBox=c=>`<div class="gcard">${BFWARN}
       <div style="margin-top:10px;background:#f6f3fe;border-radius:12px;padding:10px 14px"><span class="muted" style="font-size:12px;font-weight:700">TOAST GIFT CARD</span><br><b style="font-size:18px;color:var(--purp);letter-spacing:1px;overflow-wrap:anywhere">${esc(c.card)}</b></div>
       <p class="muted" style="font-size:13px;margin:8px 0 0">${c.amount?'Value '+usd(c.amount):''}${c.bought?' · bought '+esc(c.bought):''}${c.buyer?' · '+esc(c.buyer):''}${c.note?' · '+esc(c.note):''}</p>
       <p class="muted" style="font-size:13px;margin:6px 0 0">Redeem it in Toast as usual. The balance lives in Toast.</p></div>`;
-  const okToast=!cards.length&&!zero.length&&!bf.length&&GIFT.numeric;
-  $('giftRes').innerHTML=bf.map(bfBox).join('')+(okToast?`<div class="gcard"><div class="gok">NOT A BLACK FRIDAY CARD<span>Regular Toast gift card. Promos are OK. Redeem it in Toast as usual.</span></div><p class="muted" style="font-size:13px;margin:8px 0 0">Double-check the number with the guest. If it was bought during a Black Friday sale and isn't on the list yet, ask a manager.</p></div>`:'')+(cards.length?cards.map((c,i)=>`<div class="gcard${c.left<=0?' empty':''}">
+  const unknown=!cards.length&&!zero.length&&!bf.length&&!toast.length&&GIFT.numeric;
+  $('giftRes').innerHTML=toast.map(toastBox).join('')+bf.map(bfBox).join('')+(unknown?`<div class="gcard"><div class="gbf" style="background:#5b3ea6">NOT ON OUR LIST YET<span>Check the date it was bought in Toast before you redeem.</span></div><p style="font-size:14px;margin:8px 0 0">If it was bought on <b>Black Friday (Nov 27)</b>, it is a Black Friday card: no other promos and <b>add 18% gratuity</b>. Any other date: regular card, promos are OK.</p><p class="muted" style="font-size:13px;margin:6px 0 0">${GIFT.toastReport?'Our list is from Toast\'s report of '+esc(GIFT.toastReport)+'. ':''}Double-check the number with the guest, or ask a manager.</p></div>`:'')+(cards.length?cards.map((c,i)=>`<div class="gcard${c.left<=0?' empty':''}">
       <div class="gtop"><div><span class="muted" style="font-size:12px;font-weight:700">OLD FAREHARBOR CODE</span><br><b style="font-size:16px;letter-spacing:.5px">${esc(c.old)}</b></div>
         <div style="text-align:right"><span class="muted" style="font-size:12px;font-weight:700">BALANCE LEFT</span><br><b class="gbal">${usd(c.left)}</b></div></div>
-      ${c.blackFriday?`<div class="gbf">BLACK FRIDAY GIFT CARD<span>This gift card already gives 50% OFF. CAN NOT be combined with any other discounts or promotions.</span></div>`:''}
+      ${c.blackFriday?BFWARN:''}
       <div class="gtoast"><span>Redeem in Toast with code</span><b>${esc(c.toast)}</b></div>
       ${c.left>0?`<div class="guse"><label class="l" style="margin:0">Amount used in Toast</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="gAmt${i}" inputmode="decimal" placeholder="0.00" style="flex:1;min-width:110px;font-size:18px">
@@ -1576,8 +1585,14 @@ function renderGift(){
         ${ME&&ME.owner?`<button class="tl" style="margin-top:6px" onclick="giftUndo(${i})">Undo the last use</button>`:''}</details>`:''}
     </div>`).join(''):'')+
     (zero.length?zero.map(z=>`<div class="gcard empty"><b>${esc(z.old)}</b><p style="margin:6px 0 0;color:#c40056;font-weight:700">This card was already at $0 before we moved to Toast.</p></div>`).join(''):'')+
-    (!cards.length&&!zero.length&&!bf.length&&!okToast?'<p class="muted">No card found. Check the code with the guest, or ask a manager.</p>':'');
+    (!cards.length&&!zero.length&&!bf.length&&!toast.length&&!unknown?'<p class="muted">No card found. Check the code with the guest, or ask a manager.</p>':'');
 }
+async function toastUpload(inp){const f=inp.files&&inp.files[0];inp.value='';if(!f)return;
+  if(f.size>3e6)return toast('That file is too big. Export the gift card report as CSV from Toast.',5000);
+  try{const r=await call('giftSearch','',await f.text());
+    if(!r||r.imported==null)return toast('Paste the new Gifts.gs in Apps Script and deploy a new version first',6000);
+    toast(`Updated ✓ ${r.imported} Toast gift cards · ${r.blackFriday} Black Friday`,6000);if($('giftQ').value.trim())giftFind()}
+  catch(e){toast(e.message||String(e),6000)}}
 async function giftUse(i){const c=GIFT.cards[i],amt=parseFloat(String($('gAmt'+i).value).replace(/[^\d.]/g,''));
   if(!(amt>0))return toast('Enter the amount used in Toast');if(amt>c.left+0.001)return toast(`Only ${usd(c.left)} is left on this card`,4000);
   if(!confirm(`Save ${usd(amt)} used on card ${c.old}?\n\nToast code ${c.toast}\nBalance left after: ${usd(c.left-amt)}`))return;
@@ -1721,7 +1736,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611251216';
+const BUILD='202611270740';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
