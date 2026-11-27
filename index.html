@@ -1181,6 +1181,11 @@ function warmPrint(){try{needPdfLib().then(()=>within(Promise.all(['800','700','
 window.addEventListener('load',()=>setTimeout(warmPrint,1500));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)warmPrint()});
 let LAST_PRINT=null;
+function reprintAfterRestart(list){
+  try{if(list&&list.length)sessionStorage.setItem('abs_reprint',JSON.stringify(list))}catch(e){}
+  toast('Fixing the printer, one moment…',4000);setTimeout(()=>location.reload(),600)}
+window.addEventListener('load',()=>{let list=null;try{list=JSON.parse(sessionStorage.getItem('abs_reprint')||'null');sessionStorage.removeItem('abs_reprint')}catch(e){}
+  if(list&&list.length)setTimeout(()=>{spdAdd('reprintAfterRestart',list.length,true);printLabels(list,{noMark:true})},2500)});
 function printFailed(list,e){
   LAST_PRINT=list;spdAdd('printError'+String(e&&e.name||'').replace(/[^A-Za-z]/g,''),0,false);spdFlush();
   $('pmCount').textContent='Stickers didn\'t open';$('pmSub').textContent='Tap Try again. Still stuck? Use Print all in Visits.';
@@ -1199,11 +1204,11 @@ async function printLabels_(list,opts){
     else{pendingCopies=copies;$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
   }else{
     await needPdfLib();const blob=await makePdf(copies);
-    pendingPdf={blob,count:copies.length};
+    pendingPdf={blob,count:copies.length,list};
     if(isTouch){
       // straight to the iPad's share sheet when the tap still counts; otherwise one "Print" tap first
       const file=new File([blob],'abstract-stickers.pdf',{type:'application/pdf'});let shown=false;
-      if(opts.direct&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});shown=true}catch(e){if(e.name==='AbortError')shown=true}}
+      if(opts.direct&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});shown=true}catch(e){if(e.name==='AbortError')shown=true;else{spdAdd('shareFail'+String(e.name||'').replace(/[^A-Za-z]/g,''),0,false)}}}
       if(!shown){$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
     }
     // Mac (Safari web app): printing only opens right after a tap. Straight from a tap = print now;
@@ -1218,7 +1223,10 @@ async function sendToPrinter(){
   if(!pendingPdf)return;const {blob}=pendingPdf;$('printModal').classList.add('hide');
   if(isTouch){
     const file=new File([blob],'abstract-stickers.pdf',{type:'application/pdf'});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return}catch(e){if(e.name==='AbortError')return}}
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return}catch(e){if(e.name==='AbortError')return;
+      // the iPad's share sheet gets stuck after the app sits open overnight (every share fails until the app restarts).
+      // Fix it for staff: restart the app and bring the same stickers right back, ready to print.
+      spdAdd('shareFail'+String(e.name||'').replace(/[^A-Za-z]/g,''),0,false);spdFlush();return reprintAfterRestart(pendingPdf&&pendingPdf.list)}}
     window.open(URL.createObjectURL(blob),'_blank');return;
   }
   const url=URL.createObjectURL(blob);let f=$('pdfFrame');
@@ -1736,7 +1744,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611270740';
+const BUILD='202611271100';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
@@ -1753,8 +1761,11 @@ function doUpdate(){location.replace(location.pathname+'?v='+($('updBar').datase
 // start every day fresh: if the app has been open since a previous day, reload it as soon as nobody is using it
 // (an app left open overnight is what kept breaking the first prints each morning)
 const OPENED_DAY=new Date().toDateString();
-function freshDay(){if(new Date().toDateString()!==OPENED_DAY&&safeToReload())location.reload()}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){freshDay();checkUpdate()}});setInterval(()=>{freshDay();checkUpdate()},5*60000);
+function freshDay(wake){if(new Date().toDateString()===OPENED_DAY)return;
+  // just woke up on a new day: nobody is mid-task yet, so restart right away (the 2-minute idle wait let staff start before the restart)
+  const a=document.activeElement,typing=a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName);
+  if(wake?(!typing&&$('ciForm').classList.contains('hide')):safeToReload())location.reload()}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){freshDay(true);checkUpdate()}});setInterval(()=>{freshDay();checkUpdate()},5*60000);
 /* saved copies so screens show instantly, then refresh in the background */
 const cget=k=>{try{const v=localStorage.getItem('c_'+k);return v?JSON.parse(v):null}catch(e){return null}};
 const cset=(k,v)=>{try{localStorage.setItem('c_'+k,JSON.stringify(v))}catch(e){}};
