@@ -552,6 +552,7 @@
   <p class="muted" id="pmSub" style="margin:0 0 18px">ready for the Rollo</p>
   <button class="btn main" id="pmGo" onclick="sendToPrinter()">Print</button>
   <button class="btn ghost" style="width:100%;margin-top:10px" onclick="$('printModal').classList.add('hide')">Cancel</button>
+  <button class="btn ghost small" id="pmFix" style="width:100%;margin-top:14px;font-size:13px" onclick="fixPrint()">Didn't open? Tap here to fix it</button>
 </div></div>
 <div id="setModal" class="modal hide"><div class="mbox setbox" style="text-align:left">
   <div class="mhead"><b style="font-size:20px">SETTINGS</b><button class="btn ghost small" onclick="$('setModal').classList.add('hide')" aria-label="Close">✕</button></div>
@@ -1180,7 +1181,9 @@ function needPdfLib(){if(window.jspdf)return Promise.resolve();return within(new
 function warmPrint(){try{needPdfLib().then(()=>within(Promise.all(['800','700','500'].map(w=>document.fonts.load(`${w} 40px Poppins`))),3000)).catch(()=>{})}catch(e){}}
 window.addEventListener('load',()=>setTimeout(warmPrint,1500));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)warmPrint()});
-let LAST_PRINT=null;
+let LAST_PRINT=null,SHARE_PENDING=false;
+function shareFile(file){SHARE_PENDING=true;return navigator.share({files:[file]}).finally(()=>{SHARE_PENDING=false})}
+function fixPrint(){spdAdd('fixPrintTap',0,false);spdFlush();reprintAfterRestart(pendingPdf&&pendingPdf.list)}
 function reprintAfterRestart(list){
   try{if(list&&list.length)sessionStorage.setItem('abs_reprint',JSON.stringify(list))}catch(e){}
   toast('Fixing the printer, one moment…',4000);setTimeout(()=>location.reload(),600)}
@@ -1203,13 +1206,18 @@ async function printLabels_(list,opts){
     if(opts.direct)quickPrint(copies);
     else{pendingCopies=copies;$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
   }else{
-    await needPdfLib();const blob=await makePdf(copies);
+    await needPdfLib();const blob=await within(makePdf(copies),8000,'Stickers took too long to make');
     pendingPdf={blob,count:copies.length,list};
     if(isTouch){
       // straight to the iPad's share sheet when the tap still counts; otherwise one "Print" tap first
-      const file=new File([blob],'abstract-stickers.pdf',{type:'application/pdf'});let shown=false;
-      if(opts.direct&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});shown=true}catch(e){if(e.name==='AbortError')shown=true;else{spdAdd('shareFail'+String(e.name||'').replace(/[^A-Za-z]/g,''),0,false)}}}
-      if(!shown){$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')}
+      const file=new File([blob],'abstract-stickers.pdf',{type:'application/pdf'});
+      const showBox=()=>{$('pmCount').textContent=copies.length+' sticker'+(copies.length>1?'s':'');$('printModal').classList.remove('hide')};
+      if(opts.direct&&!SHARE_PENDING&&navigator.canShare&&navigator.canShare({files:[file]})){
+        // never wait on the share sheet: if it hasn't opened in 1.5s, show the Print box (the iPad can leave it hanging forever)
+        let done=false;const t=setTimeout(()=>{if(!done){spdAdd('shareSlow',1500,false);showBox()}},1500);
+        shareFile(file).then(()=>{done=true;clearTimeout(t);$('printModal').classList.add('hide')})
+          .catch(e=>{done=true;clearTimeout(t);if(e.name==='AbortError')$('printModal').classList.add('hide');else{spdAdd('shareFail'+String(e.name||'').replace(/[^A-Za-z]/g,''),0,false);showBox()}});
+      }else showBox();
     }
     // Mac (Safari web app): printing only opens right after a tap. Straight from a tap = print now;
     // after a save (check-in from the manifest) the tap has "expired", so show the Print box: one tap and it opens
@@ -1223,7 +1231,11 @@ async function sendToPrinter(){
   if(!pendingPdf)return;const {blob}=pendingPdf;$('printModal').classList.add('hide');
   if(isTouch){
     const file=new File([blob],'abstract-stickers.pdf',{type:'application/pdf'});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return}catch(e){if(e.name==='AbortError')return;
+    // a share from earlier never finished = the iPad's share sheet is stuck: restart right away and bring the stickers back
+    if(SHARE_PENDING){spdAdd('shareStuck',0,false);spdFlush();return reprintAfterRestart(pendingPdf&&pendingPdf.list)}
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      const t=setTimeout(()=>{if(SHARE_PENDING){$('pmFix').classList.remove('hide');$('printModal').classList.remove('hide')}},4000);
+      try{await shareFile(file);clearTimeout(t);return}catch(e){clearTimeout(t);if(e.name==='AbortError')return;
       // the iPad's share sheet gets stuck after the app sits open overnight (every share fails until the app restarts).
       // Fix it for staff: restart the app and bring the same stickers right back, ready to print.
       spdAdd('shareFail'+String(e.name||'').replace(/[^A-Za-z]/g,''),0,false);spdFlush();return reprintAfterRestart(pendingPdf&&pendingPdf.list)}}
@@ -1747,7 +1759,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611280905';
+const BUILD='202611281030';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
