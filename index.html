@@ -1562,24 +1562,28 @@ async function giftFind(){const q=$('giftQ').value.trim();if(q.replace(/[^a-z0-9
   $('giftRes').innerHTML='<p class="muted">Searching…</p>';
   try{const r=await call('giftSearch',q);if($('giftQ').value.trim()!==q)return;GIFT=r;renderGift()}catch(e){$('giftRes').innerHTML=`<p class="muted">Could not search: ${esc(e.message||e)}</p>`}}
 const usd=n=>'$'+Number(n||0).toFixed(2);
-const BFWARN=`<div class="gbf">BLACK FRIDAY GIFT CARD<span>Already 50% OFF. CAN NOT be combined with any other discounts or promotions.</span><span style="color:#fff;font-weight:600;font-size:13px;margin-top:6px;line-height:1.4">That means nothing else that lowers the check: no 2-canvas deals, no 50% off shipping, no Groupons, no promo codes, no other discounts.</span><span style="color:#fff;font-size:16px;margin-top:6px">ADD 18% GRATUITY TO THE FULL CHECK</span></div>`;
+const BFWARN=`<div class="gbf">__SALE__ GIFT CARD<span>Already 50% OFF. CAN NOT be combined with any other discounts or promotions.</span><span style="color:#fff;font-weight:600;font-size:13px;margin-top:6px;line-height:1.4">That means nothing else that lowers the check: no 2-canvas deals, no 50% off shipping, no Groupons, no promo codes, no other discounts.</span><span style="color:#fff;font-size:16px;margin-top:6px">ADD 18% GRATUITY TO THE FULL CHECK</span></div>`;
+// Cyber Monday cards (first used Nov 30) follow the same rules, with their own title
+const saleWarn=d=>BFWARN.replace('__SALE__',/^11\/30\//.test(String(d||''))?'CYBER MONDAY':'BLACK FRIDAY');
+// Mon Nov 30 to Wed Dec 2: Cyber Monday cards may not be on the list yet (remove once they're added)
+const cmPending=()=>{const d=new Date();return d>=new Date('2026-11-30T00:00:00-05:00')&&d<new Date('2026-12-03T00:00:00-05:00')};
 function renderGift(){
   const {cards,zero}=GIFT,toast=GIFT.toast||[],inToast=new Set(toast.map(t=>t.card));
   const bf=(GIFT.bf||[]).filter(c=>!inToast.has(String(c.card).replace(/\D/g,'')));
-  const toastBox=c=>`<div class="gcard${c.balance<=0?' empty':''}">${c.bf?BFWARN:`<div class="gok">NOT A BLACK FRIDAY CARD<span>Regular Toast gift card. Promos are OK.</span></div>`}
+  const toastBox=c=>`<div class="gcard${c.balance<=0?' empty':''}">${c.bf?saleWarn(c.first):`<div class="gok">NOT A BLACK FRIDAY CARD<span>Regular Toast gift card. Promos are OK.</span></div>`}
       <div class="gtop" style="margin-top:10px"><div><span class="muted" style="font-size:12px;font-weight:700">TOAST GIFT CARD</span><br><b style="font-size:17px;color:var(--purp);letter-spacing:1px;overflow-wrap:anywhere">${esc(c.card)}</b></div>
         <div style="text-align:right"><span class="muted" style="font-size:12px;font-weight:700">BALANCE</span><br><b class="gbal">${usd(c.balance)}</b></div></div>
       <p class="muted" style="font-size:13px;margin:8px 0 0">Started with ${usd(c.start)}${c.first?' · bought '+esc(c.first):''}</p>
       <p class="muted" style="font-size:13px;margin:6px 0 0">Redeem it in Toast as usual. Toast has the live balance.</p></div>`;
-  const bfBox=c=>`<div class="gcard">${BFWARN}
+  const bfBox=c=>`<div class="gcard">${saleWarn(c.bought)}
       <div style="margin-top:10px;background:#f6f3fe;border-radius:12px;padding:10px 14px"><span class="muted" style="font-size:12px;font-weight:700">TOAST GIFT CARD</span><br><b style="font-size:18px;color:var(--purp);letter-spacing:1px;overflow-wrap:anywhere">${esc(c.card)}</b></div>
       <p class="muted" style="font-size:13px;margin:8px 0 0">${c.amount?'Value '+usd(c.amount):''}${c.bought?' · bought '+esc(c.bought):''}${c.buyer?' · '+esc(c.buyer):''}${c.note?' · '+esc(c.note):''}</p>
       <p class="muted" style="font-size:13px;margin:6px 0 0">Redeem it in Toast as usual. The balance lives in Toast.</p></div>`;
   const unknown=!cards.length&&!zero.length&&!bf.length&&!toast.length&&GIFT.numeric;
-  $('giftRes').innerHTML=toast.map(toastBox).join('')+bf.map(bfBox).join('')+(unknown?`<div class="gcard"><div class="gok">NOT A BLACK FRIDAY CARD<span>Regular gift card. Promos are OK. Redeem it in Toast as usual.</span></div><p class="muted" style="font-size:13px;margin:8px 0 0">Every Black Friday card is on our list, so if a number doesn't come up here, it's a regular card. Double-check the number with the guest.</p></div>`:'')+(cards.length?cards.map((c,i)=>`<div class="gcard${c.left<=0?' empty':''}">
+  $('giftRes').innerHTML=toast.map(toastBox).join('')+bf.map(bfBox).join('')+(unknown?(cmPending()?`<div class="gcard"><div class="gbf" style="background:#5b3ea6">CHECK THE DATE IN TOAST<span>Cyber Monday cards aren't on our list yet.</span></div><p style="font-size:14px;margin:8px 0 0">If this card was bought on <b>Monday, Nov 30</b>, it's a Cyber Monday card: no other promos and <b>add 18% gratuity</b>. Any other date: regular card, promos are OK.</p></div>`:`<div class="gcard"><div class="gok">NOT A BLACK FRIDAY CARD<span>Regular gift card. Promos are OK. Redeem it in Toast as usual.</span></div><p class="muted" style="font-size:13px;margin:8px 0 0">Every Black Friday and Cyber Monday card is on our list, so if a number doesn't come up here, it's a regular card. Double-check the number with the guest.</p></div>`):'')+(cards.length?cards.map((c,i)=>`<div class="gcard${c.left<=0?' empty':''}">
       <div class="gtop"><div><span class="muted" style="font-size:12px;font-weight:700">OLD FAREHARBOR CODE</span><br><b style="font-size:16px;letter-spacing:.5px">${esc(c.old)}</b></div>
         <div style="text-align:right"><span class="muted" style="font-size:12px;font-weight:700">BALANCE LEFT</span><br><b class="gbal">${usd(c.left)}</b></div></div>
-      ${c.blackFriday?BFWARN:''}
+      ${c.blackFriday?saleWarn(''):''}
       <div class="gtoast"><span>Redeem in Toast with code</span><b>${esc(c.toast)}</b></div>
       ${c.left>0?`<div class="guse"><label class="l" style="margin:0">Amount used in Toast</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="gAmt${i}" inputmode="decimal" placeholder="0.00" style="flex:1;min-width:110px;font-size:18px">
@@ -1743,7 +1747,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611280900';
+const BUILD='202611280905';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
