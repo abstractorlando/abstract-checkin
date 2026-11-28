@@ -1234,8 +1234,7 @@ async function sendToPrinter(){
     // a share from earlier never finished = the iPad's share sheet is stuck: restart right away and bring the stickers back
     if(SHARE_PENDING){spdAdd('shareStuck',0,false);spdFlush();return reprintAfterRestart(pendingPdf&&pendingPdf.list)}
     if(navigator.canShare&&navigator.canShare({files:[file]})){
-      const t=setTimeout(()=>{if(SHARE_PENDING){$('pmFix').classList.remove('hide');$('printModal').classList.remove('hide')}},4000);
-      try{await shareFile(file);clearTimeout(t);return}catch(e){clearTimeout(t);if(e.name==='AbortError')return;
+      try{await shareFile(file);$('printModal').classList.add('hide');return}catch(e){if(e.name==='AbortError')return;
       // the iPad's share sheet gets stuck after the app sits open overnight (every share fails until the app restarts).
       // Fix it for staff: restart the app and bring the same stickers right back, ready to print.
       spdAdd('shareFail'+String(e.name||'').replace(/[^A-Za-z]/g,''),0,false);spdFlush();return reprintAfterRestart(pendingPdf&&pendingPdf.list)}}
@@ -1759,7 +1758,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611281030';
+const BUILD='202611281240';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
