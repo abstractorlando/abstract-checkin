@@ -1562,7 +1562,7 @@ async function giftFind(){const q=$('giftQ').value.trim();if(q.replace(/[^a-z0-9
   $('giftRes').innerHTML='<p class="muted">Searching…</p>';
   try{const r=await call('giftSearch',q);if($('giftQ').value.trim()!==q)return;GIFT=r;renderGift()}catch(e){$('giftRes').innerHTML=`<p class="muted">Could not search: ${esc(e.message||e)}</p>`}}
 const usd=n=>'$'+Number(n||0).toFixed(2);
-const BFWARN=`<div class="gbf">BLACK FRIDAY GIFT CARD<span>Already 50% OFF. CAN NOT be combined with any other discounts or promotions.</span><span style="color:#fff;font-size:16px;margin-top:6px">ADD 18% GRATUITY TO THE FULL CHECK</span></div>`;
+const BFWARN=`<div class="gbf">BLACK FRIDAY GIFT CARD<span>Already 50% OFF. CAN NOT be combined with any other discounts or promotions.</span><span style="color:#fff;font-weight:600;font-size:13px;margin-top:6px;line-height:1.4">That means nothing else that lowers the check: no 2-canvas deals, no 50% off shipping, no Groupons, no promo codes, no other discounts.</span><span style="color:#fff;font-size:16px;margin-top:6px">ADD 18% GRATUITY TO THE FULL CHECK</span></div>`;
 function renderGift(){
   const {cards,zero}=GIFT,toast=GIFT.toast||[],inToast=new Set(toast.map(t=>t.card));
   const bf=(GIFT.bf||[]).filter(c=>!inToast.has(String(c.card).replace(/\D/g,'')));
@@ -1743,7 +1743,7 @@ function renderPickup(list){
 
 /* ---------- Shipping requests (guest shipping form) ---------- */
 /* ---------- new version check: the home-screen app has no refresh button, so it looks for updates itself ---------- */
-const BUILD='202611280830';
+const BUILD='202611280832';
 let UPD_AT=0;
 async function checkUpdate(){if(BUILD.startsWith('__')||Date.now()-UPD_AT<120000)return;UPD_AT=Date.now();
   try{const t=await (await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'})).text();const m=/const BUILD='([^']+)'/.exec(t);
